@@ -1,0 +1,53 @@
+import { Router, type IRouter } from "express";
+import { eq } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
+import { db, usersTable } from "@workspace/db";
+import { UpdateUserSettingsBody } from "@workspace/api-zod";
+import { ensureUser } from "../lib/auth";
+
+const router: IRouter = Router();
+
+router.get("/users/me", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  await ensureUser(userId);
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+
+  res.json({
+    clerkId: user.clerkId,
+    displayName: user.displayName,
+    dailyAiUsage: user.dailyAiUsage,
+    dailyAiLimit: 50,
+  });
+});
+
+router.patch("/users/me/settings", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const parsed = UpdateUserSettingsBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  await ensureUser(userId);
+
+  const [user] = await db.update(usersTable)
+    .set({ displayName: parsed.data.displayName, updatedAt: new Date() })
+    .where(eq(usersTable.clerkId, userId))
+    .returning();
+
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+
+  res.json({
+    clerkId: user.clerkId,
+    displayName: user.displayName,
+    dailyAiUsage: user.dailyAiUsage,
+    dailyAiLimit: 50,
+  });
+});
+
+export default router;

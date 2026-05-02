@@ -1,0 +1,166 @@
+# Fábrica de Soluções — um cockpit de IA para founders
+
+Quero construir um app web chamado "Fábrica de Soluções". É uma plataforma
+onde founders (fundadores de startups) constroem produtos digitais em 6
+fases sequenciais, com ajuda de uma IA que gera os artefatos de produto
+em cada fase.
+
+## Como o app funciona
+
+Cada usuário entra, cria uma conta (email + senha) e pode criar vários
+projetos. Cada projeto passa obrigatoriamente pelas mesmas 6 fases,
+nesta ordem:
+
+1. IDEIA — validar se a ideia tem potencial de mercado
+2. PRD — definir o que vai ser construído (Product Requirements Document)
+3. SPEC — definir como vai ser construído tecnicamente
+4. IMPLEMENTAÇÃO — planejar a construção em milestones
+5. TESTE — planejar como validar que funciona
+6. DEPLOY — planejar o lançamento e go-to-market
+
+O usuário não pode pular fases. Cada fase tem um "gate de saída" (3
+checkboxes obrigatórios) — só pode avançar para a próxima fase depois
+de marcar todos. Também pode voltar para fases anteriores se quiser
+revisar algo.
+
+## O que a IA faz
+
+Em cada fase, existe um botão "Executar [FASE] com IA". Ao clicar, a
+IA analisa o briefing do projeto (texto que o usuário escreveu) mais
+os artefatos gerados em fases anteriores, e entrega artefatos
+estruturados como resultado. Use a IA padrão do Hercules — quero
+entregar isso rápido sem me preocupar com API key externa nesse primeiro
+momento.
+
+Cada fase gera artefatos específicos:
+
+- Fase IDEIA: Lean Canvas (9 blocos: problema, segmentos de clientes,
+  proposta de valor única, solução, canais, fluxo de receita, estrutura
+  de custos, métricas-chave, vantagem injusta), JTBD (Jobs to be Done),
+  dimensionamento de mercado (TAM/SAM/SOM), hipótese central em 1 frase,
+  e um score de potencial (4 notas de 1 a 5 para desejabilidade,
+  viabilidade, factibilidade, escalabilidade).
+
+- Fase PRD: documento de PRD completo, personas (primária e secundária),
+  métricas de sucesso (1 North Star + 3 inputs), hipótese de pricing.
+
+- Fase SPEC: arquitetura do sistema, modelo de dados, contratos de API,
+  fluxos de UI principais.
+
+- Fase IMPLEMENTAÇÃO: plano de milestones (cada milestone é uma feature
+  navegável), estrutura de pastas sugerida, conteúdo de README com setup
+  em 5 comandos.
+
+- Fase TESTE: plano de testes, checklist de QA, lista de bugs iniciais
+  a prevenir.
+
+- Fase DEPLOY: runbook de deploy, plano de Go-to-Market mínimo
+  (canal de aquisição #1 + mensagem-chave + lista dos 10 primeiros
+  clientes-alvo), launch checklist.
+
+Todos os artefatos podem ser editados manualmente pelo usuário depois
+de gerados.
+
+## Telas do app
+
+### Tela 1: Login/Signup
+Formulário simples de email + senha. Design limpo e acolhedor.
+
+### Tela 2: Dashboard
+Mostra todos os projetos do usuário em cards. Cada card tem:
+- Nome do projeto
+- Descrição curta
+- Badge indicando a fase atual (ex: "Fase 3 — SPEC")
+- Barra de progresso visual de 0 a 6
+Botão grande "+ Novo projeto" no topo. Ao clicar, abre um modal
+pedindo nome + briefing inicial (texto livre).
+
+### Tela 3: Projeto (visão geral)
+Mostra no topo um "pipeline visual" — 6 bolinhas numeradas conectadas
+por uma linha, indicando as 6 fases. Verde = concluída, azul = ativa,
+cinza = bloqueada. O usuário clica em qualquer fase concluída ou ativa
+para entrar nela.
+Abaixo tem abas: "Briefing" (texto editável), "Artefatos" (lista de
+tudo gerado até agora).
+
+### Tela 4: Fase (tela principal do app)
+Esta é a tela mais importante. Contém:
+- Breadcrumb no topo (Projeto > Fase X - NOME)
+- "Objetivo desta fase" em destaque (texto fixo que explica o propósito
+  da fase)
+- Botão grande "▶ Executar [NOME DA FASE] com IA" (fica desabilitado
+  se a fase está bloqueada)
+- Durante a geração: um indicador visual de "gerando..."
+- Depois da geração: cards expansíveis com cada artefato gerado.
+  O Lean Canvas (na Fase IDEIA) deve aparecer em um layout especial
+  de grade 3x3 visualmente bonito, com os 9 blocos destacados. Os
+  outros artefatos aparecem como texto formatado que pode ser editado
+  clicando em "Editar".
+- Gate de saída: uma lista de 3 checkboxes que o usuário precisa marcar
+  para avançar. Cada fase tem seus próprios critérios (ex: IDEIA tem
+  "hipótese central escrita", "3 alternativas mapeadas", "score médio
+  maior ou igual a 3.5").
+- Quando todos os 3 checkboxes estão marcados, aparece o botão "✓
+  Concluir fase e avançar" que leva para a próxima fase.
+- Link discreto no rodapé: "↩ Voltar para uma fase anterior" — abre
+  um menu listando fases concluídas. Ao escolher, volta para aquela
+  fase sem apagar nenhum artefato.
+
+### Tela 5: Configurações
+Permite o usuário alterar email/senha e deletar a conta.
+
+## Critérios do gate de saída por fase
+
+- IDEIA: "Hipótese central escrita em 1 frase" | "3 alternativas atuais
+  mapeadas" | "Score de potencial médio ≥ 3.5"
+- PRD: "MVP cabe em ≤ 4 semanas" | "North Star metric definida e
+  mensurável" | "Proposta de valor não substituível por concorrente"
+- SPEC: "Schema de dados completo" | "Contratos de API definidos" |
+  "Plano de segurança revisado"
+- IMPLEMENTAÇÃO: "Milestones quebrados em features navegáveis" | "README
+  com setup em ≤ 15 min" | "Zero mocks em features críticas"
+- TESTE: "Zero bugs P0 abertos" | "3+ usuários reais testaram" |
+  "Performance validada"
+- DEPLOY: "Produto em URL pública" | "Monitoramento ativo" | "Lista
+  dos 10 primeiros clientes pronta"
+
+## Regras importantes
+
+1. Um usuário só vê os próprios projetos — nunca projetos de outro usuário.
+2. Artefatos gerados ficam salvos e podem ser editados manualmente a
+   qualquer momento, inclusive depois de concluir a fase.
+3. Ao voltar para uma fase anterior, os artefatos das fases seguintes
+   NÃO são apagados (ficam preservados para o caso de o usuário
+   retomar).
+4. A IA responde sempre em português brasileiro.
+5. Limite de uso: cada usuário pode executar no máximo 50 fases por dia
+   (para controlar custos de IA).
+6. Os textos que explicam o objetivo de cada fase devem ter tom
+   motivacional — o usuário está construindo algo importante, o app
+   deve parecer um parceiro de construção, não uma ferramenta burocrática.
+
+## Design e tom
+
+- Identidade visual: moderna, clean, com tom profissional mas acolhedor.
+  Paleta sugerida: um laranja terracota como cor de destaque (#b8461e)
+  em fundo claro (#fdfcfa), texto escuro (#1a1a1a). Fonte serif para
+  títulos grandes, sans-serif para o resto.
+- Microcopy inspiradora: em vez de "Criar projeto", algo como "Iniciar
+  nova construção". Em vez de "Executar fase", "Gerar artefatos da
+  fase". O usuário deve sentir que está operando uma linha de montagem
+  de produtos, não preenchendo formulários.
+- Estados vazios com carinho: quando não há projetos, mostrar uma tela
+  de boas-vindas explicando o framework em 3 passos antes de convidar
+  a criar o primeiro projeto.
+
+## O que NÃO fazer neste primeiro corte
+
+- Não colocar compartilhamento de projetos entre usuários (cada projeto
+  é privado, só do dono).
+- Não colocar templates prontos de projeto — cada usuário começa do zero.
+- Não colocar export/download dos artefatos ainda (fica para v2).
+- Não colocar histórico de execuções da IA (se executar a fase de novo,
+  sobrescreve os artefatos anteriores).
+
+Começa construindo. Quero ver a primeira versão rodando para começar
+a testar o fluxo das 6 fases.

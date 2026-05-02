@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Fábrica de Soluções API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: projects
+    description: Project operations
+  - name: phases
+    description: Phase operations
+  - name: artifacts
+    description: Artifact operations
+  - name: ai
+    description: AI execution operations
+  - name: users
+    description: User operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,333 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects for the authenticated user
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a single project with all phases
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update project briefing or name
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectBody"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /projects/{id}/summary:
+    get:
+      operationId: getProjectSummary
+      tags: [projects]
+      summary: Get dashboard-level summary for a project (phase completion, gate status)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectSummary"
+
+  /projects/dashboard:
+    get:
+      operationId: getDashboard
+      tags: [projects]
+      summary: Get all projects with summary for the dashboard
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /projects/{projectId}/phases/{phaseNumber}:
+    get:
+      operationId: getPhase
+      tags: [phases]
+      summary: Get a phase with its artifacts and gate status
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 6
+      responses:
+        "200":
+          description: Phase detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhaseDetail"
+        "404":
+          description: Not found
+
+  /projects/{projectId}/phases/{phaseNumber}/gates:
+    patch:
+      operationId: updatePhaseGates
+      tags: [phases]
+      summary: Update gate checkbox states for a phase
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 6
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhaseGatesBody"
+      responses:
+        "200":
+          description: Updated phase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Phase"
+
+  /projects/{projectId}/phases/{phaseNumber}/complete:
+    post:
+      operationId: completePhase
+      tags: [phases]
+      summary: Mark a phase as complete and unlock the next phase
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 6
+      responses:
+        "200":
+          description: Phase completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Phase"
+        "400":
+          description: Gates not all checked
+
+  /projects/{projectId}/phases/{phaseNumber}/artifacts:
+    get:
+      operationId: listPhaseArtifacts
+      tags: [artifacts]
+      summary: List all artifacts for a phase
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of artifacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Artifact"
+
+  /projects/{projectId}/phases/{phaseNumber}/artifacts/{artifactKey}:
+    patch:
+      operationId: updateArtifact
+      tags: [artifacts]
+      summary: Update artifact content (manual edit)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: artifactKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateArtifactBody"
+      responses:
+        "200":
+          description: Updated artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifact"
+
+  /projects/{projectId}/phases/{phaseNumber}/execute:
+    post:
+      operationId: executePhaseWithAI
+      tags: [ai]
+      summary: Execute a phase with AI to generate artifacts (SSE streaming)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: SSE stream of generation progress and artifacts
+        "400":
+          description: Phase is locked or daily limit reached
+        "404":
+          description: Not found
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [users]
+      summary: Get current user profile and daily AI usage
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/me/settings:
+    patch:
+      operationId: updateUserSettings
+      tags: [users]
+      summary: Update user settings (display name)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserSettingsBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +370,273 @@ components:
       required:
         - status
 
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        briefing:
+          type: string
+        currentPhase:
+          type: integer
+          minimum: 1
+          maximum: 6
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - briefing
+        - currentPhase
+        - createdAt
+        - updatedAt
+
+    ProjectDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        briefing:
+          type: string
+        currentPhase:
+          type: integer
+        phases:
+          type: array
+          items:
+            $ref: "#/components/schemas/Phase"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - briefing
+        - currentPhase
+        - phases
+        - createdAt
+        - updatedAt
+
+    Phase:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        phaseNumber:
+          type: integer
+        status:
+          type: string
+          enum: [locked, active, completed]
+        gate1Checked:
+          type: boolean
+        gate2Checked:
+          type: boolean
+        gate3Checked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - projectId
+        - phaseNumber
+        - status
+        - gate1Checked
+        - gate2Checked
+        - gate3Checked
+        - createdAt
+        - updatedAt
+
+    PhaseDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        phaseNumber:
+          type: integer
+        status:
+          type: string
+          enum: [locked, active, completed]
+        gate1Checked:
+          type: boolean
+        gate2Checked:
+          type: boolean
+        gate3Checked:
+          type: boolean
+        artifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Artifact"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - projectId
+        - phaseNumber
+        - status
+        - gate1Checked
+        - gate2Checked
+        - gate3Checked
+        - artifacts
+        - createdAt
+        - updatedAt
+
+    Artifact:
+      type: object
+      properties:
+        id:
+          type: integer
+        phaseId:
+          type: integer
+        artifactKey:
+          type: string
+        content:
+          type: string
+        contentJson:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - phaseId
+        - artifactKey
+        - content
+        - contentJson
+        - createdAt
+        - updatedAt
+
+    ProjectSummary:
+      type: object
+      properties:
+        projectId:
+          type: integer
+        name:
+          type: string
+        currentPhase:
+          type: integer
+        completedPhases:
+          type: integer
+        allGatesChecked:
+          type: boolean
+        phaseStatuses:
+          type: array
+          items:
+            type: string
+            enum: [locked, active, completed]
+      required:
+        - projectId
+        - name
+        - currentPhase
+        - completedPhases
+        - allGatesChecked
+        - phaseStatuses
+
+    DashboardData:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectSummary"
+        totalProjects:
+          type: integer
+        dailyAiUsage:
+          type: integer
+        dailyAiLimit:
+          type: integer
+      required:
+        - projects
+        - totalProjects
+        - dailyAiUsage
+        - dailyAiLimit
+
+    UserProfile:
+      type: object
+      properties:
+        clerkId:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        dailyAiUsage:
+          type: integer
+        dailyAiLimit:
+          type: integer
+      required:
+        - clerkId
+        - dailyAiUsage
+        - dailyAiLimit
+        - displayName
+
+    CreateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        briefing:
+          type: string
+      required:
+        - name
+        - briefing
+
+    UpdateProjectBody:
+      type: object
+      properties:
+        name:
+          type: string
+        briefing:
+          type: string
+
+    UpdatePhaseGatesBody:
+      type: object
+      properties:
+        gate1Checked:
+          type: boolean
+        gate2Checked:
+          type: boolean
+        gate3Checked:
+          type: boolean
+      required:
+        - gate1Checked
+        - gate2Checked
+        - gate3Checked
+
+    UpdateArtifactBody:
+      type: object
+      properties:
+        content:
+          type: string
+        contentJson:
+          type: ["string", "null"]
+      required:
+        - content
+
+    UpdateUserSettingsBody:
+      type: object
+      properties:
+        displayName:
+          type: string
