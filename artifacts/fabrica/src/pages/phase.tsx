@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Link, useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -17,60 +17,159 @@ import { PHASES } from "@/lib/constants";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-// Lean Canvas grid layout: 9 blocks in a specific 3x3 arrangement
 const LEAN_CANVAS_BLOCKS = [
   { key: "problema", label: "Problema", hint: "Top 3 problemas" },
-  { key: "solucao", label: "Solução", hint: "Top 3 soluções" },
-  { key: "proposta_valor_unica", label: "Proposta de Valor Única", hint: "Mensagem clara e convincente" },
-  { key: "vantagem_injusta", label: "Vantagem Injusta", hint: "Difícil de copiar ou comprar" },
   { key: "segmentos_clientes", label: "Segmentos de Clientes", hint: "Clientes-alvo" },
-  { key: "metricas_chave", label: "Métricas-Chave", hint: "Atividades-chave a medir" },
+  { key: "proposta_valor_unica", label: "Proposta de Valor Única", hint: "Mensagem clara e convincente" },
+  { key: "solucao", label: "Solução", hint: "Top 3 soluções" },
   { key: "canais", label: "Canais", hint: "Caminho para os clientes" },
-  { key: "estrutura_custos", label: "Estrutura de Custos", hint: "Custos fixos e variáveis" },
   { key: "fluxo_receita", label: "Fluxo de Receita", hint: "Modelo de receita, LTV, receita bruta" },
+  { key: "estrutura_custos", label: "Estrutura de Custos", hint: "Custos fixos e variáveis" },
+  { key: "metricas_chave", label: "Métricas-Chave", hint: "Atividades-chave a medir" },
+  { key: "vantagem_injusta", label: "Vantagem Injusta", hint: "Difícil de copiar ou comprar" },
 ];
 
 function LeanCanvas({ content }: { content: string }) {
-  // Try to parse JSON from content
   let data: Record<string, string> = {};
   try {
     const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
     if (jsonMatch) {
       data = JSON.parse(jsonMatch[1]);
     } else {
-      // Try direct JSON parse
       const trimmed = content.trim();
-      if (trimmed.startsWith("{")) {
-        data = JSON.parse(trimmed);
-      }
+      if (trimmed.startsWith("{")) data = JSON.parse(trimmed);
     }
-  } catch {
-    // fallback: show raw content
-  }
+  } catch { /* fallback */ }
 
   if (Object.keys(data).length === 0) {
     return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+    <div className="grid grid-cols-3 gap-2 mt-2">
       {LEAN_CANVAS_BLOCKS.map((block) => (
         <div
           key={block.key}
-          className={`bg-background border border-border rounded-lg p-4 ${
-            block.key === "proposta_valor_unica" ? "sm:row-span-2 border-primary/30 bg-primary/5" : ""
-          }`}
+          className={`border rounded-lg p-3 ${block.key === "proposta_valor_unica" ? "border-primary/40 bg-primary/5 row-span-2" : "border-border bg-background"}`}
         >
-          <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">{block.label}</div>
-          <div className="text-xs text-muted-foreground mb-2">{block.hint}</div>
-          <div className="text-sm text-foreground leading-relaxed">
-            {data[block.key] ?? <span className="text-muted-foreground italic">Não gerado</span>}
+          <div className="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5">{block.label}</div>
+          <div className="text-[10px] text-muted-foreground mb-1.5">{block.hint}</div>
+          <div className="text-xs text-foreground leading-snug">
+            {data[block.key] ?? <span className="text-muted-foreground italic">—</span>}
           </div>
         </div>
       ))}
     </div>
   );
 }
+
+function ScorePotencial({ content }: { content: string }) {
+  let data: Record<string, any> = {};
+  try {
+    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (jsonMatch) data = JSON.parse(jsonMatch[1]);
+  } catch { /* fallback */ }
+
+  if (!data.desejabilidade) {
+    return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
+  }
+
+  const dims = ["desejabilidade", "viabilidade", "factibilidade", "escalabilidade", "timing"];
+  const rec = data.recomendacao as string;
+  const recColors: Record<string, string> = {
+    "AVANÇAR": "bg-primary/10 text-primary border-primary/30",
+    "PIVOTAR": "bg-yellow-50 text-yellow-700 border-yellow-200",
+    "ABANDONAR": "bg-red-50 text-red-600 border-red-200",
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-5 gap-2">
+        {dims.map((dim) => (
+          <div key={dim} className="text-center">
+            <div className="text-2xl font-bold text-primary">{data[dim] ?? "—"}</div>
+            <div className="text-[10px] text-muted-foreground capitalize mt-0.5">{dim}</div>
+            {data.justificativas?.[dim] && (
+              <div className="text-[10px] text-foreground mt-1 leading-snug">{data.justificativas[dim]}</div>
+            )}
+          </div>
+        ))}
+      </div>
+      {rec && (
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${recColors[rec] ?? "bg-muted text-muted-foreground"}`}>
+          Recomendação: {rec}
+        </div>
+      )}
+      {data.proximos_passos?.length > 0 && (
+        <div>
+          <div className="text-xs font-medium mb-1">Próximos passos</div>
+          <ul className="space-y-0.5">
+            {data.proximos_passos.map((step: string, i: number) => (
+              <li key={i} className="text-xs text-foreground flex gap-2">
+                <span className="text-primary flex-shrink-0">{i + 1}.</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Full lookup of all artifact labels across all phases
+const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = {
+  // Phase 1
+  LEAN_CANVAS: { label: "Lean Canvas", description: "9 blocos do modelo de negócio" },
+  JTBD: { label: "Jobs to Be Done", description: "O que o cliente realmente quer realizar" },
+  ANALISE_COMPETITIVA: { label: "Análise Competitiva", description: "5 concorrentes com tabela comparativa" },
+  SWOT: { label: "Análise SWOT", description: "Forças, fraquezas, oportunidades e ameaças" },
+  DIMENSIONAMENTO_MERCADO: { label: "TAM / SAM / SOM", description: "Tamanho real do mercado com metodologia" },
+  VALIDACAO_RAPIDA: { label: "Script de Validação", description: "10 perguntas de entrevista para validar a hipótese" },
+  HIPOTESE_CENTRAL: { label: "Hipótese Central", description: "Aposta principal em 1 frase testável" },
+  SCORE_POTENCIAL: { label: "Score de Potencial", description: "Avaliação 1-5 em 5 dimensões com recomendação" },
+  // Phase 2
+  PRD: { label: "Product Requirements Document", description: "Escopo, funcionalidades e critérios de sucesso" },
+  PERSONAS: { label: "Personas", description: "3 personas detalhadas incluindo persona negativa" },
+  USER_STORIES: { label: "User Stories", description: "15 user stories com critérios de aceitação" },
+  METRICAS_SUCESSO: { label: "Framework de Métricas", description: "North Star, inputs, guardrails e AARRR" },
+  HIPOTESE_PRICING: { label: "Estratégia de Pricing", description: "3 tiers com unit economics e willingness to pay" },
+  BENCHMARKING: { label: "Benchmarking", description: "3 referências globais com o que copiar e evitar" },
+  ROADMAP_3_MESES: { label: "Roadmap 3 Meses", description: "Plano trimestral com objetivos e entregas-chave" },
+  // Phase 3
+  ARQUITETURA: { label: "Arquitetura do Sistema", description: "Stack, componentes, diagramas e trade-offs" },
+  MODELO_DADOS: { label: "Modelo de Dados", description: "Entidades, campos, índices e relacionamentos" },
+  CONTRATOS_API: { label: "Contratos de API", description: "8+ endpoints críticos documentados" },
+  SEGURANCA: { label: "Plano de Segurança", description: "OWASP Top 10, LGPD, autenticação e auditoria" },
+  FLUXOS_UI: { label: "Fluxos de UX", description: "5 fluxos críticos tela por tela com edge cases" },
+  ESCALABILIDADE: { label: "Plano de Escalabilidade", description: "Estratégia para 1K, 10K e 100K usuários" },
+  ADR: { label: "Architecture Decision Records", description: "5 ADRs com contexto, decisão e consequências" },
+  SETUP_DEVOPS: { label: "DevOps & Infraestrutura", description: "CI/CD, ambientes, observabilidade e custo estimado" },
+  // Phase 4
+  MILESTONES: { label: "Plano de Milestones", description: "5+ milestones com features, critérios e demos" },
+  SPRINT_1: { label: "Sprint 1 Detalhado", description: "Primeira semana hora a hora com bloqueadores" },
+  ESTRUTURA_PASTAS: { label: "Estrutura do Projeto", description: "Árvore de arquivos comentada" },
+  README: { label: "README Completo", description: "Setup em 5 comandos, .env.example e contribuição" },
+  GUIA_CONTRIBUICAO: { label: "CONTRIBUTING.md", description: "Padrões, PR checklist e convenção de commits" },
+  TECH_DEBT_LOG: { label: "Log de Débito Técnico", description: "8+ atalhos documentados com plano de resolução" },
+  DEFINITION_OF_DONE: { label: "Definition of Done", description: "Critérios para código, testes e deploy" },
+  // Phase 5
+  PLANO_TESTES: { label: "Plano de Testes", description: "Estratégia, pirâmide, ferramentas e cobertura mínima" },
+  CASOS_TESTE_CRITICOS: { label: "20 Casos de Teste Críticos", description: "P0/P1/P2 com steps e resultados esperados" },
+  CHECKLIST_QA: { label: "Checklist de QA", description: "Funcionalidade, performance, segurança, acessibilidade" },
+  SCRIPT_USER_TEST: { label: "Script de Teste com Usuários", description: "Roteiro para 5 testes reais com métricas" },
+  RELATORIO_PERFORMANCE: { label: "Benchmarks de Performance", description: "Core Web Vitals, latência e carga suportada" },
+  BUGS_PREVENCAO: { label: "Top 10 Bugs a Prevenir", description: "Causa raiz, impacto, prevenção e detecção" },
+  OBSERVABILIDADE: { label: "Plano de Observabilidade", description: "Logs, métricas, alertas e dashboards" },
+  // Phase 6
+  RUNBOOK_DEPLOY: { label: "Runbook de Deploy", description: "Pré-deploy, deploy, smoke tests, rollback" },
+  GTM: { label: "Plano Go-to-Market", description: "Canais, mensagem, 10 primeiros clientes e métricas" },
+  LAUNCH_CHECKLIST: { label: "Launch Checklist", description: "Técnico, produto, marketing, legal e operacional" },
+  METRICAS_POS_LAUNCH: { label: "Dashboard Pós-Lançamento", description: "Métricas semana a semana nas primeiras 4 semanas" },
+  PLANO_CRESCIMENTO_90_DIAS: { label: "Plano de Crescimento 90 Dias", description: "Metas, canais, experimentos e triggers de pivô" },
+  PITCH_INVESTIDORES: { label: "Narrativa para Investidores", description: "8 slides — problema, solução, mercado e pedido" },
+  SLA_SUPORTE: { label: "SLA & Plano de Suporte", description: "Canais, SLA, playbooks e FAQ inicial" },
+};
 
 function ArtifactCard({
   artifact,
@@ -89,31 +188,9 @@ function ArtifactCard({
   const updateArtifact = useUpdateArtifact();
 
   const isLeanCanvas = phaseNumber === 1 && artifact.artifactKey === "LEAN_CANVAS";
-
-  const ARTIFACT_LABELS: Record<string, string> = {
-    LEAN_CANVAS: "Lean Canvas",
-    JTBD: "Jobs to Be Done",
-    DIMENSIONAMENTO_MERCADO: "Dimensionamento de Mercado (TAM/SAM/SOM)",
-    HIPOTESE_CENTRAL: "Hipótese Central",
-    SCORE_POTENCIAL: "Score de Potencial",
-    PRD: "Product Requirements Document",
-    PERSONAS: "Personas",
-    METRICAS_SUCESSO: "Métricas de Sucesso",
-    HIPOTESE_PRICING: "Hipótese de Pricing",
-    ARQUITETURA: "Arquitetura do Sistema",
-    MODELO_DADOS: "Modelo de Dados",
-    CONTRATOS_API: "Contratos de API",
-    FLUXOS_UI: "Fluxos de UI",
-    MILESTONES: "Plano de Milestones",
-    ESTRUTURA_PASTAS: "Estrutura de Pastas",
-    README: "README",
-    PLANO_TESTES: "Plano de Testes",
-    CHECKLIST_QA: "Checklist de QA",
-    BUGS_PREVENCAO: "Prevenção de Bugs",
-    RUNBOOK_DEPLOY: "Runbook de Deploy",
-    GTM: "Go-to-Market",
-    LAUNCH_CHECKLIST: "Launch Checklist",
-  };
+  const isScorePotencial = phaseNumber === 1 && artifact.artifactKey === "SCORE_POTENCIAL";
+  const meta = ARTIFACT_LABELS[artifact.artifactKey];
+  const isEmpty = !artifact.content?.trim();
 
   function save() {
     updateArtifact.mutate(
@@ -123,22 +200,35 @@ function ArtifactCard({
   }
 
   return (
-    <div className="bg-card border border-card-border rounded-xl overflow-hidden" data-testid={`artifact-card-${artifact.artifactKey}`}>
+    <div
+      className={`bg-card border rounded-xl overflow-hidden transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-card-border"}`}
+      data-testid={`artifact-card-${artifact.artifactKey}`}
+    >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left"
+        className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors text-left"
         data-testid={`artifact-toggle-${artifact.artifactKey}`}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-          <span className="text-sm font-medium text-foreground">{ARTIFACT_LABELS[artifact.artifactKey] ?? artifact.artifactKey}</span>
+        <div className="flex items-start gap-3">
+          <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${isEmpty ? "bg-muted-foreground/30" : "bg-primary"}`} />
+          <div>
+            <div className="text-sm font-medium text-foreground leading-snug">
+              {meta?.label ?? artifact.artifactKey}
+            </div>
+            {meta?.description && (
+              <div className="text-xs text-muted-foreground mt-0.5">{meta.description}</div>
+            )}
+          </div>
         </div>
-        <svg
-          className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+          {isEmpty && <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Não gerado</span>}
+          <svg
+            className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </button>
 
       {expanded && (
@@ -148,36 +238,42 @@ function ArtifactCard({
               <Textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                className="min-h-[200px] text-sm font-mono"
+                className="min-h-[240px] text-sm font-mono"
                 data-testid={`textarea-artifact-${artifact.artifactKey}`}
               />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => { setEditing(false); setDraft(artifact.content); }}>Cancelar</Button>
-                <Button size="sm" onClick={save} disabled={updateArtifact.isPending} className="bg-primary hover:bg-primary/90 text-white" data-testid={`button-save-artifact-${artifact.artifactKey}`}>
+                <Button size="sm" onClick={save} disabled={updateArtifact.isPending} className="bg-primary hover:bg-primary/90 text-white">
                   {updateArtifact.isPending ? "Salvando..." : "Salvar"}
                 </Button>
               </div>
             </div>
           ) : (
             <div>
-              {isLeanCanvas ? (
+              {isEmpty ? (
+                <p className="text-sm text-muted-foreground italic">Este artefato não foi gerado ainda. Execute a IA para gerar.</p>
+              ) : isLeanCanvas ? (
                 <LeanCanvas content={artifact.content} />
+              ) : isScorePotencial ? (
+                <ScorePotencial content={artifact.content} />
               ) : (
-                <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
-                  {artifact.content || <span className="text-muted-foreground italic">Sem conteúdo</span>}
+                <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto prose prose-sm prose-headings:font-serif prose-headings:text-foreground max-w-none">
+                  {artifact.content}
                 </div>
               )}
-              <div className="mt-3 flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => { setEditing(true); setDraft(artifact.content); }}
-                  data-testid={`button-edit-artifact-${artifact.artifactKey}`}
-                >
-                  Editar
-                </Button>
-              </div>
+              {!isEmpty && (
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => { setEditing(true); setDraft(artifact.content); }}
+                    data-testid={`button-edit-artifact-${artifact.artifactKey}`}
+                  >
+                    Editar
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -212,6 +308,7 @@ export function PhasePage() {
   const allGatesChecked = phase?.gate1Checked && phase?.gate2Checked && phase?.gate3Checked;
   const isLocked = phase?.status === "locked";
   const isCompleted = phase?.status === "completed";
+  const hasArtifacts = artifacts.some(a => a.content?.trim());
 
   function handleGateChange(gateNum: 1 | 2 | 3, checked: boolean) {
     if (!phase) return;
@@ -222,11 +319,7 @@ export function PhasePage() {
     };
     updateGates.mutate(
       { projectId, phaseNumber, data: update },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetPhaseQueryKey(projectId, phaseNumber) });
-        },
-      }
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPhaseQueryKey(projectId, phaseNumber) }) }
     );
   }
 
@@ -258,16 +351,9 @@ export function PhasePage() {
         setGenerating(false);
         return;
       }
-
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-
-      if (!reader) {
-        setGenerationError("Streaming não suportado");
-        setGenerating(false);
-        return;
-      }
-
+      if (!reader) { setGenerationError("Streaming não suportado"); setGenerating(false); return; }
       let buffer = "";
       while (true) {
         const { done, value } = await reader.read();
@@ -279,18 +365,15 @@ export function PhasePage() {
           if (line.startsWith("data: ")) {
             try {
               const event = JSON.parse(line.slice(6));
-              if (event.type === "progress") {
-                setGeneratingText((prev) => prev + event.content);
-              } else if (event.type === "done") {
+              if (event.type === "progress") setGeneratingText((prev) => prev + event.content);
+              else if (event.type === "done") {
                 queryClient.invalidateQueries({ queryKey: getGetPhaseQueryKey(projectId, phaseNumber) });
                 setGenerating(false);
               } else if (event.type === "error") {
                 setGenerationError(event.message);
                 setGenerating(false);
               }
-            } catch {
-              // ignore parse errors
-            }
+            } catch { /* ignore */ }
           }
         }
       }
@@ -315,7 +398,6 @@ export function PhasePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card/50 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3 text-sm">
           <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Painel</Link>
@@ -328,41 +410,65 @@ export function PhasePage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
 
         {/* Phase header */}
         <div className="bg-card border border-card-border rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+          <div className="flex items-start gap-4 mb-4">
+            <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
               isCompleted ? "bg-primary text-white" :
               isLocked ? "bg-muted text-muted-foreground" :
               "bg-primary/10 text-primary border border-primary/30"
             }`}>
               {phaseNumber}
             </div>
-            <div>
-              <span className="text-xs font-semibold text-primary uppercase tracking-wider">Fase {phaseNumber}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-xs font-semibold text-primary uppercase tracking-wider">Fase {phaseNumber}</span>
+                {phaseDef?.tagline && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{phaseDef.tagline}</span>
+                )}
+                {isCompleted && <span className="ml-auto text-xs font-medium px-2.5 py-1 bg-primary/10 text-primary rounded-full border border-primary/20">Concluída</span>}
+                {isLocked && <span className="ml-auto text-xs font-medium px-2.5 py-1 bg-muted text-muted-foreground rounded-full">Bloqueada</span>}
+              </div>
               <h1 className="text-xl font-serif text-foreground">{phaseDef?.name}</h1>
             </div>
-            {isCompleted && (
-              <span className="ml-auto text-xs font-medium px-2.5 py-1 bg-primary/10 text-primary rounded-full border border-primary/20">
-                Concluída
-              </span>
-            )}
-            {isLocked && (
-              <span className="ml-auto text-xs font-medium px-2.5 py-1 bg-muted text-muted-foreground rounded-full">
-                Bloqueada
-              </span>
-            )}
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed italic">
+          <p className="text-sm text-muted-foreground leading-relaxed italic pl-14">
             "{phaseDef?.motivation}"
           </p>
+
+          {/* Artifact preview chips */}
+          {phaseDef?.artifacts && (
+            <div className="mt-5 pl-14">
+              <div className="text-xs font-medium text-muted-foreground mb-2">O que você vai receber:</div>
+              <div className="flex flex-wrap gap-1.5">
+                {phaseDef.artifacts.map((art) => {
+                  const generated = artifacts.find(a => a.artifactKey === art.key && a.content?.trim());
+                  return (
+                    <span
+                      key={art.key}
+                      className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                        generated
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-muted text-muted-foreground border-muted"
+                      }`}
+                    >
+                      {art.label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* AI Execution */}
         <div className="bg-card border border-card-border rounded-2xl p-6">
-          <h2 className="font-serif text-lg mb-4">Gerar artefatos com IA</h2>
+          <h2 className="font-serif text-lg mb-1">Gerar com IA</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            A IA vai analisar seu briefing e os artefatos das fases anteriores para gerar {phaseDef?.artifacts?.length ?? 0} entregáveis específicos para o seu produto.
+          </p>
 
           {isLocked ? (
             <p className="text-sm text-muted-foreground">Esta fase está bloqueada. Conclua a fase anterior para desbloqueá-la.</p>
@@ -370,11 +476,11 @@ export function PhasePage() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-primary font-medium">Gerando artefatos...</span>
+                <span className="text-sm text-primary font-medium">Gerando {phaseDef?.artifacts?.length} artefatos...</span>
               </div>
               {generatingText && (
                 <div className="bg-muted/50 rounded-lg p-4 max-h-48 overflow-y-auto">
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono">{generatingText}</pre>
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">{generatingText}</pre>
                 </div>
               )}
             </div>
@@ -382,7 +488,7 @@ export function PhasePage() {
             <div className="space-y-3">
               <Button
                 onClick={handleExecuteAI}
-                className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
+                className="bg-primary hover:bg-primary/90 text-white"
                 data-testid="button-execute-ai"
               >
                 Gerar artefatos da fase {phaseDef?.name} com IA
@@ -390,8 +496,8 @@ export function PhasePage() {
               {generationError && (
                 <p className="text-sm text-destructive" data-testid="text-generation-error">{generationError}</p>
               )}
-              {artifacts.length > 0 && !generationError && (
-                <p className="text-xs text-muted-foreground">Executar novamente substituirá os artefatos atuais.</p>
+              {hasArtifacts && !generationError && (
+                <p className="text-xs text-muted-foreground">Executar novamente substituirá todos os artefatos atuais.</p>
               )}
             </div>
           )}
@@ -399,8 +505,13 @@ export function PhasePage() {
 
         {/* Artifacts */}
         {artifacts.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="font-serif text-lg">Artefatos gerados</h2>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-serif text-lg">Artefatos gerados</h2>
+              <span className="text-xs text-muted-foreground">
+                {artifacts.filter(a => a.content?.trim()).length}/{artifacts.length} gerados
+              </span>
+            </div>
             {artifacts.map((artifact) => (
               <ArtifactCard
                 key={artifact.id}
@@ -417,23 +528,21 @@ export function PhasePage() {
         {!isLocked && (
           <div className="bg-card border border-card-border rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-1">Portão de saída</h2>
-            <p className="text-xs text-muted-foreground mb-5">Marque todos os critérios para avançar para a próxima fase.</p>
-            <div className="space-y-3">
+            <p className="text-xs text-muted-foreground mb-5">
+              Marque os 3 critérios para avançar. Não avance até estar genuinamente satisfeito.
+            </p>
+            <div className="space-y-4">
               {phaseDef?.gates.map((gate, i) => {
                 const gateNum = (i + 1) as 1 | 2 | 3;
                 const checked = gateNum === 1 ? phase?.gate1Checked : gateNum === 2 ? phase?.gate2Checked : phase?.gate3Checked;
                 return (
-                  <label
-                    key={i}
-                    className="flex items-start gap-3 cursor-pointer group"
-                    data-testid={`gate-${gateNum}`}
-                  >
+                  <label key={i} className="flex items-start gap-3 cursor-pointer group" data-testid={`gate-${gateNum}`}>
                     <input
                       type="checkbox"
                       checked={!!checked}
                       onChange={(e) => handleGateChange(gateNum, e.target.checked)}
                       disabled={isCompleted}
-                      className="mt-0.5 w-4 h-4 accent-[#b8461e] rounded"
+                      className="mt-0.5 w-4 h-4 accent-[#b8461e] rounded flex-shrink-0"
                     />
                     <span className={`text-sm leading-snug ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       {gate}
@@ -451,29 +560,33 @@ export function PhasePage() {
                   className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
                   data-testid="button-complete-phase"
                 >
-                  {completePhase.isPending ? "Avançando..." : `Concluir fase e avançar para ${phaseNumber < 6 ? `Fase ${phaseNumber + 1}` : "o Deploy"}`}
+                  {completePhase.isPending ? "Avançando..." : `Concluir fase e avançar para ${phaseNumber < 6 ? `Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "o lançamento"}`}
                 </Button>
               </div>
             )}
 
             {isCompleted && (
-              <div className="mt-5 pt-4 border-t border-border">
-                <p className="text-sm text-primary font-medium">Esta fase foi concluída.</p>
-                {phaseNumber < 6 && (
-                  <Link href={`/projects/${projectId}/phases/${phaseNumber + 1}`}>
-                    <Button variant="outline" size="sm" className="mt-2" data-testid="link-next-phase">
+              <div className="mt-5 pt-4 border-t border-border flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6l2.5 2.5L10 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Fase concluída</p>
+                  {phaseNumber < 6 && (
+                    <Link href={`/projects/${projectId}/phases/${phaseNumber + 1}`} className="text-xs text-primary hover:underline">
                       Ir para Fase {phaseNumber + 1} — {PHASES[phaseNumber]?.name}
-                    </Button>
-                  </Link>
-                )}
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Back to previous phase */}
         {phaseNumber > 1 && (
-          <div className="text-center pt-4">
+          <div className="text-center pb-6">
             <Link href={`/projects/${projectId}/phases/${phaseNumber - 1}`} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Voltar para a fase anterior
             </Link>
