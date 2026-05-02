@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PHASES } from "@/lib/constants";
+import { usePlan } from "@/hooks/usePlan";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -33,12 +34,8 @@ function LeanCanvas({ content }: { content: string }) {
   let data: Record<string, string> = {};
   try {
     const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) {
-      data = JSON.parse(jsonMatch[1]);
-    } else {
-      const trimmed = content.trim();
-      if (trimmed.startsWith("{")) data = JSON.parse(trimmed);
-    }
+    if (jsonMatch) data = JSON.parse(jsonMatch[1]);
+    else { const t = content.trim(); if (t.startsWith("{")) data = JSON.parse(t); }
   } catch { /* fallback */ }
 
   if (Object.keys(data).length === 0) {
@@ -48,15 +45,10 @@ function LeanCanvas({ content }: { content: string }) {
   return (
     <div className="grid grid-cols-3 gap-2 mt-2">
       {LEAN_CANVAS_BLOCKS.map((block) => (
-        <div
-          key={block.key}
-          className={`border rounded-lg p-3 ${block.key === "proposta_valor_unica" ? "border-primary/40 bg-primary/5 row-span-2" : "border-border bg-background"}`}
-        >
+        <div key={block.key} className={`border rounded-lg p-3 ${block.key === "proposta_valor_unica" ? "border-primary/40 bg-primary/5 row-span-2" : "border-border bg-background"}`}>
           <div className="text-[10px] font-bold text-primary uppercase tracking-widest mb-0.5">{block.label}</div>
           <div className="text-[10px] text-muted-foreground mb-1.5">{block.hint}</div>
-          <div className="text-xs text-foreground leading-snug">
-            {data[block.key] ?? <span className="text-muted-foreground italic">—</span>}
-          </div>
+          <div className="text-xs text-foreground leading-snug">{data[block.key] ?? <span className="text-muted-foreground italic">—</span>}</div>
         </div>
       ))}
     </div>
@@ -70,9 +62,7 @@ function ScorePotencial({ content }: { content: string }) {
     if (jsonMatch) data = JSON.parse(jsonMatch[1]);
   } catch { /* fallback */ }
 
-  if (!data.desejabilidade) {
-    return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
-  }
+  if (!data.desejabilidade) return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
 
   const dims = ["desejabilidade", "viabilidade", "factibilidade", "escalabilidade", "timing"];
   const rec = data.recomendacao as string;
@@ -89,9 +79,7 @@ function ScorePotencial({ content }: { content: string }) {
           <div key={dim} className="text-center">
             <div className="text-2xl font-bold text-primary">{data[dim] ?? "—"}</div>
             <div className="text-[10px] text-muted-foreground capitalize mt-0.5">{dim}</div>
-            {data.justificativas?.[dim] && (
-              <div className="text-[10px] text-foreground mt-1 leading-snug">{data.justificativas[dim]}</div>
-            )}
+            {data.justificativas?.[dim] && <div className="text-[10px] text-foreground mt-1 leading-snug">{data.justificativas[dim]}</div>}
           </div>
         ))}
       </div>
@@ -106,8 +94,7 @@ function ScorePotencial({ content }: { content: string }) {
           <ul className="space-y-0.5">
             {data.proximos_passos.map((step: string, i: number) => (
               <li key={i} className="text-xs text-foreground flex gap-2">
-                <span className="text-primary flex-shrink-0">{i + 1}.</span>
-                <span>{step}</span>
+                <span className="text-primary flex-shrink-0">{i + 1}.</span><span>{step}</span>
               </li>
             ))}
           </ul>
@@ -117,9 +104,7 @@ function ScorePotencial({ content }: { content: string }) {
   );
 }
 
-// Full lookup of all artifact labels across all phases
 const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = {
-  // Phase 1
   LEAN_CANVAS: { label: "Lean Canvas", description: "9 blocos do modelo de negócio" },
   JTBD: { label: "Jobs to Be Done", description: "O que o cliente realmente quer realizar" },
   ANALISE_COMPETITIVA: { label: "Análise Competitiva", description: "5 concorrentes com tabela comparativa" },
@@ -128,7 +113,6 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   VALIDACAO_RAPIDA: { label: "Script de Validação", description: "10 perguntas de entrevista para validar a hipótese" },
   HIPOTESE_CENTRAL: { label: "Hipótese Central", description: "Aposta principal em 1 frase testável" },
   SCORE_POTENCIAL: { label: "Score de Potencial", description: "Avaliação 1-5 em 5 dimensões com recomendação" },
-  // Phase 2
   PRD: { label: "Product Requirements Document", description: "Escopo, funcionalidades e critérios de sucesso" },
   PERSONAS: { label: "Personas", description: "3 personas detalhadas incluindo persona negativa" },
   USER_STORIES: { label: "User Stories", description: "15 user stories com critérios de aceitação" },
@@ -136,7 +120,6 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   HIPOTESE_PRICING: { label: "Estratégia de Pricing", description: "3 tiers com unit economics e willingness to pay" },
   BENCHMARKING: { label: "Benchmarking", description: "3 referências globais com o que copiar e evitar" },
   ROADMAP_3_MESES: { label: "Roadmap 3 Meses", description: "Plano trimestral com objetivos e entregas-chave" },
-  // Phase 3
   ARQUITETURA: { label: "Arquitetura do Sistema", description: "Stack, componentes, diagramas e trade-offs" },
   MODELO_DADOS: { label: "Modelo de Dados", description: "Entidades, campos, índices e relacionamentos" },
   CONTRATOS_API: { label: "Contratos de API", description: "8+ endpoints críticos documentados" },
@@ -145,7 +128,6 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   ESCALABILIDADE: { label: "Plano de Escalabilidade", description: "Estratégia para 1K, 10K e 100K usuários" },
   ADR: { label: "Architecture Decision Records", description: "5 ADRs com contexto, decisão e consequências" },
   SETUP_DEVOPS: { label: "DevOps & Infraestrutura", description: "CI/CD, ambientes, observabilidade e custo estimado" },
-  // Phase 4
   MILESTONES: { label: "Plano de Milestones", description: "5+ milestones com features, critérios e demos" },
   SPRINT_1: { label: "Sprint 1 Detalhado", description: "Primeira semana hora a hora com bloqueadores" },
   ESTRUTURA_PASTAS: { label: "Estrutura do Projeto", description: "Árvore de arquivos comentada" },
@@ -153,7 +135,6 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   GUIA_CONTRIBUICAO: { label: "CONTRIBUTING.md", description: "Padrões, PR checklist e convenção de commits" },
   TECH_DEBT_LOG: { label: "Log de Débito Técnico", description: "8+ atalhos documentados com plano de resolução" },
   DEFINITION_OF_DONE: { label: "Definition of Done", description: "Critérios para código, testes e deploy" },
-  // Phase 5
   PLANO_TESTES: { label: "Plano de Testes", description: "Estratégia, pirâmide, ferramentas e cobertura mínima" },
   CASOS_TESTE_CRITICOS: { label: "20 Casos de Teste Críticos", description: "P0/P1/P2 com steps e resultados esperados" },
   CHECKLIST_QA: { label: "Checklist de QA", description: "Funcionalidade, performance, segurança, acessibilidade" },
@@ -161,7 +142,6 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   RELATORIO_PERFORMANCE: { label: "Benchmarks de Performance", description: "Core Web Vitals, latência e carga suportada" },
   BUGS_PREVENCAO: { label: "Top 10 Bugs a Prevenir", description: "Causa raiz, impacto, prevenção e detecção" },
   OBSERVABILIDADE: { label: "Plano de Observabilidade", description: "Logs, métricas, alertas e dashboards" },
-  // Phase 6
   RUNBOOK_DEPLOY: { label: "Runbook de Deploy", description: "Pré-deploy, deploy, smoke tests, rollback" },
   GTM: { label: "Plano Go-to-Market", description: "Canais, mensagem, 10 primeiros clientes e métricas" },
   LAUNCH_CHECKLIST: { label: "Launch Checklist", description: "Técnico, produto, marketing, legal e operacional" },
@@ -171,15 +151,29 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   SLA_SUPORTE: { label: "SLA & Plano de Suporte", description: "Canais, SLA, playbooks e FAQ inicial" },
 };
 
+function downloadMarkdown(artifactKey: string, content: string) {
+  const blob = new Blob([content], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${artifactKey.toLowerCase()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function ArtifactCard({
   artifact,
   phaseNumber,
   projectId,
+  canCopy,
+  canDownload,
   onUpdate,
 }: {
   artifact: { id: number; artifactKey: string; content: string; contentJson: string | null };
   phaseNumber: number;
   projectId: number;
+  canCopy: boolean;
+  canDownload: boolean;
   onUpdate: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -200,32 +194,21 @@ function ArtifactCard({
   }
 
   return (
-    <div
-      className={`bg-card border rounded-xl overflow-hidden transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-card-border"}`}
-      data-testid={`artifact-card-${artifact.artifactKey}`}
-    >
+    <div className={`bg-card border rounded-xl overflow-hidden transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-card-border"}`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors text-left"
-        data-testid={`artifact-toggle-${artifact.artifactKey}`}
       >
         <div className="flex items-start gap-3">
           <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${isEmpty ? "bg-muted-foreground/30" : "bg-primary"}`} />
           <div>
-            <div className="text-sm font-medium text-foreground leading-snug">
-              {meta?.label ?? artifact.artifactKey}
-            </div>
-            {meta?.description && (
-              <div className="text-xs text-muted-foreground mt-0.5">{meta.description}</div>
-            )}
+            <div className="text-sm font-medium text-foreground leading-snug">{meta?.label ?? artifact.artifactKey}</div>
+            {meta?.description && <div className="text-xs text-muted-foreground mt-0.5">{meta.description}</div>}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
           {isEmpty && <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Não gerado</span>}
-          <svg
-            className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
-          >
+          <svg className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
@@ -233,14 +216,9 @@ function ArtifactCard({
 
       {expanded && (
         <div className="px-4 pb-4 border-t border-border/50 pt-4">
-          {editing ? (
+          {editing && canCopy ? (
             <div className="space-y-3">
-              <Textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                className="min-h-[240px] text-sm font-mono"
-                data-testid={`textarea-artifact-${artifact.artifactKey}`}
-              />
+              <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} className="min-h-[240px] text-sm font-mono" />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" onClick={() => { setEditing(false); setDraft(artifact.content); }}>Cancelar</Button>
                 <Button size="sm" onClick={save} disabled={updateArtifact.isPending} className="bg-primary hover:bg-primary/90 text-white">
@@ -251,27 +229,58 @@ function ArtifactCard({
           ) : (
             <div>
               {isEmpty ? (
-                <p className="text-sm text-muted-foreground italic">Este artefato não foi gerado ainda. Execute a IA para gerar.</p>
+                <p className="text-sm text-muted-foreground italic">Este artefato não foi gerado ainda.</p>
               ) : isLeanCanvas ? (
                 <LeanCanvas content={artifact.content} />
               ) : isScorePotencial ? (
                 <ScorePotencial content={artifact.content} />
               ) : (
-                <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto prose prose-sm prose-headings:font-serif prose-headings:text-foreground max-w-none">
+                /* Plan gate: no copy/paste for basic */
+                <div
+                  className="text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto"
+                  style={!canCopy ? {
+                    userSelect: "none",
+                    WebkitUserSelect: "none",
+                    pointerEvents: "none",
+                  } : {}}
+                  onCopy={!canCopy ? (e) => e.preventDefault() : undefined}
+                  onCut={!canCopy ? (e) => e.preventDefault() : undefined}
+                  onContextMenu={!canCopy ? (e) => e.preventDefault() : undefined}
+                >
                   {artifact.content}
                 </div>
               )}
+
               {!isEmpty && (
-                <div className="mt-3 flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => { setEditing(true); setDraft(artifact.content); }}
-                    data-testid={`button-edit-artifact-${artifact.artifactKey}`}
-                  >
-                    Editar
-                  </Button>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  {!canCopy ? (
+                    <Link href="/pricing">
+                      <span className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                        🔒 Copiar e editar — plano Pro
+                      </span>
+                    </Link>
+                  ) : (
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => { setEditing(true); setDraft(artifact.content); }}>
+                      Editar
+                    </Button>
+                  )}
+                  {canDownload && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => downloadMarkdown(artifact.artifactKey, artifact.content)}
+                    >
+                      ↓ .md
+                    </Button>
+                  )}
+                  {!canDownload && !isEmpty && (
+                    <Link href="/pricing">
+                      <span className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                        ↓ Download — plano Pro
+                      </span>
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
@@ -287,6 +296,7 @@ export function PhasePage() {
   const projectId = parseInt(params.projectId ?? "0", 10);
   const phaseNumber = parseInt(params.phaseNumber ?? "1", 10);
   const queryClient = useQueryClient();
+  const { permissions } = usePlan();
 
   const { data: project } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
@@ -309,6 +319,9 @@ export function PhasePage() {
   const isLocked = phase?.status === "locked";
   const isCompleted = phase?.status === "completed";
   const hasArtifacts = artifacts.some(a => a.content?.trim());
+
+  // Print protection for basic plan
+  const noPrint = !permissions.canPrint && permissions.plan !== "free";
 
   function handleGateChange(gateNum: 1 | 2 | 3, checked: boolean) {
     if (!phase) return;
@@ -346,7 +359,7 @@ export function PhasePage() {
       credentials: "include",
     }).then(async (response) => {
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Erro desconhecido" }));
+        const err = await response.json().catch(() => ({ error: "Erro desconhecido" })) as { error?: string };
         setGenerationError(err.error ?? "Erro ao gerar artefatos");
         setGenerating(false);
         return;
@@ -364,13 +377,13 @@ export function PhasePage() {
         for (const line of lines) {
           if (line.startsWith("data: ")) {
             try {
-              const event = JSON.parse(line.slice(6));
-              if (event.type === "progress") setGeneratingText((prev) => prev + event.content);
+              const event = JSON.parse(line.slice(6)) as { type: string; content?: string };
+              if (event.type === "progress") setGeneratingText((prev) => prev + (event.content ?? ""));
               else if (event.type === "done") {
                 queryClient.invalidateQueries({ queryKey: getGetPhaseQueryKey(projectId, phaseNumber) });
                 setGenerating(false);
               } else if (event.type === "error") {
-                setGenerationError(event.message);
+                setGenerationError((event as any).message ?? "Erro");
                 setGenerating(false);
               }
             } catch { /* ignore */ }
@@ -397,7 +410,12 @@ export function PhasePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${noPrint ? "no-print-content" : ""}`}>
+      {/* CSS injection for print protection */}
+      {noPrint && (
+        <style>{`@media print { .no-print-content { display: none !important; } body::after { content: "Impressão disponível apenas no plano Avançado."; display: block; padding: 2rem; } }`}</style>
+      )}
+
       <header className="border-b bg-card/50 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3 text-sm">
           <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Painel</Link>
@@ -407,38 +425,35 @@ export function PhasePage() {
           </Link>
           <span className="text-muted-foreground">/</span>
           <span className="text-foreground font-medium">Fase {phaseNumber} — {phaseDef?.name}</span>
+          {permissions.hasAiAdvisor && (
+            <Link href={`/projects/${projectId}/advisor`} className="ml-auto text-xs text-primary hover:underline flex items-center gap-1">
+              <span>🤖</span> AI Advisor
+            </Link>
+          )}
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
-
         {/* Phase header */}
         <div className="bg-card border border-card-border rounded-2xl p-6">
           <div className="flex items-start gap-4 mb-4">
             <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
-              isCompleted ? "bg-primary text-white" :
-              isLocked ? "bg-muted text-muted-foreground" :
-              "bg-primary/10 text-primary border border-primary/30"
+              isCompleted ? "bg-primary text-white" : isLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary border border-primary/30"
             }`}>
               {phaseNumber}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-xs font-semibold text-primary uppercase tracking-wider">Fase {phaseNumber}</span>
-                {phaseDef?.tagline && (
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{phaseDef.tagline}</span>
-                )}
+                {phaseDef?.tagline && <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{phaseDef.tagline}</span>}
                 {isCompleted && <span className="ml-auto text-xs font-medium px-2.5 py-1 bg-primary/10 text-primary rounded-full border border-primary/20">Concluída</span>}
                 {isLocked && <span className="ml-auto text-xs font-medium px-2.5 py-1 bg-muted text-muted-foreground rounded-full">Bloqueada</span>}
               </div>
               <h1 className="text-xl font-serif text-foreground">{phaseDef?.name}</h1>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed italic pl-14">
-            "{phaseDef?.motivation}"
-          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed italic pl-14">"{phaseDef?.motivation}"</p>
 
-          {/* Artifact preview chips */}
           {phaseDef?.artifacts && (
             <div className="mt-5 pl-14">
               <div className="text-xs font-medium text-muted-foreground mb-2">O que você vai receber:</div>
@@ -446,19 +461,25 @@ export function PhasePage() {
                 {phaseDef.artifacts.map((art) => {
                   const generated = artifacts.find(a => a.artifactKey === art.key && a.content?.trim());
                   return (
-                    <span
-                      key={art.key}
-                      className={`text-[11px] px-2 py-0.5 rounded-full border ${
-                        generated
-                          ? "bg-primary/10 text-primary border-primary/20"
-                          : "bg-muted text-muted-foreground border-muted"
-                      }`}
-                    >
+                    <span key={art.key} className={`text-[11px] px-2 py-0.5 rounded-full border ${generated ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-muted"}`}>
                       {art.label}
                     </span>
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Plan badge */}
+          {permissions.plan !== "free" && (
+            <div className="mt-4 pl-14 flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground">Plano:</span>
+              <span className="text-[10px] font-medium text-primary">{permissions.planName}</span>
+              {!permissions.canCopy && (
+                <Link href="/pricing">
+                  <span className="text-[10px] text-muted-foreground hover:text-primary transition-colors ml-1">· Upgrade para copiar e baixar →</span>
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -486,16 +507,10 @@ export function PhasePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <Button
-                onClick={handleExecuteAI}
-                className="bg-primary hover:bg-primary/90 text-white"
-                data-testid="button-execute-ai"
-              >
+              <Button onClick={handleExecuteAI} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-execute-ai">
                 Gerar artefatos da fase {phaseDef?.name} com IA
               </Button>
-              {generationError && (
-                <p className="text-sm text-destructive" data-testid="text-generation-error">{generationError}</p>
-              )}
+              {generationError && <p className="text-sm text-destructive">{generationError}</p>}
               {hasArtifacts && !generationError && (
                 <p className="text-xs text-muted-foreground">Executar novamente substituirá todos os artefatos atuais.</p>
               )}
@@ -518,19 +533,19 @@ export function PhasePage() {
                 artifact={artifact}
                 phaseNumber={phaseNumber}
                 projectId={projectId}
+                canCopy={permissions.canCopy}
+                canDownload={permissions.canDownload}
                 onUpdate={invalidatePhase}
               />
             ))}
           </div>
         )}
 
-        {/* Gate of exit */}
+        {/* Gate */}
         {!isLocked && (
           <div className="bg-card border border-card-border rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-1">Portão de saída</h2>
-            <p className="text-xs text-muted-foreground mb-5">
-              Marque os 3 critérios para avançar. Não avance até estar genuinamente satisfeito.
-            </p>
+            <p className="text-xs text-muted-foreground mb-5">Marque os 3 critérios para avançar. Não avance até estar genuinamente satisfeito.</p>
             <div className="space-y-4">
               {phaseDef?.gates.map((gate, i) => {
                 const gateNum = (i + 1) as 1 | 2 | 3;
@@ -544,9 +559,7 @@ export function PhasePage() {
                       disabled={isCompleted}
                       className="mt-0.5 w-4 h-4 accent-[#b8461e] rounded flex-shrink-0"
                     />
-                    <span className={`text-sm leading-snug ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                      {gate}
-                    </span>
+                    <span className={`text-sm leading-snug ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>{gate}</span>
                   </label>
                 );
               })}
@@ -554,12 +567,7 @@ export function PhasePage() {
 
             {allGatesChecked && !isCompleted && (
               <div className="mt-6 pt-5 border-t border-border">
-                <Button
-                  onClick={handleComplete}
-                  disabled={completePhase.isPending}
-                  className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
-                  data-testid="button-complete-phase"
-                >
+                <Button onClick={handleComplete} disabled={completePhase.isPending} className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto" data-testid="button-complete-phase">
                   {completePhase.isPending ? "Avançando..." : `Concluir fase e avançar para ${phaseNumber < 6 ? `Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "o lançamento"}`}
                 </Button>
               </div>

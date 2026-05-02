@@ -14,6 +14,9 @@ import { Dashboard } from "@/pages/dashboard";
 import { ProjectPage } from "@/pages/project";
 import { PhasePage } from "@/pages/phase";
 import { SettingsPage } from "@/pages/settings";
+import { PricingPage } from "@/pages/pricing";
+import { BillingPage } from "@/pages/billing";
+import { AdvisorPage } from "@/pages/advisor";
 
 const queryClient = new QueryClient();
 
@@ -135,14 +138,21 @@ function Router() {
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
+      <Route path="/pricing" component={PricingPage} />
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/billing">
+        {() => <ProtectedRoute component={BillingPage} />}
       </Route>
       <Route path="/projects/:id">
         {() => <ProtectedRoute component={ProjectPage} />}
       </Route>
       <Route path="/projects/:projectId/phases/:phaseNumber">
         {() => <ProtectedRoute component={PhasePage} />}
+      </Route>
+      <Route path="/projects/:projectId/advisor">
+        {() => <ProtectedRoute component={AdvisorPage} />}
       </Route>
       <Route path="/settings">
         {() => <ProtectedRoute component={SettingsPage} />}

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PHASES } from "@/lib/constants";
+import { usePlan } from "@/hooks/usePlan";
 
 function PhasePipeline({ phases, currentPhase, projectId }: {
   phases: Array<{ phaseNumber: number; status: string }>;
@@ -68,6 +69,7 @@ export function ProjectPage() {
   const params = useParams<{ id: string }>();
   const projectId = parseInt(params.id ?? "0", 10);
   const queryClient = useQueryClient();
+  const { permissions } = usePlan();
 
   const { data: project, isLoading } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
@@ -142,12 +144,19 @@ export function ProjectPage() {
             <PhasePipeline phases={phases} currentPhase={project.currentPhase} projectId={projectId} />
           )}
           {activePhase && (
-            <div className="mt-6 pt-5 border-t border-border">
+            <div className="mt-6 pt-5 border-t border-border flex items-center gap-3 flex-wrap">
               <Link href={`/projects/${projectId}/phases/${activePhase.phaseNumber}`}>
                 <Button className="bg-primary hover:bg-primary/90 text-white" data-testid="button-go-active-phase">
                   Entrar na Fase {activePhase.phaseNumber} — {PHASES[activePhase.phaseNumber - 1]?.name}
                 </Button>
               </Link>
+              {permissions.hasAiAdvisor && (
+                <Link href={`/projects/${projectId}/advisor`}>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <span>🤖</span> AI Advisor
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </div>

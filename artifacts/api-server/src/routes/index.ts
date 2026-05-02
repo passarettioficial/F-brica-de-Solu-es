@@ -3,6 +3,8 @@ import healthRouter from "./health";
 import projectsRouter from "./projects";
 import phasesRouter from "./phases";
 import usersRouter from "./users";
+import billingRouter from "./billing";
+import advisorRouter from "./advisor";
 
 const router: IRouter = Router();
 
@@ -10,5 +12,7 @@ router.use(healthRouter);
 router.use(projectsRouter);
 router.use(phasesRouter);
 router.use(usersRouter);
+router.use(billingRouter);
+router.use(advisorRouter);
 
 export default router;

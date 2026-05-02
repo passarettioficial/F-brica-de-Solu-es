@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { PHASES } from "@/lib/constants";
+import { usePlan } from "@/hooks/usePlan";
 
 const PHASE_STATUS_LABELS: Record<string, string> = {
   completed: "Concluída",
@@ -79,6 +80,7 @@ export function Dashboard() {
   const [showNew, setShowNew] = useState(false);
   const [name, setName] = useState("");
   const [briefing, setBriefing] = useState("");
+  const { permissions } = usePlan();
 
   const { data: dashboard, isLoading } = useGetDashboard();
   const createProject = useCreateProject();
@@ -117,9 +119,15 @@ export function Dashboard() {
           <nav className="flex items-center gap-4">
             {dashboard && (
               <span className="text-xs text-muted-foreground">
-                {dashboard.dailyAiUsage}/{dashboard.dailyAiLimit} execuções hoje
+                {dashboard.dailyAiUsage}/{dashboard.dailyAiLimit} IA hoje
               </span>
             )}
+            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              {permissions.planName}
+            </Link>
+            <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Assinatura
+            </Link>
             <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-settings">
               {user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}
             </Link>

@@ -4,6 +4,7 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { UpdateUserSettingsBody } from "@workspace/api-zod";
 import { ensureUser } from "../lib/auth";
+import { getPlanConfig } from "../lib/stripe";
 
 const router: IRouter = Router();
 
@@ -17,11 +18,21 @@ router.get("/users/me", async (req, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
+  const plan = getPlanConfig(user.plan);
+
   res.json({
     clerkId: user.clerkId,
     displayName: user.displayName,
     dailyAiUsage: user.dailyAiUsage,
-    dailyAiLimit: 50,
+    dailyAiLimit: plan.aiDailyLimit,
+    plan: user.plan,
+    planName: plan.name,
+    permissions: {
+      canCopy: plan.canCopy,
+      canDownload: plan.canDownload,
+      canPrint: plan.canPrint,
+      hasAiAdvisor: plan.hasAiAdvisor,
+    },
   });
 });
 
@@ -42,11 +53,21 @@ router.patch("/users/me/settings", async (req, res): Promise<void> => {
 
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
+  const plan = getPlanConfig(user.plan);
+
   res.json({
     clerkId: user.clerkId,
     displayName: user.displayName,
     dailyAiUsage: user.dailyAiUsage,
-    dailyAiLimit: 50,
+    dailyAiLimit: plan.aiDailyLimit,
+    plan: user.plan,
+    planName: plan.name,
+    permissions: {
+      canCopy: plan.canCopy,
+      canDownload: plan.canDownload,
+      canPrint: plan.canPrint,
+      hasAiAdvisor: plan.hasAiAdvisor,
+    },
   });
 });
 
