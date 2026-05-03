@@ -79,6 +79,12 @@ const FAQ_CARDS = [
   { q: "Tem saída para apresentação?", a: "Sim. Você chega em artefatos que ajudam a vender e executar." },
 ];
 
+const CTA_CARDS = [
+  { title: "Comece grátis", text: "Teste o fluxo e veja valor antes de decidir." },
+  { title: "Veja os planos", text: "Escolha entre grátis, Pro e Avançado." },
+  { title: "Entre no app", text: "Se já tem conta, continue construindo." },
+];
+
 const SALES_SCRIPT = [
   "Todo bom produto começa com clareza.",
   "A Fábrica de Soluções transforma briefing em direção.",
@@ -219,6 +225,17 @@ export function Home() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="px-6 pb-8">
+          <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
+            {CTA_CARDS.map((card) => (
+              <div key={card.title} className="glass-card rounded-2xl p-5">
+                <div className="mb-2 text-xs font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
+                <p className="text-sm text-muted-foreground">{card.text}</p>
+              </div>
+            ))}
           </div>
         </section>
 
