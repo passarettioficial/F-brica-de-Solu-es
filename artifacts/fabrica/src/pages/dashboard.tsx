@@ -108,8 +108,25 @@ function EmptyState({ onNew }: { onNew: () => void }) {
   );
 }
 
-function MetricCard({ label, value, sub, accent = false }: { label: string; value: string | number; sub?: string; accent?: boolean }) {
-  return <div className={`glass-card rounded-xl p-4 ${accent ? "border-primary/25" : ""}`}><div className={`text-2xl font-bold font-serif mb-0.5 ${accent ? "text-primary" : "text-foreground"}`}>{value}</div><div className="text-xs font-medium text-muted-foreground">{label}</div>{sub && <div className="text-xs text-muted-foreground/60 mt-0.5 font-mono">{sub}</div>}</div>;
+type MetricVariant = "slate" | "terracotta" | "amber" | "emerald" | "danger";
+
+const METRIC_STYLES: Record<MetricVariant, { wrap: string; value: string; label: string; sub: string }> = {
+  slate:      { wrap: "bg-slate-100 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700",       value: "text-slate-800 dark:text-slate-100",      label: "text-slate-500 dark:text-slate-400",      sub: "text-slate-400 dark:text-slate-500" },
+  terracotta: { wrap: "bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800",    value: "text-orange-700 dark:text-orange-400",    label: "text-orange-600/70 dark:text-orange-500", sub: "text-orange-400 dark:text-orange-600" },
+  amber:      { wrap: "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800",        value: "text-amber-700 dark:text-amber-400",      label: "text-amber-600/70 dark:text-amber-500",   sub: "text-amber-400 dark:text-amber-600" },
+  emerald:    { wrap: "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800",value: "text-emerald-700 dark:text-emerald-400",  label: "text-emerald-600/70 dark:text-emerald-500",sub: "text-emerald-400 dark:text-emerald-600" },
+  danger:     { wrap: "bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800",                value: "text-red-700 dark:text-red-400",          label: "text-red-600/70 dark:text-red-500",       sub: "text-red-400 dark:text-red-600" },
+};
+
+function MetricCard({ label, value, sub, variant = "slate" }: { label: string; value: string | number; sub?: string; variant?: MetricVariant }) {
+  const s = METRIC_STYLES[variant];
+  return (
+    <div className={`rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${s.wrap}`}>
+      <div className={`text-2xl font-bold font-serif mb-0.5 ${s.value}`}>{value}</div>
+      <div className={`text-xs font-medium ${s.label}`}>{label}</div>
+      {sub && <div className={`text-xs mt-0.5 font-mono ${s.sub}`}>{sub}</div>}
+    </div>
+  );
 }
 
 const SHORTCUTS = [
@@ -180,7 +197,12 @@ export function Dashboard() {
         {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
         {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
         {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"><MetricCard label="Projetos ativos" value={activeProjects} /><MetricCard label="Fases concluidas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} accent /><MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} accent={aiUsagePct >= 90} /><MetricCard label="Plano" value={permissions.planName} sub="ver planos →" /></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <MetricCard label="Projetos ativos" value={activeProjects} variant="slate" />
+          <MetricCard label="Fases concluidas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="terracotta" />
+          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant={aiUsagePct >= 90 ? "danger" : "amber"} />
+          <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="emerald" />
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">{SHORTCUTS.map((s) => { const locked = s.planRequired && !permissions.hasAiAdvisor; const href = locked ? "/pricing" : (s.href ?? "/pricing"); return <Link key={s.label} href={href}><div className="glass-card rounded-xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>; })}</div>
         <div className="flex items-center justify-between mb-5"><div><p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p><h2 className="font-serif text-xl text-foreground">Suas construcoes</h2></div>{projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">+ Novo</button>}</div>
         {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-xl p-5 animate-pulse h-44" />)}</div> : projects.length === 0 ? <EmptyState onNew={() => setShowNew(true)} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{projects.map((project) => { const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active"; return <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}><div className="glass-card rounded-xl p-5 cursor-pointer group h-full relative overflow-hidden"><div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" /><div className="flex items-start justify-between mb-3"><h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3></div><div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div><div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider"><span>{project.completedPhases}/6 fases</span><span>{Math.round((project.completedPhases / 6) * 100)}%</span></div><ProgressBar completed={project.completedPhases} /></div></Link>; })}</div>}
