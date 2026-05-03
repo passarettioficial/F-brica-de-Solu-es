@@ -8,6 +8,8 @@ export interface PlanPermissions {
   canPrint: boolean;
   hasAiAdvisor: boolean;
   aiDailyLimit: number;
+  isAdmin: boolean;
+  isSuperuser: boolean;
 }
 
 const defaultPermissions: PlanPermissions = {
@@ -18,6 +20,8 @@ const defaultPermissions: PlanPermissions = {
   canPrint: false,
   hasAiAdvisor: false,
   aiDailyLimit: 2,
+  isAdmin: false,
+  isSuperuser: false,
 };
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -39,6 +43,8 @@ export function usePlan() {
             canPrint: data.permissions.canPrint,
             hasAiAdvisor: data.permissions.hasAiAdvisor,
             aiDailyLimit: data.permissions.aiDailyLimit,
+            isAdmin: data.isAdmin ?? false,
+            isSuperuser: data.isSuperuser ?? false,
           });
         }
       })

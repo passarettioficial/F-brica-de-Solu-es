@@ -18,7 +18,7 @@ router.get("/users/me", async (req, res): Promise<void> => {
   const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
-  const plan = getPlanConfig(user.plan);
+  const plan = getPlanConfig(user.plan, user.isSuperuser);
 
   res.json({
     clerkId: user.clerkId,
@@ -27,6 +27,8 @@ router.get("/users/me", async (req, res): Promise<void> => {
     dailyAiLimit: plan.aiDailyLimit,
     plan: user.plan,
     planName: plan.name,
+    isAdmin: user.isAdmin,
+    isSuperuser: user.isSuperuser,
     permissions: {
       canCopy: plan.canCopy,
       canDownload: plan.canDownload,
@@ -53,7 +55,7 @@ router.patch("/users/me/settings", async (req, res): Promise<void> => {
 
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
-  const plan = getPlanConfig(user.plan);
+  const plan = getPlanConfig(user.plan, user.isSuperuser);
 
   res.json({
     clerkId: user.clerkId,
@@ -62,6 +64,8 @@ router.patch("/users/me/settings", async (req, res): Promise<void> => {
     dailyAiLimit: plan.aiDailyLimit,
     plan: user.plan,
     planName: plan.name,
+    isAdmin: user.isAdmin,
+    isSuperuser: user.isSuperuser,
     permissions: {
       canCopy: plan.canCopy,
       canDownload: plan.canDownload,

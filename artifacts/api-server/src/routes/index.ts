@@ -5,6 +5,7 @@ import phasesRouter from "./phases";
 import usersRouter from "./users";
 import billingRouter from "./billing";
 import advisorRouter from "./advisor";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(phasesRouter);
 router.use(usersRouter);
 router.use(billingRouter);
 router.use(advisorRouter);
+router.use(adminRouter);
 
 export default router;

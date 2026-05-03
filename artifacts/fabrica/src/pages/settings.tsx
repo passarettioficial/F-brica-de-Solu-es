@@ -11,9 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { usePlan } from "@/hooks/usePlan";
 
 export function SettingsPage() {
   const { user: clerkUser } = useUser();
+  const { permissions } = usePlan();
   const queryClient = useQueryClient();
   const { data: userProfile, isLoading } = useGetCurrentUser();
   const updateSettings = useUpdateUserSettings();
@@ -46,12 +48,19 @@ export function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center gap-3">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-            Painel
-          </Link>
-          <span className="text-muted-foreground text-sm">/</span>
-          <span className="text-foreground text-sm font-medium">Configurações</span>
+        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
+              Painel
+            </Link>
+            <span className="text-muted-foreground text-sm">/</span>
+            <span className="text-foreground text-sm font-medium">Configurações</span>
+          </div>
+          {permissions.isAdmin && (
+            <Link href="/admin" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Admin
+            </Link>
+          )}
         </div>
       </header>
 

@@ -128,6 +128,11 @@ export function Dashboard() {
             <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               Assinatura
             </Link>
+            {permissions.isAdmin && (
+              <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium" data-testid="link-admin">
+                Admin
+              </Link>
+            )}
             <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-settings">
               {user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}
             </Link>

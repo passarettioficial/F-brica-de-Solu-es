@@ -70,7 +70,20 @@ export const PLANS: Record<PlanId, PlanConfig> = {
   },
 };
 
-export function getPlanConfig(planId: string): PlanConfig {
+export function getPlanConfig(planId: string, isSuperuser = false): PlanConfig {
+  if (isSuperuser) {
+    return {
+      id: "advanced" as PlanId,
+      name: "Superuser",
+      lookupKey: "",
+      aiDailyLimit: 999999,
+      canCopy: true,
+      canDownload: true,
+      canPrint: true,
+      hasAiAdvisor: true,
+      maxProjects: 999999,
+    };
+  }
   return PLANS[planId as PlanId] ?? PLANS.free;
 }
 

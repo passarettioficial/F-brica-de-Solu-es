@@ -17,6 +17,7 @@ import { SettingsPage } from "@/pages/settings";
 import { PricingPage } from "@/pages/pricing";
 import { BillingPage } from "@/pages/billing";
 import { AdvisorPage } from "@/pages/advisor";
+import { AdminPage } from "@/pages/admin";
 
 const queryClient = new QueryClient();
 
@@ -156,6 +157,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         {() => <ProtectedRoute component={SettingsPage} />}
+      </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute component={AdminPage} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

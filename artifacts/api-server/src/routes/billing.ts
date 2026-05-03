@@ -96,11 +96,13 @@ router.get("/billing/me", async (req: Request, res: Response): Promise<void> => 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
   if (!user) { res.status(404).json({ error: "User not found" }); return; }
 
-  const plan = getPlanConfig(user.plan);
+  const plan = getPlanConfig(user.plan, user.isSuperuser);
 
   res.json({
-    plan: user.plan,
+    plan: user.isSuperuser ? "advanced" : user.plan,
     planName: plan.name,
+    isAdmin: user.isAdmin,
+    isSuperuser: user.isSuperuser,
     stripeCustomerId: user.stripeCustomerId,
     stripeSubscriptionId: user.stripeSubscriptionId,
     stripeSubscriptionStatus: user.stripeSubscriptionStatus,
