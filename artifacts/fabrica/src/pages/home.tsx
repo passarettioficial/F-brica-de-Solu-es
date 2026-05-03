@@ -67,6 +67,13 @@ const TESTIMONIALS = [
   },
 ];
 
+const SALES_SCRIPT = [
+  "Todo bom produto começa com clareza.",
+  "A Fábrica de Soluções transforma briefing em direção.",
+  "Você avança por 6 fases, com artefatos que reduzem ambiguidade.",
+  "O resultado é um produto mais forte, mais rápido e pronto para vender.",
+];
+
 export function Home() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -221,6 +228,58 @@ export function Home() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-24 px-6">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_0.9fr] gap-6 items-stretch">
+            <div className="glass-card rounded-3xl p-8">
+              <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-3">Vídeo de vendas</p>
+              <h2 className="font-serif text-4xl text-foreground leading-tight mb-4">Um vídeo curto para vender a ideia com força.</h2>
+              <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
+                Estruturamos uma peça com abertura, problema, processo, resultado e CTA final para explicar o valor da plataforma em segundos.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Roteiro pronto</span>
+                <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Brandbook aplicado</span>
+                <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">CTA claro</span>
+              </div>
+              <div className="mt-8 space-y-3">
+                {SALES_SCRIPT.map((line, index) => (
+                  <div key={index} className="flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-3">
+                    <span className="text-xs font-mono text-primary mt-0.5">0{index + 1}</span>
+                    <p className="text-sm text-foreground leading-relaxed">{line}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="glass-card rounded-3xl p-6 flex flex-col justify-between">
+              <div>
+                <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-3">Estrutura do vídeo</p>
+                <div className="space-y-3">
+                  {[
+                    ["01", "Pare de começar pelo código", "Uma ideia sem estrutura vira retrabalho."],
+                    ["02", "6 fases, 45+ artefatos", "Lean Canvas, PRD, arquitetura e go-to-market."],
+                    ["03", "Visual limpo, processo sério", "Branding consistente e decisões mais claras."],
+                    ["04", "Pronto para vender", "Crie, valide e lance com mais confiança."],
+                  ].map(([k, title, text]) => (
+                    <div key={k} className="rounded-2xl border border-border bg-background p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-mono text-primary">Cena {k}</span>
+                        <span className="text-[11px] text-muted-foreground uppercase tracking-wider">6–8s</span>
+                      </div>
+                      <p className="font-serif text-lg text-foreground mb-1">{title}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6 rounded-2xl bg-primary/5 border border-primary/15 p-4">
+                <p className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-1">Fechamento</p>
+                <p className="text-sm text-foreground">Crie seu primeiro projeto em menos de 2 minutos. Sem cartão de crédito.</p>
+              </div>
             </div>
           </div>
         </section>
