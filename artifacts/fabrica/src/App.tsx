@@ -146,6 +146,7 @@ function Router() {
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/pricing" component={PricingPage} />
       <Route path="/brandbook" component={BrandbookPage} />
+      <Route path="/video-vendas" component={SalesVideoPage} />
       <Route path="/privacidade" component={PrivacyPage} />
       <Route path="/analise-mercado" component={MarketAnalysisPage} />
       <Route path="/dashboard">
