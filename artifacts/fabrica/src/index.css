@@ -53,52 +53,52 @@
 }
 
 :root {
-  --background: 36 28% 97%;
-  --foreground: 20 14% 8%;
-  --card: 36 20% 100%;
-  --card-foreground: 20 14% 8%;
-  --card-border: 36 15% 88%;
-  --popover: 36 20% 100%;
-  --popover-foreground: 20 14% 8%;
-  --popover-border: 36 15% 88%;
-  --primary: 16 72% 40%;
+  --background: 36 36% 98%;
+  --foreground: 18 18% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 18 18% 10%;
+  --card-border: 28 18% 86%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 18 18% 10%;
+  --popover-border: 28 18% 86%;
+  --primary: 16 74% 43%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 36 20% 92%;
-  --secondary-foreground: 20 14% 20%;
-  --muted: 36 12% 93%;
-  --muted-foreground: 20 8% 42%;
-  --accent: 36 18% 90%;
-  --accent-foreground: 16 72% 40%;
+  --secondary: 30 24% 93%;
+  --secondary-foreground: 18 18% 16%;
+  --muted: 28 18% 95%;
+  --muted-foreground: 18 10% 42%;
+  --accent: 30 24% 92%;
+  --accent-foreground: 16 74% 43%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 36 15% 86%;
-  --input: 36 15% 86%;
-  --ring: 16 72% 40%;
+  --border: 28 18% 86%;
+  --input: 28 18% 86%;
+  --ring: 16 74% 43%;
   --radius: 0.625rem;
 }
 
 .dark {
-  --background: 220 14% 7%;
-  --foreground: 36 28% 95%;
-  --card: 220 14% 11%;
-  --card-foreground: 36 28% 95%;
+  --background: 220 18% 6%;
+  --foreground: 36 28% 96%;
+  --card: 220 16% 10%;
+  --card-foreground: 36 28% 96%;
   --card-border: 220 10% 18%;
-  --popover: 220 14% 11%;
-  --popover-foreground: 36 28% 95%;
+  --popover: 220 16% 10%;
+  --popover-foreground: 36 28% 96%;
   --popover-border: 220 10% 18%;
-  --primary: 16 72% 50%;
+  --primary: 16 74% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 10% 17%;
-  --secondary-foreground: 36 28% 95%;
-  --muted: 220 10% 14%;
-  --muted-foreground: 220 8% 60%;
-  --accent: 220 10% 17%;
-  --accent-foreground: 16 72% 50%;
+  --secondary: 220 10% 16%;
+  --secondary-foreground: 36 28% 96%;
+  --muted: 220 10% 13%;
+  --muted-foreground: 220 10% 62%;
+  --accent: 220 10% 16%;
+  --accent-foreground: 16 74% 50%;
   --destructive: 0 62% 36%;
-  --destructive-foreground: 36 28% 95%;
+  --destructive-foreground: 36 28% 96%;
   --border: 220 10% 18%;
   --input: 220 10% 18%;
-  --ring: 16 72% 50%;
+  --ring: 16 74% 50%;
 }
 
 @layer base {
@@ -114,37 +114,36 @@
   }
 }
 
-/* ─── Glass / Blueprint card ─── */
 .glass-card {
-  background: hsl(var(--card) / 0.85);
-  border: 1px solid hsl(var(--border) / 0.8);
+  background: hsl(var(--card) / 0.94);
+  border: 1px solid hsl(var(--border) / 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 10px 30px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .glass-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 16px 40px rgba(0,0,0,0.06);
-  border-color: hsl(var(--primary) / 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.08), 0 18px 42px rgba(0,0,0,0.06);
+  border-color: hsl(var(--primary) / 0.28);
 }
 .dark .glass-card {
-  background: hsl(var(--card) / 0.7);
-  border-color: hsl(var(--border) / 0.6);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.18);
+  background: hsl(var(--card) / 0.82);
+  border-color: hsl(var(--border) / 0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 10px 26px rgba(0,0,0,0.2);
 }
 .dark .glass-card:hover {
-  border-color: hsl(var(--primary) / 0.35);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.32);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.28);
 }
 
-/* ─── Hero grid overlay ─── */
 .hero-grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(hsl(var(--foreground) / 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+    linear-gradient(hsl(var(--foreground) / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--foreground) / 0.04) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
 }
@@ -154,32 +153,28 @@
     linear-gradient(90deg, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
 }
 
-/* ─── Hero glow ─── */
 .hero-glow {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.12), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.05), transparent 60%);
+    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.1), transparent 72%),
+    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.04), transparent 60%);
 }
 .dark .hero-glow {
   background:
-    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.18), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.16), transparent 72%),
     radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.08), transparent 60%);
 }
 
-/* ─── Theme toggle ─── */
 .theme-toggle-button {
-  @apply rounded-full border border-border bg-card/70 backdrop-blur-md;
+  @apply rounded-full border border-border bg-card/80 backdrop-blur-md;
 }
 
-/* ─── Phase node glow on active ─── */
 .phase-node-active {
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15), 0 0 20px hsl(var(--primary) / 0.2);
 }
 
-/* ─── Animated underline ─── */
 .link-underline {
   position: relative;
 }
@@ -197,33 +192,15 @@
   width: 100%;
 }
 
-/* ─── Stat counter shimmer ─── */
 @keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 .stat-shimmer {
-  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.6) 50%, hsl(var(--primary)) 100%);
+  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.65) 50%, hsl(var(--primary)) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   animation: shimmer 4s linear infinite;
-}
-
-/* ─── Subtle card number badge ─── */
-.step-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 700;
-  font-family: "Inter", sans-serif;
-  letter-spacing: 0.02em;
-  background: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
-  border: 1px solid hsl(var(--primary) / 0.2);
 }

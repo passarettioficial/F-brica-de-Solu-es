@@ -21,30 +21,9 @@ import { ActivationChecklist } from "@/components/activation-checklist";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const EXAMPLE_TEMPLATES = [
-  {
-    id: "saas",
-    label: "SaaS B2B",
-    icon: "💼",
-    name: "Plataforma de gestao para PMEs",
-    briefing:
-      "Quero criar uma plataforma SaaS para pequenas e medias empresas gerenciarem seus projetos e clientes. O problema: PMEs perdem contratos por falta de acompanhamento. Publico-alvo: donos de empresas de 5-50 funcionarios. Diferencial: simplicidade e preco acessivel (R$99/mes). Modelo: freemium com limite de projetos.",
-  },
-  {
-    id: "app",
-    label: "App de Consumo",
-    icon: "📱",
-    name: "App de saude e habitos",
-    briefing:
-      "Quero criar um app mobile para ajudar pessoas a criarem habitos saudaveis de forma gamificada. O problema: as pessoas desistem das metas em menos de 30 dias. Publico-alvo: adultos 25-40 anos que querem ser mais produtivos. Diferencial: social accountability — voce so avanca se um amigo confirmar. Modelo: assinatura anual R$199.",
-  },
-  {
-    id: "marketplace",
-    label: "Marketplace",
-    icon: "🛒",
-    name: "Marketplace de servicos criativos",
-    briefing:
-      "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de contedo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiaveis. Publico-alvo: startups e agencias de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissao de 15% por transacao.",
-  },
+  { id: "saas", label: "SaaS B2B", icon: "💼", name: "Plataforma de gestao para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e medias empresas gerenciarem seus projetos e clientes. O problema: PMEs perdem contratos por falta de acompanhamento. Publico-alvo: donos de empresas de 5-50 funcionarios. Diferencial: simplicidade e preco acessivel (R$99/mes). Modelo: freemium com limite de projetos." },
+  { id: "app", label: "App de Consumo", icon: "📱", name: "App de saude e habitos", briefing: "Quero criar um app mobile para ajudar pessoas a criarem habitos saudaveis de forma gamificada. O problema: as pessoas desistem das metas em menos de 30 dias. Publico-alvo: adultos 25-40 anos que querem ser mais produtivos. Diferencial: social accountability — voce so avanca se um amigo confirmar. Modelo: assinatura anual R$199." },
+  { id: "marketplace", label: "Marketplace", icon: "🛒", name: "Marketplace de servicos criativos", briefing: "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de contedo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiaveis. Publico-alvo: startups e agencias de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissao de 15% por transacao." },
 ];
 
 function PhaseBadge({ status, phaseNumber }: { status: string; phaseNumber: number }) {
@@ -54,47 +33,26 @@ function PhaseBadge({ status, phaseNumber }: { status: string; phaseNumber: numb
     active: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
     locked: "bg-muted text-muted-foreground border border-border",
   };
-  return (
-    <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${colors[status] ?? colors.locked}`}>
-      Fase {phaseNumber} — {phaseName}
-    </span>
-  );
+  return <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${colors[status] ?? colors.locked}`}>Fase {phaseNumber} — {phaseName}</span>;
 }
 
 function ProgressBar({ completed, total = 6 }: { completed: number; total?: number }) {
   const pct = Math.round((completed / total) * 100);
-  return (
-    <div className="w-full bg-muted rounded-full h-1 mt-3" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-      <div className="bg-primary h-1 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-    </div>
-  );
+  return <div className="w-full bg-muted rounded-full h-1 mt-3" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div className="bg-primary h-1 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} /></div>;
 }
 
 function ResumeCard({ project }: { project: { projectId: number; name: string; currentPhase: number; completedPhases: number } }) {
   const phaseName = PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`;
   const pct = Math.round((project.completedPhases / 6) * 100);
-  const motivations = [
-    "Continue de onde parou — seu produto esta ganhando forma.",
-    "Cada artefato concluido e um produto mais solido.",
-    "Quase la! Falta pouco para concluir esta fase.",
-    "Nao pare agora — voce esta no caminho certo.",
-  ];
+  const motivations = ["Continue de onde parou — seu produto esta ganhando forma.", "Cada artefato concluido e um produto mais solido.", "Quase la! Falta pouco para concluir esta fase.", "Nao pare agora — voce esta no caminho certo."];
   const motivation = motivations[project.completedPhases % motivations.length];
-
   return (
     <Link href={`/projects/${project.projectId}/phases/${project.currentPhase}`}>
       <div className="glass-card rounded-2xl p-6 cursor-pointer group mb-8 relative overflow-hidden">
-        {/* Decorative corner */}
-        <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none">
-          <div className="absolute top-3 right-3 w-4 h-4 border-t border-r border-primary/20" />
-        </div>
-
+        <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none"><div className="absolute top-3 right-3 w-4 h-4 border-t border-r border-primary/20" /></div>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse flex-shrink-0" />
-              <span className="text-xs font-mono font-semibold text-primary uppercase tracking-wider">Continuar de onde parou</span>
-            </div>
+            <div className="flex items-center gap-2 mb-2"><span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse flex-shrink-0" /><span className="text-xs font-mono font-semibold text-primary uppercase tracking-wider">Continuar de onde parou</span></div>
             <h3 className="font-serif text-xl text-foreground group-hover:text-primary transition-colors truncate mb-1">{project.name}</h3>
             <p className="text-xs text-muted-foreground">{motivation}</p>
           </div>
@@ -103,20 +61,11 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
             <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">concluido</div>
           </div>
         </div>
-
         <div className="mt-5">
-          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
-            <span>Fase {project.currentPhase} — {phaseName}</span>
-            <span>{project.completedPhases}/6</span>
-          </div>
+          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider"><span>Fase {project.currentPhase} — {phaseName}</span><span>{project.completedPhases}/6</span></div>
           <ProgressBar completed={project.completedPhases} />
         </div>
-
-        <div className="mt-5">
-          <Button size="sm" className="bg-foreground hover:bg-foreground/85 text-background text-xs font-semibold transition-all group-hover:-translate-y-0.5 duration-200">
-            Entrar na Fase {project.currentPhase} →
-          </Button>
-        </div>
+        <div className="mt-5"><Button size="sm" className="bg-foreground hover:bg-foreground/85 text-background text-xs font-semibold transition-all group-hover:-translate-y-0.5 duration-200">Entrar na Fase {project.currentPhase} →</Button></div>
       </div>
     </Link>
   );
@@ -127,21 +76,13 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
   if (pct < 70) return null;
   const isExhausted = used >= limit;
   return (
-    <div className={`border rounded-xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900"}`} role="alert">
+    <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900"}`} role="alert">
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}`}>
-          {isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}
-        </p>
-        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
-          {isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}
-        </p>
+        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}`}>{isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}</p>
+        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>{isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}</p>
       </div>
-      <Link href="/pricing">
-        <Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}>
-          Ver planos
-        </Button>
-      </Link>
+      <Link href="/pricing"><Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}>Ver planos</Button></Link>
     </div>
   );
 }
@@ -149,54 +90,26 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      {/* Blueprint decorative element */}
       <div className="relative mb-8">
         <div className="w-20 h-20 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-center">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-primary">
-            <rect x="6" y="4" width="24" height="28" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M11 12h14M11 17h14M11 22h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            <path d="M27 27l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-primary"><rect x="6" y="4" width="24" height="28" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M11 12h14M11 17h14M11 22h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M27 27l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
         </div>
         <div className="absolute -top-1 -right-1 w-3 h-3 border-t border-r border-primary/30" />
         <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b border-l border-primary/20" />
       </div>
-
       <h2 className="text-2xl font-serif text-foreground mb-3">Sua linha de montagem aguarda</h2>
-      <p className="text-muted-foreground max-w-md mb-10 text-sm leading-relaxed">
-        Cada grande produto comeca com uma ideia e um processo rigoroso. Crie seu primeiro projeto e deixe a IA guiar voce pelas 6 fases — da ideia ao lancamento.
-      </p>
-
+      <p className="text-muted-foreground max-w-md mb-10 text-sm leading-relaxed">Cada grande produto comeca com uma ideia e um processo rigoroso. Crie seu primeiro projeto e deixe a IA guiar voce pelas 6 fases — da ideia ao lancamento.</p>
       <div className="grid grid-cols-3 gap-4 mb-10 max-w-lg w-full">
-        {[
-          { step: "01", label: "Descreva sua ideia", desc: "Leva menos de 2 minutos" },
-          { step: "02", label: "IA gera os artefatos", desc: "PRD, personas, arquitetura..." },
-          { step: "03", label: "Avance fase a fase", desc: "Ate o lancamento" },
-        ].map((item, i) => (
-          <div key={i} className="glass-card rounded-xl p-4 text-left">
-            <div className="text-xs font-mono text-primary/60 mb-2">{item.step}</div>
-            <div className="text-sm font-semibold text-foreground mb-0.5 leading-snug">{item.label}</div>
-            <div className="text-xs text-muted-foreground">{item.desc}</div>
-          </div>
-        ))}
+        {[{ step: "01", label: "Descreva sua ideia", desc: "Leva menos de 2 minutos" }, { step: "02", label: "IA gera os artefatos", desc: "PRD, personas, arquitetura..." }, { step: "03", label: "Avance fase a fase", desc: "Ate o lancamento" }].map((item, i) => <div key={i} className="glass-card rounded-xl p-4 text-left"><div className="text-xs font-mono text-primary/60 mb-2">{item.step}</div><div className="text-sm font-semibold text-foreground mb-0.5 leading-snug">{item.label}</div><div className="text-xs text-muted-foreground">{item.desc}</div></div>)}
       </div>
-
-      <Button onClick={onNew} className="bg-foreground hover:bg-foreground/85 text-background px-8 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">
-        Criar meu primeiro projeto →
-      </Button>
+      <Button onClick={onNew} className="bg-foreground hover:bg-foreground/85 text-background px-8 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">Criar meu primeiro projeto →</Button>
       <p className="text-xs font-mono text-muted-foreground/60 mt-4 uppercase tracking-wider">Sem cartao de credito</p>
     </div>
   );
 }
 
 function MetricCard({ label, value, sub, accent = false }: { label: string; value: string | number; sub?: string; accent?: boolean }) {
-  return (
-    <div className={`glass-card rounded-xl p-4 ${accent ? "border-primary/25" : ""}`}>
-      <div className={`text-2xl font-bold font-serif mb-0.5 ${accent ? "text-primary" : "text-foreground"}`}>{value}</div>
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      {sub && <div className="text-xs text-muted-foreground/60 mt-0.5 font-mono">{sub}</div>}
-    </div>
-  );
+  return <div className={`glass-card rounded-xl p-4 ${accent ? "border-primary/25" : ""}`}><div className={`text-2xl font-bold font-serif mb-0.5 ${accent ? "text-primary" : "text-foreground"}`}>{value}</div><div className="text-xs font-medium text-muted-foreground">{label}</div>{sub && <div className="text-xs text-muted-foreground/60 mt-0.5 font-mono">{sub}</div>}</div>;
 }
 
 const SHORTCUTS = [
@@ -220,35 +133,19 @@ export function Dashboard() {
   const { data: dashboard, isLoading } = useGetDashboard();
   const createProject = useCreateProject();
 
-  const handleTourComplete = useCallback(() => {
-    setTimeout(() => setShowNew(true), 400);
-  }, []);
-
-  function applyTemplate(template: typeof EXAMPLE_TEMPLATES[0]) {
-    setName(template.name);
-    setBriefing(template.briefing);
-    setSelectedTemplate(template.id);
-  }
-
+  const handleTourComplete = useCallback(() => { setTimeout(() => setShowNew(true), 400); }, []);
+  function applyTemplate(template: typeof EXAMPLE_TEMPLATES[0]) { setName(template.name); setBriefing(template.briefing); setSelectedTemplate(template.id); }
   function handleCreate() {
     if (!name.trim() || !briefing.trim()) return;
-    createProject.mutate(
-      { data: { name: name.trim(), briefing: briefing.trim() } },
-      {
-        onSuccess: (project) => {
-          queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
-          setShowNew(false);
-          setName("");
-          setBriefing("");
-          setSelectedTemplate(null);
-          toast({ title: "Projeto criado!", description: `"${project.name}" esta pronto. Comecemos a Fase 1.` });
-          setLocation(`/projects/${project.id}`);
-        },
-        onError: () => {
-          toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" });
-        },
-      }
-    );
+    createProject.mutate({ data: { name: name.trim(), briefing: briefing.trim() } }, {
+      onSuccess: (project) => {
+        queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+        setShowNew(false); setName(""); setBriefing(""); setSelectedTemplate(null);
+        toast({ title: "Projeto criado!", description: `"${project.name}" esta pronto. Comecemos a Fase 1.` });
+        setLocation(`/projects/${project.id}`);
+      },
+      onError: () => { toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" }); },
+    });
   }
 
   const projects = dashboard?.projects ?? [];
@@ -265,212 +162,37 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <OnboardingTour onComplete={handleTourComplete} />
-
-      {/* Header */}
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
+      <header className="border-b border-border/60 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Logo" className="w-6 h-6 rounded-md" />
-            <span className="font-serif text-base font-semibold text-foreground tracking-tight">Fabrica</span>
-          </Link>
-          <nav className="flex items-center gap-1">
-            <ThemeToggle />
-            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">{permissions.planName}</Link>
-            <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">Assinatura</Link>
-            {permissions.isAdmin && (
-              <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all font-medium" data-testid="link-admin">Admin</Link>
-            )}
-            <NotificationBell />
-            <Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all" data-testid="link-settings">
-              {user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}
-            </Link>
-          </nav>
+          <Link href="/" className="flex items-center gap-2.5"><img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Logo" className="w-6 h-6 rounded-md" /><span className="font-serif text-base font-semibold text-foreground tracking-tight">Fabrica</span></Link>
+          <nav className="flex items-center gap-1"><ThemeToggle /><Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">{permissions.planName}</Link><Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">Assinatura</Link>{permissions.isAdmin && <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all font-medium" data-testid="link-admin">Admin</Link>}<NotificationBell /><Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all" data-testid="link-settings">{user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}</Link></nav>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-6 py-10">
-
-        {/* Page title */}
         <div className="flex items-start justify-between mb-8">
           <div>
             <p className="text-xs font-mono text-primary uppercase tracking-[0.18em] mb-1.5">PAINEL DE CONTROLE</p>
             <h1 className="text-3xl font-serif text-foreground">{user?.firstName ? `Ola, ${user.firstName}.` : "Bem-vindo."}</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {projects.length === 0
-                ? "Nenhum projeto ainda — comece criando o seu."
-                : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}
-            </p>
+            <p className="text-muted-foreground text-sm mt-1">{projects.length === 0 ? "Nenhum projeto ainda — comece criando o seu." : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}</p>
           </div>
-          <Button
-            onClick={() => setShowNew(true)}
-            className="bg-foreground hover:bg-foreground/85 text-background font-semibold"
-            data-testid="button-new-project"
-          >
-            + Nova construcao
-          </Button>
+          <Button onClick={() => setShowNew(true)} className="bg-foreground hover:bg-foreground/85 text-background font-semibold" data-testid="button-new-project">+ Nova construcao</Button>
         </div>
-
-        {/* AI Limit Banner */}
         {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
-
-        {/* Activation checklist */}
-        {showChecklist && (
-          <ActivationChecklist
-            hasProjects={projects.length > 0}
-            hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0}
-            phase1Completed={phase1Completed}
-            phase3Completed={phase3Completed}
-            allPhasesCompleted={allPhasesCompleted}
-            onNewProject={() => setShowNew(true)}
-          />
-        )}
-
-        {/* Resume card */}
+        {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
         {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
-
-        {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <MetricCard label="Projetos ativos" value={activeProjects} />
-          <MetricCard label="Fases concluidas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} accent />
-          <MetricCard
-            label="IA hoje"
-            value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`}
-            sub={`${aiUsagePct}% usado`}
-            accent={aiUsagePct >= 90}
-          />
-          <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" />
-        </div>
-
-        {/* Shortcuts */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          {SHORTCUTS.map((s) => {
-            const locked = s.planRequired && !permissions.hasAiAdvisor;
-            const href = locked ? "/pricing" : (s.href ?? "/pricing");
-            return (
-              <Link key={s.label} href={href}>
-                <div className="glass-card rounded-xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}>
-                  <div className="text-xl mb-2.5">{s.icon}</div>
-                  <div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Projects */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p>
-            <h2 className="font-serif text-xl text-foreground">Suas construcoes</h2>
-          </div>
-          {projects.length > 0 && (
-            <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
-              + Novo
-            </button>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-xl p-5 animate-pulse h-44" />)}
-          </div>
-        ) : projects.length === 0 ? (
-          <EmptyState onNew={() => setShowNew(true)} />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {projects.map((project) => {
-              const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active";
-              return (
-                <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}>
-                  <div className="glass-card rounded-xl p-5 cursor-pointer group h-full relative overflow-hidden">
-                    <div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" />
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3>
-                    </div>
-                    <div className="mb-4">
-                      <PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} />
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider">
-                      <span>{project.completedPhases}/6 fases</span>
-                      <span>{Math.round((project.completedPhases / 6) * 100)}%</span>
-                    </div>
-                    <ProgressBar completed={project.completedPhases} />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"><MetricCard label="Projetos ativos" value={activeProjects} /><MetricCard label="Fases concluidas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} accent /><MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} accent={aiUsagePct >= 90} /><MetricCard label="Plano" value={permissions.planName} sub="ver planos →" /></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">{SHORTCUTS.map((s) => { const locked = s.planRequired && !permissions.hasAiAdvisor; const href = locked ? "/pricing" : (s.href ?? "/pricing"); return <Link key={s.label} href={href}><div className="glass-card rounded-xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>; })}</div>
+        <div className="flex items-center justify-between mb-5"><div><p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p><h2 className="font-serif text-xl text-foreground">Suas construcoes</h2></div>{projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">+ Novo</button>}</div>
+        {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-xl p-5 animate-pulse h-44" />)}</div> : projects.length === 0 ? <EmptyState onNew={() => setShowNew(true)} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{projects.map((project) => { const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active"; return <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}><div className="glass-card rounded-xl p-5 cursor-pointer group h-full relative overflow-hidden"><div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" /><div className="flex items-start justify-between mb-3"><h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3></div><div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div><div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider"><span>{project.completedPhases}/6 fases</span><span>{Math.round((project.completedPhases / 6) * 100)}%</span></div><ProgressBar completed={project.completedPhases} /></div></Link>; })}</div>}
       </main>
-
-      {/* New project dialog */}
       <Dialog open={showNew} onOpenChange={(open) => { setShowNew(open); if (!open) setSelectedTemplate(null); }}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Nova construcao</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="font-serif text-xl">Nova construcao</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
-            <div>
-              <Label className="text-xs font-mono text-muted-foreground mb-2 block uppercase tracking-wider">Template (opcional)</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {EXAMPLE_TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => applyTemplate(t)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all ${
-                      selectedTemplate === t.id
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border bg-card hover:border-primary/30 text-foreground"
-                    }`}
-                  >
-                    <span className="text-xl">{t.icon}</span>
-                    <span className="text-xs font-medium leading-tight">{t.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label>
-              <Input
-                id="proj-name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Ex: App de delivery para pets"
-                className="mt-1.5"
-                data-testid="input-project-name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="proj-briefing" className="text-sm font-medium">
-                Briefing inicial
-                <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span>
-              </Label>
-              <Textarea
-                id="proj-briefing"
-                value={briefing}
-                onChange={e => setBriefing(e.target.value)}
-                placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais..."
-                className="mt-1.5 min-h-[140px]"
-                data-testid="textarea-project-briefing"
-              />
-              {briefing.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1 font-mono">
-                  {briefing.length} chars — {briefing.length < 200 ? "adicione mais contexto" : "otimo nivel de detalhe"}
-                </p>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button>
-              <Button
-                onClick={handleCreate}
-                disabled={!name.trim() || !briefing.trim() || createProject.isPending}
-                className="bg-foreground hover:bg-foreground/85 text-background font-semibold"
-                data-testid="button-create-project"
-              >
-                {createProject.isPending ? "Criando..." : "Criar projeto →"}
-              </Button>
-            </div>
+            <div><Label className="text-xs font-mono text-muted-foreground mb-2 block uppercase tracking-wider">Template (opcional)</Label><div className="grid grid-cols-3 gap-2">{EXAMPLE_TEMPLATES.map((t) => <button key={t.id} onClick={() => applyTemplate(t)} className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all ${selectedTemplate === t.id ? "border-primary bg-primary/5 text-primary" : "border-border bg-card hover:border-primary/30 text-foreground"}`}><span className="text-xl">{t.icon}</span><span className="text-xs font-medium leading-tight">{t.label}</span></button>)}</div></div>
+            <div><Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label><Input id="proj-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: App de delivery para pets" className="mt-1.5" data-testid="input-project-name" /></div>
+            <div><Label htmlFor="proj-briefing" className="text-sm font-medium">Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span></Label><Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais..." className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />{briefing.length > 0 && <p className="text-xs text-muted-foreground mt-1 font-mono">{briefing.length} chars — {briefing.length < 200 ? "adicione mais contexto" : "otimo nivel de detalhe"}</p>}</div>
+            <div className="flex justify-end gap-2 pt-1"><Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button><Button onClick={handleCreate} disabled={!name.trim() || !briefing.trim() || createProject.isPending} className="bg-foreground hover:bg-foreground/85 text-background font-semibold" data-testid="button-create-project">{createProject.isPending ? "Criando..." : "Criar projeto →"}</Button></div>
           </div>
         </DialogContent>
       </Dialog>
