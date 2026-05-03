@@ -213,6 +213,20 @@ export function Dashboard() {
           </div>
           <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold rounded-full" data-testid="button-new-project">+ Nova construção</Button>
         </div>
+        <div className="grid gap-3 md:grid-cols-3 mb-6">
+          <div className="surface-panel rounded-2xl p-4">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Resumo</div>
+            <div className="text-xl font-serif text-foreground">{projects.length > 0 ? "Fluxo ativo" : "Pronto para começar"}</div>
+          </div>
+          <div className="surface-panel rounded-2xl p-4">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Template favorito</div>
+            <div className="text-xl font-serif text-foreground">{selectedTemplate ? EXAMPLE_TEMPLATES.find((item) => item.id === selectedTemplate)?.label ?? "Nenhum" : "Nenhum ainda"}</div>
+          </div>
+          <div className="surface-panel rounded-2xl p-4">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Convite</div>
+            <div className="text-xl font-serif text-foreground">{hasSharedProject ? "Projeto compartilhado" : "Compartilhe depois"}</div>
+          </div>
+        </div>
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <section className="space-y-6">
             <div className="surface-panel rounded-2xl p-6">

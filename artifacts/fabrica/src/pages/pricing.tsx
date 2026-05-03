@@ -88,6 +88,10 @@ const FAQ = [
     q: "Os artefatos são reutilizáveis?",
     a: "Sim. Eles funcionam como base viva para briefing, decisão e colaboração do time.",
   },
+  {
+    q: "O plano gratuito já mostra valor?",
+    a: "Sim. Ele permite começar o fluxo, ver a estrutura das fases e sentir o produto antes do upgrade.",
+  },
 ];
 
 export function PricingPage() {
@@ -143,6 +147,21 @@ export function PricingPage() {
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Transforme ideias em produtos com IA.
           </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3 mb-10">
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Entrada</div>
+            <div className="text-xl font-serif text-foreground">Comece no grátis</div>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Expansão</div>
+            <div className="text-xl font-serif text-foreground">Suba para Pro</div>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Premium</div>
+            <div className="text-xl font-serif text-foreground">Adicione AI Advisor</div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
