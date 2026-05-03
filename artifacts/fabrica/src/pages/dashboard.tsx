@@ -76,13 +76,13 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
   if (pct < 70) return null;
   const isExhausted = used >= limit;
   return (
-    <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-900"}`} role="alert">
+    <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-secondary/70 border-primary/15 dark:bg-amber-950/20 dark:border-amber-900"}`} role="alert">
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-amber-800 dark:text-amber-300"}`}>{isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}</p>
         <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>{isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}</p>
       </div>
-      <Link href="/pricing"><Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-amber-300 text-amber-700 hover:bg-amber-50"}`}>Ver planos</Button></Link>
+      <Link href="/pricing"><Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-primary/20 text-primary hover:bg-primary/5"}`}>Ver planos</Button></Link>
     </div>
   );
 }
@@ -112,7 +112,7 @@ type MetricVariant = "slate" | "terracotta" | "amber" | "emerald" | "danger";
 
 const METRIC_STYLES: Record<MetricVariant, { wrap: string; value: string; label: string; sub: string }> = {
   /* brand azul claro #EEF1FB family */
-  slate:      { wrap: "bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800",            value: "text-blue-800 dark:text-blue-200",        label: "text-blue-500 dark:text-blue-400",        sub: "text-blue-400 dark:text-blue-500" },
+  slate:      { wrap: "bg-secondary/70 border border-primary/15 dark:bg-blue-950/40 dark:border-blue-800",      value: "text-primary dark:text-blue-200",         label: "text-primary/80 dark:text-blue-400",      sub: "text-primary/60 dark:text-blue-500" },
   /* brand laranja #FF8C42 family */
   terracotta: { wrap: "bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800",    value: "text-orange-700 dark:text-orange-300",    label: "text-orange-500 dark:text-orange-500",    sub: "text-orange-400 dark:text-orange-600" },
   amber:      { wrap: "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800",        value: "text-amber-700 dark:text-amber-400",      label: "text-amber-600/70 dark:text-amber-500",   sub: "text-amber-400 dark:text-amber-600" },
