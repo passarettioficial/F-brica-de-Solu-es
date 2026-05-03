@@ -1029,6 +1029,18 @@ export function AdminPage() {
     );
   }
 
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="text-foreground font-medium">Acesso restrito</div>
+          <div className="text-muted-foreground text-sm">Você não tem permissão para acessar a administração.</div>
+          <Link href="/dashboard" className="inline-flex text-sm text-primary hover:underline">Voltar ao painel</Link>
+        </div>
+      </div>
+    );
+  }
+
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: "overview", label: "Visão geral" },
     { id: "users", label: "Usuários" },

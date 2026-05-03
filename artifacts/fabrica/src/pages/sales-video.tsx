@@ -95,21 +95,17 @@ export function SalesVideoPage() {
         </section>
 
         <section className="grid lg:grid-cols-3 gap-6">
-          <div className="glass-card rounded-2xl p-6">
-            <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Abertura</p>
-            <p className="font-serif text-xl text-foreground mb-2">Problema</p>
-            <p className="text-sm text-muted-foreground">Você tem uma ideia, mas ainda não tem produto, narrativa nem estrutura.</p>
-          </div>
-          <div className="glass-card rounded-2xl p-6">
-            <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Meio</p>
-            <p className="font-serif text-xl text-foreground mb-2">Processo</p>
-            <p className="text-sm text-muted-foreground">A plataforma organiza validação, especificação e execução em etapas claras.</p>
-          </div>
-          <div className="glass-card rounded-2xl p-6">
-            <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Final</p>
-            <p className="font-serif text-xl text-foreground mb-2">Resultado</p>
-            <p className="text-sm text-muted-foreground">Mais clareza, mais velocidade e um produto que parece pronto para mercado.</p>
-          </div>
+          {[
+            ["Abertura", "Problema", "Você tem uma ideia, mas ainda não tem produto, narrativa nem estrutura."],
+            ["Meio", "Processo", "A plataforma organiza validação, especificação e execução em etapas claras."],
+            ["Final", "Resultado", "Mais clareza, mais velocidade e um produto que parece pronto para mercado."],
+          ].map(([section, title, text]) => (
+            <div key={section} className="glass-card rounded-2xl p-6">
+              <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">{section}</p>
+              <p className="font-serif text-xl text-foreground mb-2">{title}</p>
+              <p className="text-sm text-muted-foreground">{text}</p>
+            </div>
+          ))}
         </section>
 
         <section className="glass-card rounded-3xl p-8 flex items-center justify-between gap-6 flex-wrap">
