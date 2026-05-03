@@ -72,9 +72,12 @@ export function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
+      <div className="pointer-events-none fixed inset-0 opacity-70">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,63,171,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(255,140,66,0.12),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.65),transparent_18%)]" />
+      </div>
 
       {/* ── Header ── */}
-      <header className="py-4 px-6 md:px-8 flex justify-between items-center border-b border-border/60 bg-background/85 sticky top-0 z-20 backdrop-blur-xl">
+      <header className="py-4 px-6 md:px-8 flex justify-between items-center border-b border-border/60 bg-background/75 sticky top-0 z-20 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <img src={`${base}/logo.svg`} alt="Fabrica" className="w-8 h-8 rounded-xl ring-1 ring-border/70 bg-card" />
           <div className="leading-tight">
@@ -93,53 +96,85 @@ export function Home() {
       <main className="flex-1 flex flex-col">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-center px-6 pt-24 pb-28 text-center overflow-hidden">
+        <section className="relative px-6 pt-20 pb-20 overflow-hidden">
           <div className="hero-glow" />
           <div className="hero-grid" />
 
-          {/* Blueprint corner marks */}
-          <div className="absolute top-8 left-8 w-6 h-6 border-t border-l border-primary/30 hidden md:block" />
-          <div className="absolute top-8 right-8 w-6 h-6 border-t border-r border-primary/30 hidden md:block" />
-          <div className="absolute bottom-8 left-8 w-6 h-6 border-b border-l border-primary/20 hidden md:block" />
-          <div className="absolute bottom-8 right-8 w-6 h-6 border-b border-r border-primary/20 hidden md:block" />
-
-          <div className="relative z-10 max-w-5xl mx-auto w-full">
-            <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/20 bg-white/70 shadow-sm tracking-wider">
+          <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/20 bg-white/70 shadow-sm tracking-wider">
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
               PLATAFORMA DE PRODUTO COM IA — v2.0
-            </div>
+              </div>
 
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
               A linha de<br />
               montagem para<br />
               <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders serios</span>.
-            </h1>
+              </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-sans leading-relaxed">
+              <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl font-sans leading-relaxed">
               Da ideia ao lancamento em 6 fases estruturadas.
               A IA gera artefatos detalhados — PRD, personas, arquitetura, go-to-market —
               tudo baseado no seu briefing.
-            </p>
+              </p>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-0 md:divide-x md:divide-border/60 mb-12 max-w-3xl mx-auto bg-card/70 backdrop-blur-sm border border-border/60 rounded-2xl overflow-hidden">
+              {/* Stats row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-0 md:divide-x md:divide-border/60 mb-12 max-w-3xl lg:max-w-none bg-card/70 backdrop-blur-sm border border-border/60 rounded-2xl overflow-hidden">
               {STATS.map((stat, i) => (
                 <div key={i} className="text-center px-6 py-5">
                     <div className="stat-shimmer text-3xl font-bold font-serif">{stat.value}</div>
                     <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mt-0.5">{stat.label}</div>
                 </div>
               ))}
-            </div>
+              </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 items-center justify-center lg:justify-start">
               <Link href="/sign-up">
                 <Button className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200">
                   Iniciar minha construcao →
                 </Button>
               </Link>
               <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver planos e precos</Link>
+              </div>
+              <p className="text-xs text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
             </div>
-            <p className="text-xs text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
+
+            <div className="relative">
+              <div className="glass-card rounded-[2rem] p-4 md:p-5 shadow-xl">
+                <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-5">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <p className="text-xs font-mono text-primary uppercase tracking-[0.2em]">Produto pronto</p>
+                      <h3 className="font-serif text-2xl text-foreground mt-1">SaaS com processo guiado</h3>
+                    </div>
+                    <div className="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center text-primary">◎</div>
+                  </div>
+                  <div className="grid gap-3">
+                    <div className="rounded-xl bg-secondary/70 border border-border/60 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Fase atual</span>
+                        <span className="text-xs font-mono text-primary">01</span>
+                      </div>
+                      <div className="text-lg font-serif text-foreground mt-1">Ideia e validacao</div>
+                      <div className="mt-3 h-2 rounded-full bg-background">
+                        <div className="h-2 w-[22%] rounded-full bg-primary" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-border/60 bg-card p-4">
+                        <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Artefatos</div>
+                        <div className="text-2xl font-serif text-foreground mt-1">45+</div>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-card p-4">
+                        <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tempo</div>
+                        <div className="text-2xl font-serif text-foreground mt-1">2 min</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
