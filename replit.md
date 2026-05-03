@@ -54,6 +54,41 @@ Plans: `free`, `starter`, `advanced`. Defined in `artifacts/api-server/src/lib/s
 
 Superusers bypass all plan limits — `getPlanConfig` returns unlimited config when `isSuperuser=true`.
 
+### Customer Service & UX Features
+
+**Routes:**
+- `/atendimento` — support page (WhatsApp, FAQ, ticket form, LGPD notice)
+- `/privacidade` — full privacy policy (LGPD Art. 18 compliance, data categories, encryption info)
+
+**Components:**
+- `WhatsAppButton` — floating green button (bottom-right), configurable via `VITE_WHATSAPP_NUMBER` env var
+- `NotificationBell` — header bell icon with unread badge, dropdown list, auto-polls every 60s
+- `OnboardingTour` — 6-step guided tour modal shown automatically on first login (localStorage `fabrica_onboarding_done`). User can reset via Settings → "Ver tour de boas-vindas"
+
+**DB Tables:**
+- `notificationsTable` — per-user notifications (title, message, type, link, isRead)
+- `supportTicketsTable` — support tickets (subject, message, category, status)
+
+**API Routes:**
+- `GET /api/notifications` — list user notifications
+- `PATCH /api/notifications/read-all` — mark all read
+- `PATCH /api/notifications/:id/read` — mark single read
+- `DELETE /api/notifications/:id` — delete notification
+- `POST /api/support/tickets` — create support ticket (categories: general, billing, technical, lgpd)
+- `GET /api/support/tickets` — list user's tickets
+
+**Dashboard enhancements:**
+- Greeting with user's first name
+- Metrics row: active projects, completed phases, AI usage %, plan name
+- Shortcuts grid: Assinatura, AI Advisor, Atendimento, Configurações
+
+**Settings enhancements:**
+- Plan management section with feature comparison
+- LGPD section: links to privacy policy, data portability request, data deletion request (auto-creates lgpd ticket)
+- Shortcuts section with onboarding tour reset
+
+**WhatsApp config:** Set `VITE_WHATSAPP_NUMBER` env var (default: 5511999999999)
+
 ### Admin Panel (`/admin`)
 
 Full admin panel at `/admin`, restricted to users with `isAdmin=true` or `isSuperuser=true`.

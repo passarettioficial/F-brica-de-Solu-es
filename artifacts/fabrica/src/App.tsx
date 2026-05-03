@@ -18,6 +18,9 @@ import { PricingPage } from "@/pages/pricing";
 import { BillingPage } from "@/pages/billing";
 import { AdvisorPage } from "@/pages/advisor";
 import { AdminPage } from "@/pages/admin";
+import { SupportPage } from "@/pages/support";
+import { PrivacyPage } from "@/pages/privacy";
+import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const queryClient = new QueryClient();
 
@@ -140,11 +143,15 @@ function Router() {
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/pricing" component={PricingPage} />
+      <Route path="/privacidade" component={PrivacyPage} />
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
       <Route path="/billing">
         {() => <ProtectedRoute component={BillingPage} />}
+      </Route>
+      <Route path="/atendimento">
+        {() => <ProtectedRoute component={SupportPage} />}
       </Route>
       <Route path="/projects/:id">
         {() => <ProtectedRoute component={ProjectPage} />}
@@ -198,6 +205,7 @@ function ClerkProviderWithRoutes() {
         <TooltipProvider>
           <Router />
           <Toaster />
+          <WhatsAppButton />
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>

@@ -4,3 +4,5 @@ export * from "./phase_artifacts";
 export * from "./users";
 export * from "./coupons";
 export * from "./settings";
+export * from "./notifications";
+export * from "./support_tickets";

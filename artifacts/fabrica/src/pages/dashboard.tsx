@@ -14,6 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
+import { NotificationBell } from "@/components/notification-bell";
+import { OnboardingTour } from "@/components/onboarding-tour";
 
 const PHASE_STATUS_LABELS: Record<string, string> = {
   completed: "Concluída",
@@ -73,6 +75,35 @@ function EmptyState({ onNew }: { onNew: () => void }) {
   );
 }
 
+function MetricCard({ label, value, sub, color = "default" }: { label: string; value: string | number; sub?: string; color?: "default" | "primary" | "blue" | "green" }) {
+  const colors = {
+    default: "bg-card border-card-border",
+    primary: "bg-primary/5 border-primary/20",
+    blue: "bg-blue-50 border-blue-100",
+    green: "bg-green-50 border-green-100",
+  };
+  const textColors = {
+    default: "text-foreground",
+    primary: "text-primary",
+    blue: "text-blue-700",
+    green: "text-green-700",
+  };
+  return (
+    <div className={`border rounded-xl p-4 ${colors[color]}`}>
+      <div className={`text-2xl font-bold font-serif mb-0.5 ${textColors[color]}`}>{value}</div>
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      {sub && <div className="text-xs text-muted-foreground/70 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+const SHORTCUTS = [
+  { label: "Assinatura", href: "/billing", icon: "💳", desc: "Planos e faturamento" },
+  { label: "AI Advisor", href: null, icon: "🤖", desc: "Consultor de IA", planRequired: "advanced" },
+  { label: "Atendimento", href: "/atendimento", icon: "💬", desc: "WhatsApp e suporte" },
+  { label: "Configurações", href: "/settings", icon: "⚙️", desc: "Conta e preferências" },
+];
+
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { user } = useUser();
@@ -102,9 +133,14 @@ export function Dashboard() {
   }
 
   const projects = dashboard?.projects ?? [];
+  const completedProjects = projects.filter(p => p.completedPhases === 6).length;
+  const activeProjects = projects.filter(p => p.completedPhases < 6).length;
+  const aiUsagePct = dashboard ? Math.round((dashboard.dailyAiUsage / dashboard.dailyAiLimit) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-background">
+      <OnboardingTour />
+
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -116,12 +152,7 @@ export function Dashboard() {
             />
             <span className="font-serif text-lg font-semibold text-foreground">Fábrica de Soluções</span>
           </Link>
-          <nav className="flex items-center gap-4">
-            {dashboard && (
-              <span className="text-xs text-muted-foreground">
-                {dashboard.dailyAiUsage}/{dashboard.dailyAiLimit} IA hoje
-              </span>
-            )}
+          <nav className="flex items-center gap-3">
             <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
               {permissions.planName}
             </Link>
@@ -133,6 +164,7 @@ export function Dashboard() {
                 Admin
               </Link>
             )}
+            <NotificationBell />
             <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-settings">
               {user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}
             </Link>
@@ -142,13 +174,15 @@ export function Dashboard() {
 
       <main className="max-w-6xl mx-auto px-6 py-10">
         {/* Title row */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-serif text-foreground mb-1">Sua linha de montagem</h1>
+            <h1 className="text-3xl font-serif text-foreground mb-1">
+              Olá{user?.firstName ? `, ${user.firstName}` : ""}!
+            </h1>
             <p className="text-muted-foreground text-sm">
               {projects.length === 0
-                ? "Nenhum projeto ainda"
-                : `${projects.length} projeto${projects.length > 1 ? "s" : ""} em andamento`}
+                ? "Nenhum projeto ainda — comece criando o seu."
+                : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluído${completedProjects !== 1 ? "s" : ""}`}
             </p>
           </div>
           <Button
@@ -158,6 +192,43 @@ export function Dashboard() {
           >
             + Iniciar nova construção
           </Button>
+        </div>
+
+        {/* Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <MetricCard label="Projetos ativos" value={activeProjects} color="default" />
+          <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} color="primary" />
+          <MetricCard
+            label="IA hoje"
+            value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`}
+            sub={`${aiUsagePct}% usado`}
+            color={aiUsagePct >= 90 ? "primary" : "blue"}
+          />
+          <MetricCard label="Plano" value={permissions.planName} sub="Ver planos →" color="green" />
+        </div>
+
+        {/* Shortcuts */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          {SHORTCUTS.map((s) => {
+            const locked = s.planRequired && !permissions.hasAiAdvisor;
+            const href = locked ? "/pricing" : (s.href ?? "/pricing");
+            return (
+              <Link key={s.label} href={href}>
+                <div className="bg-card border border-card-border rounded-xl p-4 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer group">
+                  <div className="text-xl mb-2">{s.icon}</div>
+                  <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{s.label}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {locked ? "Plano Avançado" : s.desc}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Projects grid */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-xl text-foreground">Seus projetos</h2>
         </div>
 
         {isLoading ? (
@@ -202,34 +273,34 @@ export function Dashboard() {
 
       {/* New project dialog */}
       <Dialog open={showNew} onOpenChange={setShowNew}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-xl">Iniciar nova construção</DialogTitle>
+            <DialogTitle className="font-serif text-xl">Nova construção</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
+          <div className="space-y-4 pt-2">
             <div>
-              <Label htmlFor="project-name" className="text-sm font-medium">Nome do projeto</Label>
+              <Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label>
               <Input
-                id="project-name"
-                placeholder="Ex: App de gestão de finanças pessoais"
+                id="proj-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={e => setName(e.target.value)}
+                placeholder="Ex: App de delivery para pets"
                 className="mt-1.5"
                 data-testid="input-project-name"
               />
             </div>
             <div>
-              <Label htmlFor="project-briefing" className="text-sm font-medium">Briefing inicial</Label>
+              <Label htmlFor="proj-briefing" className="text-sm font-medium">Briefing inicial</Label>
               <Textarea
-                id="project-briefing"
-                placeholder="Descreva sua ideia: qual problema resolve, para quem, e qual é o seu diferencial. Seja específico."
+                id="proj-briefing"
                 value={briefing}
-                onChange={(e) => setBriefing(e.target.value)}
+                onChange={e => setBriefing(e.target.value)}
+                placeholder="Descreva sua ideia, o problema que resolve, o público-alvo e diferenciais. Quanto mais detalhe, melhores os artefatos..."
                 className="mt-1.5 min-h-[120px]"
                 data-testid="textarea-project-briefing"
               />
             </div>
-            <div className="flex gap-3 justify-end pt-2">
+            <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setShowNew(false)}>Cancelar</Button>
               <Button
                 onClick={handleCreate}

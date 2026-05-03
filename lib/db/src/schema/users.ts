@@ -14,6 +14,8 @@ export const usersTable = pgTable("users", {
   stripeSubscriptionStatus: text("stripe_subscription_status"), // active | canceled | past_due | etc
   isAdmin: boolean("is_admin").notNull().default(false),
   isSuperuser: boolean("is_superuser").notNull().default(false),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
+  lgpdConsentAt: timestamp("lgpd_consent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
