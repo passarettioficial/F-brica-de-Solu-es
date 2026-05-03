@@ -186,33 +186,62 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <OnboardingTour onComplete={handleTourComplete} />
-      <header className="border-b border-border/60 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5"><img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Logo" className="w-6 h-6 rounded-md" /><span className="font-serif text-base font-semibold text-foreground tracking-tight">Fabrica</span></Link>
-          <nav className="flex items-center gap-1"><ThemeToggle /><Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">{permissions.planName}</Link><Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">Assinatura</Link>{permissions.isAdmin && <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all font-medium" data-testid="link-admin">Admin</Link>}<NotificationBell /><Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all" data-testid="link-settings">{user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}</Link></nav>
+      <header className="border-b border-border/60 bg-background/75 backdrop-blur-xl sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Logo" className="w-7 h-7 rounded-xl bg-card ring-1 ring-border/60" />
+            <span className="font-serif text-base font-semibold text-foreground tracking-tight">Fabrica</span>
+          </Link>
+          <nav className="flex items-center gap-1">
+            <ThemeToggle />
+            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all">{permissions.planName}</Link>
+            <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all">Assinatura</Link>
+            {permissions.isAdmin && <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all font-medium" data-testid="link-admin">Admin</Link>}
+            <NotificationBell />
+            <Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all" data-testid="link-settings">{user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}</Link>
+          </nav>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <p className="text-xs font-mono text-primary uppercase tracking-[0.18em] mb-1.5">PAINEL DE CONTROLE</p>
-            <h1 className="text-3xl font-serif text-foreground">{user?.firstName ? `Ola, ${user.firstName}.` : "Bem-vindo."}</h1>
-            <p className="text-muted-foreground text-sm mt-1">{projects.length === 0 ? "Nenhum projeto ainda — comece criando o seu." : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}</p>
-          </div>
-          <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold" data-testid="button-new-project">+ Nova construcao</Button>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="grid lg:grid-cols-[1.3fr_0.7fr] gap-8">
+          <section>
+            <div className="flex items-start justify-between mb-8">
+              <div>
+                <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-1.5">PAINEL</p>
+                <h1 className="text-3xl font-serif text-foreground">{user?.firstName ? `Ola, ${user.firstName}.` : "Bem-vindo."}</h1>
+                <p className="text-muted-foreground text-sm mt-1">{projects.length === 0 ? "Nenhum projeto ainda — comece criando o seu." : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}</p>
+              </div>
+              <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold rounded-full" data-testid="button-new-project">+ Nova construcao</Button>
+            </div>
+            {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
+            {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
+            {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <MetricCard label="Projetos ativos" value={activeProjects} variant="default" />
+              <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="accent" />
+              <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
+              <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="link" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">{SHORTCUTS.map((s) => { const locked = s.planRequired && !permissions.hasAiAdvisor; const href = locked ? "/pricing" : (s.href ?? "/pricing"); return <Link key={s.label} href={href}><div className="glass-card rounded-2xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>; })}</div>
+            <div className="flex items-center justify-between mb-5"><div><p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p><h2 className="font-serif text-xl text-foreground">Suas construcoes</h2></div>{projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">+ Novo</button>}</div>
+            {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-44" />)}</div> : projects.length === 0 ? <EmptyState onNew={() => setShowNew(true)} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{projects.map((project) => { const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active"; return <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}><div className="glass-card rounded-2xl p-5 cursor-pointer group h-full relative overflow-hidden"><div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" /><div className="flex items-start justify-between mb-3"><h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3></div><div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div><div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider"><span>{project.completedPhases}/6 fases</span><span>{Math.round((project.completedPhases / 6) * 100)}%</span></div><ProgressBar completed={project.completedPhases} /></div></Link>; })}</div>}
+          </section>
+          <aside className="space-y-4 lg:pt-[72px]">
+            <div className="glass-card rounded-[1.75rem] p-5">
+              <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-2">Atalho visual</p>
+              <h3 className="font-serif text-2xl text-foreground">Interface mais limpa</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">Blocos altos, bordas suaves e leitura mais direta para parecer um produto SaaS moderno.</p>
+            </div>
+            <div className="glass-card rounded-[1.75rem] p-5">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em] mb-3">Status</p>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between"><span className="text-muted-foreground">Projetos</span><span className="font-medium text-foreground">{projects.length}</span></div>
+                <div className="flex items-center justify-between"><span className="text-muted-foreground">Fases concluidas</span><span className="font-medium text-foreground">{projects.reduce((s, p) => s + p.completedPhases, 0)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-muted-foreground">IA hoje</span><span className="font-medium text-foreground">{dashboard?.dailyAiUsage ?? 0}/{dashboard?.dailyAiLimit ?? 2}</span></div>
+              </div>
+            </div>
+          </aside>
         </div>
-        {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
-        {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
-        {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <MetricCard label="Projetos ativos" value={activeProjects} variant="default" />
-          <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="accent" />
-          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
-          <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="link" />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">{SHORTCUTS.map((s) => { const locked = s.planRequired && !permissions.hasAiAdvisor; const href = locked ? "/pricing" : (s.href ?? "/pricing"); return <Link key={s.label} href={href}><div className="glass-card rounded-xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>; })}</div>
-        <div className="flex items-center justify-between mb-5"><div><p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p><h2 className="font-serif text-xl text-foreground">Suas construcoes</h2></div>{projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">+ Novo</button>}</div>
-        {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-xl p-5 animate-pulse h-44" />)}</div> : projects.length === 0 ? <EmptyState onNew={() => setShowNew(true)} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{projects.map((project) => { const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active"; return <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}><div className="glass-card rounded-xl p-5 cursor-pointer group h-full relative overflow-hidden"><div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" /><div className="flex items-start justify-between mb-3"><h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3></div><div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div><div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider"><span>{project.completedPhases}/6 fases</span><span>{Math.round((project.completedPhases / 6) * 100)}%</span></div><ProgressBar completed={project.completedPhases} /></div></Link>; })}</div>}
       </main>
       <Dialog open={showNew} onOpenChange={(open) => { setShowNew(open); if (!open) setSelectedTemplate(null); }}>
         <DialogContent className="sm:max-w-lg">
