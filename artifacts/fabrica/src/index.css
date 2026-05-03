@@ -55,6 +55,8 @@
 :root {
   /* Brandbook: cool off-white background, carvão #12110F foreground */
   --background: 220 20% 97%;
+  --background-elevated: 0 0% 100%;
+  --background-soft: 225 55% 95%;
   --foreground: 222 25% 10%;
   --card: 0 0% 100%;
   --card-foreground: 222 25% 10%;
@@ -84,6 +86,8 @@
 .dark {
   /* Brandbook dark: azul profundo #0F1F5C base */
   --background: 225 60% 8%;
+  --background-elevated: 225 42% 12%;
+  --background-soft: 225 30% 16%;
   --foreground: 37 15% 94%;
   --card: 225 48% 12%;
   --card-foreground: 37 15% 94%;
@@ -107,6 +111,20 @@
   --ring: 224 75% 60%;
 }
 
+body {
+  background:
+    radial-gradient(circle at top left, hsl(var(--primary) / 0.12), transparent 32%),
+    radial-gradient(circle at top right, hsl(var(--accent) / 0.12), transparent 28%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background-soft)) 100%);
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, hsl(var(--primary) / 0.22), transparent 30%),
+    radial-gradient(circle at top right, hsl(var(--accent) / 0.16), transparent 24%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background-soft)) 100%);
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -121,8 +139,8 @@
 }
 
 .glass-card {
-  background: hsl(var(--card) / 0.94);
-  border: 1px solid hsl(var(--border) / 0.95);
+  background: linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--background-elevated) / 0.92));
+  border: 1px solid hsl(var(--border) / 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 10px 30px rgba(0,0,0,0.05);
@@ -134,9 +152,9 @@
   border-color: hsl(var(--primary) / 0.28);
 }
 .dark .glass-card {
-  background: hsl(var(--card) / 0.82);
-  border-color: hsl(var(--border) / 0.8);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 10px 26px rgba(0,0,0,0.2);
+  background: linear-gradient(180deg, hsl(var(--card) / 0.94), hsl(var(--background-elevated) / 0.9));
+  border-color: hsl(var(--border) / 0.85);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25), 0 14px 32px rgba(0,0,0,0.28);
 }
 .dark .glass-card:hover {
   border-color: hsl(var(--primary) / 0.32);
@@ -165,12 +183,21 @@
   pointer-events: none;
   background:
     radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.1), transparent 72%),
-    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.04), transparent 60%);
+    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.08), transparent 60%);
 }
 .dark .hero-glow {
   background:
-    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.16), transparent 72%),
-    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.08), transparent 60%);
+    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.26), transparent 72%),
+    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.16), transparent 60%);
+}
+
+.surface-panel {
+  background: linear-gradient(180deg, hsl(var(--secondary) / 0.65), hsl(var(--card) / 0.92));
+  border: 1px solid hsl(var(--border) / 0.85);
+}
+
+.dark .surface-panel {
+  background: linear-gradient(180deg, hsl(var(--secondary) / 0.34), hsl(var(--card) / 0.92));
 }
 
 .theme-toggle-button {

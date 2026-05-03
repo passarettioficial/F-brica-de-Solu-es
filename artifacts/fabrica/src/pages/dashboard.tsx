@@ -128,7 +128,7 @@ const METRIC_SUB_COLOR: Record<MetricVariant, string> = {
 
 function MetricCard({ label, value, sub, variant = "default" }: { label: string; value: string | number; sub?: string; variant?: MetricVariant }) {
   return (
-    <div className="bg-card border border-card-border rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/20">
+    <div className="surface-panel rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/20">
       <div className={`text-2xl font-bold font-serif mb-0.5 ${METRIC_VALUE_COLOR[variant]}`}>{value}</div>
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       {sub && <div className={`text-xs mt-0.5 font-mono ${METRIC_SUB_COLOR[variant]}`}>{sub}</div>}
@@ -227,12 +227,12 @@ export function Dashboard() {
             {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-44" />)}</div> : projects.length === 0 ? <EmptyState onNew={() => setShowNew(true)} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{projects.map((project) => { const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active"; return <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}><div className="glass-card rounded-2xl p-5 cursor-pointer group h-full relative overflow-hidden"><div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" /><div className="flex items-start justify-between mb-3"><h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3></div><div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div><div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider"><span>{project.completedPhases}/6 fases</span><span>{Math.round((project.completedPhases / 6) * 100)}%</span></div><ProgressBar completed={project.completedPhases} /></div></Link>; })}</div>}
           </section>
           <aside className="space-y-4 lg:pt-[72px]">
-            <div className="glass-card rounded-[1.75rem] p-5">
+            <div className="surface-panel rounded-[1.75rem] p-5">
               <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-2">Atalho visual</p>
               <h3 className="font-serif text-2xl text-foreground">Interface mais limpa</h3>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">Blocos altos, bordas suaves e leitura mais direta para parecer um produto SaaS moderno.</p>
             </div>
-            <div className="glass-card rounded-[1.75rem] p-5">
+            <div className="surface-panel rounded-[1.75rem] p-5">
               <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em] mb-3">Status</p>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between"><span className="text-muted-foreground">Projetos</span><span className="font-medium text-foreground">{projects.length}</span></div>
