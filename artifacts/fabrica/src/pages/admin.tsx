@@ -724,7 +724,7 @@ function ThemeTab() {
   const [theme, setTheme] = useState({
     primaryH: "16", primaryS: "72", primaryL: "42",
     backgroundH: "40", backgroundS: "33", backgroundL: "98",
-    fontSerif: "Playfair Display",
+    fontSerif: "Space Grotesk",
     fontSans: "Inter",
     borderRadius: "0.5",
     appName: "Fábrica de Soluções",
@@ -746,7 +746,7 @@ function ThemeTab() {
         backgroundH: get("theme_background_h", "40"),
         backgroundS: get("theme_background_s", "33"),
         backgroundL: get("theme_background_l", "98"),
-        fontSerif: get("theme_font_serif", "Playfair Display"),
+        fontSerif: get("theme_font_serif", "Space Grotesk"),
         fontSans: get("theme_font_sans", "Inter"),
         borderRadius: get("theme_border_radius", "0.5"),
         appName: get("app_name", "Fábrica de Soluções"),

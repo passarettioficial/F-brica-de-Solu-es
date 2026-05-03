@@ -109,7 +109,7 @@ export function Home() {
             <h1 className="text-6xl md:text-8xl font-serif text-foreground leading-[0.95] tracking-tight mb-8">
               A linha de<br />
               montagem para<br />
-              <span className="text-primary italic">founders serios</span>.
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders serios</span>.
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-sans leading-relaxed">
@@ -250,7 +250,7 @@ export function Home() {
             <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-6">PRONTO PARA COMECAR?</p>
             <h2 className="text-4xl md:text-6xl font-serif text-foreground mb-6 leading-tight">
               Sua ideia merece<br />
-              <span className="text-primary italic">um processo serio</span>.
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">um processo serio</span>.
             </h2>
             <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
               Comece hoje. Crie seu primeiro projeto em menos de 2 minutos.

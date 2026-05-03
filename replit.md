@@ -52,7 +52,7 @@ AI-powered web app for founders. 6 sequential phases take a product from idea to
 **Dark mode:** Base `225 60% 8%` (azul profundo), primário `224 75% 60%` (azul mais claro para legibilidade)
 
 **Componentes:**
-- **Typography**: Oversized Playfair Display serif + Inter mono para labels/tags
+- **Typography**: `--font-sans: Inter` (corpo), `--font-serif: Space Grotesk` (headings h1–h6, `font-medium tracking-tight`). Google Fonts carrega `Inter:wght@400;500;600;700;800` + `Space+Grotesk:wght@400;500;700`. Ênfase em headings via underline laranja (`decoration-accent decoration-4`), não italic (Space Grotesk não tem variante itálica real).
 - **Blueprint aesthetic**: Grid 48px no hero, corner bracket marks, labels monospace uppercase
 - **Glass cards**: `glass-card` class — backdrop blur + card/border tokens, hover lifts + borda azul no hover
 - **Dark sections**: Testimonials em `bg-foreground` para ritmo de contraste

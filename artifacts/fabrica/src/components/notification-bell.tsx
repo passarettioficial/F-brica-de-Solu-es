@@ -24,9 +24,9 @@ function timeAgo(dateStr: string): string {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  info: "bg-blue-500",
+  info: "bg-primary",
   success: "bg-green-500",
-  warning: "bg-amber-500",
+  warning: "bg-accent",
   alert: "bg-red-500",
 };
 

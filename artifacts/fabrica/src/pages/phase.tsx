@@ -69,7 +69,7 @@ function ScorePotencial({ content }: { content: string }) {
   const rec = data.recomendacao as string;
   const recColors: Record<string, string> = {
     "AVANCAR": "bg-primary/10 text-primary border-primary/30",
-    "PIVOTAR": "bg-yellow-50 text-yellow-700 border-yellow-200",
+    "PIVOTAR": "bg-accent/10 text-accent-foreground border-accent/30",
     "ABANDONAR": "bg-red-50 text-red-600 border-red-200",
   };
 
