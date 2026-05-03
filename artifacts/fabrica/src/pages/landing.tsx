@@ -153,9 +153,9 @@ export function LandingPage() {
                 <Link href={`${base}/pricing`}>
                   <Button variant="outline">Ver planos</Button>
                 </Link>
-            <Link href={`${base}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground self-center">
-              Ir ao app →
-            </Link>
+                <Link href={`${base}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground self-center">
+                  Ir ao app →
+                </Link>
               </div>
             </div>
             <div className="mt-6 grid gap-3 md:grid-cols-5">
