@@ -16,7 +16,7 @@ export function UxStrategyCard() {
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Proxima sprint</p>
           <h3 className="font-serif text-lg text-foreground">Aha, retencao e protecao de complexidade</h3>
         </div>
-        <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Ver plano de escala →</Link>
+        <Link href="/pricing" className="text-xs text-primary hover:text-primary/80 transition-colors">Ver plano de escala →</Link>
       </div>
       <div className="space-y-2">
         {ITEMS.map((item) => (

@@ -116,11 +116,11 @@
 }
 
 .glass-card {
-  @apply border border-white/10 bg-white/60 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.06)];
+  @apply border border-border/70 bg-card/80 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.06)];
 }
 
 .dark .glass-card {
-  @apply border-white/10 bg-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.25)];
+  @apply border-border/70 bg-card/75 shadow-[0_10px_40px_rgba(0,0,0,0.25)];
 }
 
 .theme-toggle-button {
