@@ -76,10 +76,10 @@ export function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 sticky top-0 z-10">
+      <header className="border-b border-border/70 bg-background/90 sticky top-0 z-10 backdrop-blur-xl">
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
+            <Link href="/dashboard" className="text-muted-foreground hover:text-primary text-sm transition-colors">
               Painel
             </Link>
             <span className="text-muted-foreground text-sm">/</span>
@@ -96,12 +96,19 @@ export function SettingsPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-10">
-        <h1 className="text-3xl font-serif text-foreground mb-8">Configurações da conta</h1>
+        <div className="mb-8 rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <p className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-2">PAINEL DE CONFIGURAÇÕES</p>
+          <h1 className="text-3xl font-serif text-foreground">Configurações da conta</h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl">Ajuste seu perfil, plano e preferências com a linguagem visual da marca: azul estrutural, laranja de ação e superfícies claras.</p>
+        </div>
 
         <div className="space-y-6">
           {/* Profile */}
-          <div className="bg-card border border-card-border rounded-xl p-6">
-            <h2 className="font-serif text-lg mb-4">Perfil</h2>
+          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-serif text-lg">Perfil</h2>
+              <span className="text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">essencial</span>
+            </div>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="display-name" className="text-sm font-medium">Nome de exibição</Label>
@@ -132,7 +139,7 @@ export function SettingsPage() {
           </div>
 
           {/* AI Usage */}
-          <div className="bg-card border border-card-border rounded-xl p-6">
+          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
             <h2 className="font-serif text-lg mb-4">Uso de IA hoje</h2>
             {isLoading ? (
               <div className="animate-pulse h-8 bg-muted rounded" />
@@ -153,7 +160,7 @@ export function SettingsPage() {
           </div>
 
           {/* Plan Management */}
-          <div className="bg-card border border-card-border rounded-xl p-6">
+          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif text-lg">Plano atual</h2>
               <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
@@ -167,7 +174,7 @@ export function SettingsPage() {
                 { label: "Download de artefatos", value: permissions.canDownload ? "✓" : "✕" },
                 { label: "AI Advisor", value: permissions.hasAiAdvisor ? "✓" : "✕" },
               ].map(item => (
-                <div key={item.label} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
+                <div key={item.label} className="flex items-center justify-between bg-secondary/60 rounded-lg px-3 py-2 border border-border/60">
                   <span className="text-muted-foreground text-xs">{item.label}</span>
                   <span className={`text-xs font-medium ${item.value === "✕" ? "text-muted-foreground" : "text-foreground"}`}>{item.value}</span>
                 </div>
@@ -178,7 +185,7 @@ export function SettingsPage() {
                 <Button variant="outline" size="sm">Gerenciar assinatura</Button>
               </Link>
               <Link href="/pricing">
-                <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
+                <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                   {permissions.plan === "free" ? "Fazer upgrade" : "Mudar plano"}
                 </Button>
               </Link>
@@ -186,30 +193,30 @@ export function SettingsPage() {
           </div>
 
           {/* Shortcuts */}
-          <div className="bg-card border border-card-border rounded-xl p-6">
+          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
             <h2 className="font-serif text-lg mb-4">Atalhos</h2>
             <div className="grid grid-cols-2 gap-2">
               <Link href="/atendimento">
-                <div className="flex items-center gap-2 bg-muted/30 hover:bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer transition-colors">
+                <div className="flex items-center gap-2 bg-secondary/60 hover:bg-primary/10 rounded-lg px-3 py-2.5 cursor-pointer transition-colors border border-border/60">
                   <span>💬</span>
                   <span className="text-sm">Atendimento</span>
                 </div>
               </Link>
               <Link href="/privacidade">
-                <div className="flex items-center gap-2 bg-muted/30 hover:bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer transition-colors">
+                <div className="flex items-center gap-2 bg-secondary/60 hover:bg-primary/10 rounded-lg px-3 py-2.5 cursor-pointer transition-colors border border-border/60">
                   <span>🔒</span>
                   <span className="text-sm">Privacidade</span>
                 </div>
               </Link>
               <button
                 onClick={() => { resetOnboarding(); window.location.href = `${basePath}/dashboard`; }}
-                className="flex items-center gap-2 bg-muted/30 hover:bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer transition-colors text-left"
+                className="flex items-center gap-2 bg-secondary/60 hover:bg-primary/10 rounded-lg px-3 py-2.5 cursor-pointer transition-colors text-left border border-border/60"
               >
                 <span>🎯</span>
                 <span className="text-sm">Ver tour de boas-vindas</span>
               </button>
               <Link href="/billing">
-                <div className="flex items-center gap-2 bg-muted/30 hover:bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer transition-colors">
+                <div className="flex items-center gap-2 bg-secondary/60 hover:bg-primary/10 rounded-lg px-3 py-2.5 cursor-pointer transition-colors border border-border/60">
                   <span>💳</span>
                   <span className="text-sm">Faturamento</span>
                 </div>
@@ -218,7 +225,7 @@ export function SettingsPage() {
           </div>
 
           {/* LGPD / Privacy */}
-          <div className="bg-card border border-card-border rounded-xl p-6">
+          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
             <h2 className="font-serif text-lg mb-1">Privacidade e LGPD</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Seus dados são protegidos conforme a Lei 13.709/2018 (LGPD). Você pode exercer seus direitos a qualquer momento.
@@ -226,13 +233,13 @@ export function SettingsPage() {
 
             <div className="space-y-2 mb-4">
               <Link href="/privacidade">
-                <div className="flex items-center justify-between bg-muted/30 hover:bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer transition-colors">
+                <div className="flex items-center justify-between bg-secondary/60 hover:bg-primary/10 rounded-lg px-3 py-2.5 cursor-pointer transition-colors border border-border/60">
                   <span className="text-sm">Ver política de privacidade completa</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               </Link>
               <Link href="/atendimento">
-                <div className="flex items-center justify-between bg-muted/30 hover:bg-muted/60 rounded-lg px-3 py-2.5 cursor-pointer transition-colors">
+                <div className="flex items-center justify-between bg-secondary/60 hover:bg-primary/10 rounded-lg px-3 py-2.5 cursor-pointer transition-colors border border-border/60">
                   <span className="text-sm">Solicitar portabilidade de dados</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
@@ -244,7 +251,7 @@ export function SettingsPage() {
             ) : (
               <button
                 onClick={handleDeleteRequest}
-                className="text-sm text-red-600 hover:text-red-700 underline transition-colors"
+                className="text-sm text-accent-foreground hover:text-primary underline transition-colors font-medium"
               >
                 Solicitar exclusão de todos os meus dados
               </button>
