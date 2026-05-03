@@ -212,27 +212,27 @@ export function PricingPage() {
             <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Plano avançado</h2>
           </div>
           <div className="glass-card rounded-2xl p-8">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">🤖</div>
-            <div>
-              <h3 className="font-serif text-xl mb-2">O que é o AI Advisor?</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                O AI Advisor é um consultor de IA exclusivo do plano Avançado. Diferente da geração de artefatos, ele lê todos os seus artefatos já gerados — seu Lean Canvas, PRD, arquitetura, personas — e responde perguntas específicas sobre o <em>seu</em> produto.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { q: "\"Qual é o maior risco do meu modelo de pricing?\"", icon: "💰" },
-                  { q: "\"Como eu deveria priorizar o backlog dado meu SWOT?\"", icon: "📋" },
-                  { q: "\"Quais são os gaps de segurança na minha arquitetura?\"", icon: "🔒" },
-                ].map((ex, i) => (
-                  <div key={i} className="bg-muted/40 rounded-lg p-3">
-                    <div className="text-xl mb-1">{ex.icon}</div>
-                    <p className="text-xs text-foreground italic">{ex.q}</p>
-                  </div>
-                ))}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">🤖</div>
+              <div>
+                <h3 className="font-serif text-xl mb-2">O que é o AI Advisor?</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                  O AI Advisor é um consultor de IA exclusivo do plano Avançado. Diferente da geração de artefatos, ele lê todos os seus artefatos já gerados — seu Lean Canvas, PRD, arquitetura, personas — e responde perguntas específicas sobre o <em>seu</em> produto.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[
+                    { q: "\"Qual é o maior risco do meu modelo de pricing?\"", icon: "💰" },
+                    { q: "\"Como eu deveria priorizar o backlog dado meu SWOT?\"", icon: "📋" },
+                    { q: "\"Quais são os gaps de segurança na minha arquitetura?\"", icon: "🔒" },
+                  ].map((ex, i) => (
+                    <div key={i} className="bg-muted/40 rounded-lg p-3">
+                      <div className="text-xl mb-1">{ex.icon}</div>
+                      <p className="text-xs text-foreground italic">{ex.q}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
       </main>
