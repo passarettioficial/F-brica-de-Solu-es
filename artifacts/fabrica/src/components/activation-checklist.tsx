@@ -94,7 +94,7 @@ export function ActivationChecklist({
           return (
             <div
               key={step.id}
-              className={`flex items-start gap-3 p-3 rounded-xl transition-all ${step.done ? "opacity-50" : isNext ? "bg-primary/5 border border-primary/20" : "opacity-60"}`}
+            className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${step.done ? "bg-secondary/40 border-border/70 opacity-60" : isNext ? "bg-primary/5 border-primary/20" : "bg-background border-border/70 opacity-80"}`}
             >
               <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border mt-0.5 ${step.done ? "bg-primary border-primary" : isNext ? "border-primary/50 bg-background" : "border-muted-foreground/30 bg-background"}`} aria-hidden="true">
                 {step.done ? (

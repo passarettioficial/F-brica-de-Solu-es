@@ -115,8 +115,8 @@ const METRIC_STYLES: Record<MetricVariant, { wrap: string; value: string; label:
   slate:      { wrap: "bg-secondary/70 border border-primary/15 dark:bg-blue-950/40 dark:border-blue-800",      value: "text-primary dark:text-blue-200",         label: "text-primary/80 dark:text-blue-400",      sub: "text-primary/60 dark:text-blue-500" },
   /* brand laranja #FF8C42 family */
   terracotta: { wrap: "bg-accent/10 border border-accent/25 dark:bg-orange-950/40 dark:border-orange-800",     value: "text-accent dark:text-orange-300",        label: "text-accent/80 dark:text-orange-500",     sub: "text-accent/60 dark:text-orange-600" },
-  amber:      { wrap: "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800",        value: "text-amber-700 dark:text-amber-400",      label: "text-amber-600/70 dark:text-amber-500",   sub: "text-amber-400 dark:text-amber-600" },
-  emerald:    { wrap: "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800",value: "text-emerald-700 dark:text-emerald-400",  label: "text-emerald-600/70 dark:text-emerald-500",sub: "text-emerald-400 dark:text-emerald-600" },
+  amber:      { wrap: "bg-secondary/60 border border-primary/10 dark:bg-blue-950/30 dark:border-blue-800",     value: "text-primary dark:text-blue-200",         label: "text-primary/70 dark:text-blue-400",      sub: "text-primary/55 dark:text-blue-500" },
+  emerald:    { wrap: "bg-secondary/60 border border-primary/10 dark:bg-blue-950/30 dark:border-blue-800",     value: "text-primary dark:text-blue-200",         label: "text-primary/70 dark:text-blue-400",      sub: "text-primary/55 dark:text-blue-500" },
   danger:     { wrap: "bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800",                value: "text-red-700 dark:text-red-400",          label: "text-red-600/70 dark:text-red-500",       sub: "text-red-400 dark:text-red-600" },
 };
 
