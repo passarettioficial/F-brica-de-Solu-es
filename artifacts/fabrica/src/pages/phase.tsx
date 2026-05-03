@@ -109,6 +109,7 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   LEAN_CANVAS: { label: "Lean Canvas", description: "9 blocos do modelo de negocio" },
   JTBD: { label: "Jobs to Be Done", description: "O que o cliente realmente quer realizar" },
   ANALISE_COMPETITIVA: { label: "Analise Competitiva", description: "5 concorrentes com tabela comparativa" },
+  PADROES_MORTALIDADE: { label: "Padroes de Mortalidade", description: "Casos comparáveis e sinais de risco por segmento" },
   SWOT: { label: "Analise SWOT", description: "Forcas, fraquezas, oportunidades e ameacas" },
   DIMENSIONAMENTO_MERCADO: { label: "TAM / SAM / SOM", description: "Tamanho real do mercado com metodologia" },
   VALIDACAO_RAPIDA: { label: "Script de Validacao", description: "10 perguntas de entrevista para validar a hipotese" },
@@ -185,6 +186,7 @@ function ArtifactCard({
 
   const isLeanCanvas = phaseNumber === 1 && artifact.artifactKey === "LEAN_CANVAS";
   const isScorePotencial = phaseNumber === 1 && artifact.artifactKey === "SCORE_POTENCIAL";
+  const isFailurePatterns = phaseNumber === 1 && artifact.artifactKey === "PADROES_MORTALIDADE";
   const meta = ARTIFACT_LABELS[artifact.artifactKey];
   const isEmpty = !artifact.content?.trim();
 
@@ -252,6 +254,16 @@ function ArtifactCard({
                 <LeanCanvas content={artifact.content} />
               ) : isScorePotencial ? (
                 <ScorePotencial content={artifact.content} />
+              ) : isFailurePatterns ? (
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
+                    <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">Camada opcional</p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      Padrões de falha, casos comparáveis e sinais de risco para ajudar na decisão sem inflar a análise principal.
+                    </p>
+                  </div>
+                  <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{artifact.content}</div>
+                </div>
               ) : (
                 <div
                   className="text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto"
