@@ -21,9 +21,9 @@ import { ActivationChecklist } from "@/components/activation-checklist";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const EXAMPLE_TEMPLATES = [
-  { id: "saas", label: "SaaS B2B", icon: "💼", name: "Plataforma de gestao para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e medias empresas gerenciarem seus projetos e clientes. O problema: PMEs perdem contratos por falta de acompanhamento. Publico-alvo: donos de empresas de 5-50 funcionarios. Diferencial: simplicidade e preco acessivel (R$99/mes). Modelo: freemium com limite de projetos." },
-  { id: "app", label: "App de Consumo", icon: "📱", name: "App de saude e habitos", briefing: "Quero criar um app mobile para ajudar pessoas a criarem habitos saudaveis de forma gamificada. O problema: as pessoas desistem das metas em menos de 30 dias. Publico-alvo: adultos 25-40 anos que querem ser mais produtivos. Diferencial: social accountability — voce so avanca se um amigo confirmar. Modelo: assinatura anual R$199." },
-  { id: "marketplace", label: "Marketplace", icon: "🛒", name: "Marketplace de servicos criativos", briefing: "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de contedo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiaveis. Publico-alvo: startups e agencias de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissao de 15% por transacao." },
+  { id: "saas", label: "SaaS B2B", icon: "💼", name: "Plataforma de gestão para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e médias empresas gerenciarem projetos, clientes e receitas. Problema: PMEs perdem contratos por falta de acompanhamento. Público-alvo: donos de empresas de 5-50 funcionários. Diferencial: simplicidade e preço acessível (R$99/mês). Modelo: freemium com limite de projetos." },
+  { id: "app", label: "App de Consumo", icon: "📱", name: "App de saúde e hábitos", briefing: "Quero criar um app mobile para ajudar pessoas a criarem hábitos saudáveis de forma gamificada. Problema: as pessoas desistem das metas em menos de 30 dias. Público-alvo: adultos 25-40 anos que querem ser mais produtivos. Diferencial: social accountability — você só avança se um amigo confirmar. Modelo: assinatura anual R$199." },
+  { id: "marketplace", label: "Marketplace", icon: "🛒", name: "Marketplace de serviços criativos", briefing: "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de conteúdo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiáveis. Público-alvo: startups e agências de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissão de 15% por transação." },
 ];
 
 function PhaseBadge({ status, phaseNumber }: { status: string; phaseNumber: number }) {
@@ -229,10 +229,11 @@ export function Dashboard() {
                 {[
                   { n: 1, title: "Criar sua conta", desc: "Voce ja está aqui.", done: true },
                   { n: 2, title: "Criar o primeiro projeto", desc: "Descreva sua ideia e deixe a IA trabalhar.", done: projects.length > 0, cta: "Criar projeto" },
-                  { n: 3, title: "Gerar artefatos com IA", desc: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: (dashboard?.dailyAiUsage ?? 0) > 0 },
-                  { n: 4, title: "Concluir a Fase 1 — Ideação", desc: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed },
-                  { n: 5, title: "Chegar na metade — Fase 3", desc: "Produto definido com PRD, personas e roadmap.", done: phase3Completed },
-                  { n: 6, title: "Concluir as 6 fases", desc: "Da ideia ao lançamento — produto pronto.", done: allPhasesCompleted },
+                  { n: 3, title: "Usar um template", desc: "Comece por um modelo mais forte e mais rápido.", done: selectedTemplate !== null },
+                  { n: 4, title: "Gerar artefatos com IA", desc: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: (dashboard?.dailyAiUsage ?? 0) > 0 },
+                  { n: 5, title: "Concluir a Fase 1 — Ideação", desc: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed },
+                  { n: 6, title: "Chegar na metade — Fase 3", desc: "Produto definido com PRD, personas e roadmap.", done: phase3Completed },
+                  { n: 7, title: "Concluir as 6 fases", desc: "Da ideia ao lançamento — produto pronto.", done: allPhasesCompleted },
                 ].map((step) => (
                   <div key={step.n} className={`flex items-center gap-3 p-3 rounded-xl border ${step.done ? "bg-secondary/35 border-border/70" : "bg-background border-border/70"}`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border ${step.done ? "bg-primary border-primary text-white" : "border-border text-muted-foreground"}`}>{step.done ? "✓" : step.n}</div>
@@ -246,7 +247,7 @@ export function Dashboard() {
               </div>
             </div>
             {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
-            {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
+            {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} hasTemplates={selectedTemplate !== null} hasSharedProject={projects.length > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
             {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
             <div className="flex items-start justify-between mb-8">
               <div />

@@ -6,6 +6,8 @@ const DISMISSED_KEY = "fabrica_activation_dismissed";
 interface ActivationChecklistProps {
   hasProjects: boolean;
   hasAiUsage: boolean;
+  hasTemplates: boolean;
+  hasSharedProject: boolean;
   phase1Completed: boolean;
   phase3Completed: boolean;
   allPhasesCompleted: boolean;
@@ -15,6 +17,8 @@ interface ActivationChecklistProps {
 export function ActivationChecklist({
   hasProjects,
   hasAiUsage,
+  hasTemplates,
+  hasSharedProject,
   phase1Completed,
   phase3Completed,
   allPhasesCompleted,
@@ -43,6 +47,8 @@ export function ActivationChecklist({
     { id: "account", label: "Criar sua conta", description: "Voce ja esta aqui.", done: true },
     { id: "project", label: "Criar o primeiro projeto", description: "Descreva sua ideia e deixe a IA trabalhar.", done: hasProjects, cta: "Criar projeto" },
     { id: "ai", label: "Gerar artefatos com IA", description: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: hasAiUsage },
+    { id: "templates", label: "Usar um template", description: "Comece a partir de um modelo do produto.", done: hasTemplates },
+    { id: "share", label: "Compartilhar um projeto", description: "Convide alguém e gere contexto compartilhável.", done: hasSharedProject },
     { id: "phase1", label: "Concluir a Fase 1 — Ideacao", description: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed, href: hasProjects ? "/dashboard" : undefined },
     { id: "phase3", label: "Chegar na metade — Fase 3", description: "Produto definido com PRD, personas e roadmap.", done: phase3Completed },
     { id: "complete", label: "Concluir as 6 fases", description: "Da ideia ao lancamento — produto pronto.", done: allPhasesCompleted },
