@@ -286,7 +286,7 @@ function UsersTab() {
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       u.stripeSubscriptionStatus === "active"
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-primary/10 text-primary"
                         : "bg-muted text-muted-foreground"
                     }`}>
                       {u.stripeSubscriptionStatus ?? "—"}
@@ -480,7 +480,7 @@ function CouponsTab() {
                   {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("pt-BR") : "—"}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.active ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                     {c.active ? "Ativo" : "Inativo"}
                   </span>
                 </td>

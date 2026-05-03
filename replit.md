@@ -36,12 +36,13 @@ AI-powered web app for founders. 6 sequential phases take a product from idea to
 ### Visual Design Language (brandbook sprint — aplicado)
 
 **Paleta do Brandbook:**
-- Azul profundo: `#0F1F5C` → `--foreground` (dark mode base)
+- Azul profundo: `#0F1F5C` → base do dark mode
 - Azul principal: `#1A3FAB` → `--primary: 224 74% 39%` (botões primários, links, destaques)
 - Azul claro: `#EEF1FB` → `--secondary: 225 55% 95%` (superfícies, chips, atalhos)
 - Laranja destaque: `#FF8C42` → `--accent: 26 100% 63%` (CTAs de conversão na landing)
-- Off-white: `#F2F1EF` → `--background: 37 15% 94%`
-- Carvão: `#12110F` → `--foreground: 15 15% 7%`
+- Background: `--background: 220 20% 97%` (cool off-white azulado — sem bege/quente)
+- Foreground: `--foreground: 222 25% 10%` (quase preto com tom azul)
+- Muted fg: `--muted-foreground: 220 10% 46%` (cinza neutro, sem tom quente)
 
 **Hierarquia de botões:**
 - Landing/home CTA → `bg-accent text-accent-foreground` (laranja — "Começar gratis", "Iniciar construção")
