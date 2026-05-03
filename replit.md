@@ -33,15 +33,33 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 AI-powered web app for founders. 6 sequential phases take a product from idea to validated deploy.
 
-### Visual Design Language (latest sprint)
-- **Typography**: Oversized Playfair Display serif headlines + Inter mono for labels/tags
-- **Blueprint aesthetic**: Subtle 48px grid overlay on hero, corner bracket marks, monospace uppercase labels
-- **Glass cards**: `glass-card` class — backdrop blur + card/border tokens, hover lifts
-- **Dark sections**: Testimonials on `bg-foreground` for contrast rhythm
-- **Shimmer stat effect**: `.stat-shimmer` CSS animation on key numbers
-- **CTAs**: `bg-foreground text-background` (near-black button) for strong conversion hierarchy
-- **Dark mode**: Full token-based `.dark` class, applied via `ThemeToggle` + `localStorage`
-- **Removed**: `UxStrategyCard` and `VisualModeCard` are internal dev tools — not shown to users
+### Visual Design Language (brandbook sprint — aplicado)
+
+**Paleta do Brandbook:**
+- Azul profundo: `#0F1F5C` → `--foreground` (dark mode base)
+- Azul principal: `#1A3FAB` → `--primary: 224 74% 39%` (botões primários, links, destaques)
+- Azul claro: `#EEF1FB` → `--secondary: 225 55% 95%` (superfícies, chips, atalhos)
+- Laranja destaque: `#FF8C42` → `--accent: 26 100% 63%` (CTAs de conversão na landing)
+- Off-white: `#F2F1EF` → `--background: 37 15% 94%`
+- Carvão: `#12110F` → `--foreground: 15 15% 7%`
+
+**Hierarquia de botões:**
+- Landing/home CTA → `bg-accent text-accent-foreground` (laranja — "Começar gratis", "Iniciar construção")
+- Ações primárias no app → `bg-primary text-white` (azul — "Nova construção", "Criar projeto", "Entrar na Fase")
+- Destaque de upgrade → `bg-accent` (laranja — "Fazer upgrade")
+- Ações secundárias → `variant="outline"` (borda azul)
+
+**Dark mode:** Base `225 60% 8%` (azul profundo), primário `224 75% 60%` (azul mais claro para legibilidade)
+
+**Componentes:**
+- **Typography**: Oversized Playfair Display serif + Inter mono para labels/tags
+- **Blueprint aesthetic**: Grid 48px no hero, corner bracket marks, labels monospace uppercase
+- **Glass cards**: `glass-card` class — backdrop blur + card/border tokens, hover lifts + borda azul no hover
+- **Dark sections**: Testimonials em `bg-foreground` para ritmo de contraste
+- **Shimmer stat**: `.stat-shimmer` CSS animation — azul primário shimmer nos números
+- **MetricCards**: slate→azul família, terracotta→laranja família, amber/emerald/danger mantidos
+- **Dark mode**: Token-based `.dark` via `ThemeToggle` + `localStorage`
+- **Removed**: `UxStrategyCard` e `VisualModeCard` — ferramentas internas, não exibidas a usuários
 
 ### Artifacts
 

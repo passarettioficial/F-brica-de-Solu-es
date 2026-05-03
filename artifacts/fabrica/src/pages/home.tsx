@@ -83,7 +83,7 @@ export function Home() {
           <ThemeToggle />
           <Link href="/privacidade" className="text-muted-foreground hover:text-foreground text-sm px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all hidden md:inline-block">Privacidade</Link>
           <Link href="/sign-in" className="text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">Entrar</Link>
-          <Link href="/sign-up" className="bg-foreground text-background hover:bg-foreground/85 text-sm font-medium py-1.5 px-4 rounded-lg transition-colors ml-1">Comecar gratis</Link>
+          <Link href="/sign-up" className="bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-medium py-1.5 px-4 rounded-lg transition-colors ml-1 font-semibold">Comecar gratis</Link>
         </nav>
       </header>
 
@@ -133,7 +133,7 @@ export function Home() {
 
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
               <Link href="/sign-up">
-                <Button className="bg-foreground text-background hover:bg-foreground/85 text-base font-semibold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200">
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200">
                   Iniciar minha construcao →
                 </Button>
               </Link>
@@ -256,7 +256,7 @@ export function Home() {
               Comece hoje. Crie seu primeiro projeto em menos de 2 minutos.
             </p>
             <Link href="/sign-up">
-              <Button className="bg-foreground text-background hover:bg-foreground/85 text-lg font-semibold py-4 px-12 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 duration-200">
+              <Button className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-semibold py-4 px-12 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 duration-200">
                 Iniciar gratuitamente →
               </Button>
             </Link>

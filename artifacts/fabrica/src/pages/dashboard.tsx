@@ -65,7 +65,7 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
           <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider"><span>Fase {project.currentPhase} — {phaseName}</span><span>{project.completedPhases}/6</span></div>
           <ProgressBar completed={project.completedPhases} />
         </div>
-        <div className="mt-5"><Button size="sm" className="bg-foreground hover:bg-foreground/85 text-background text-xs font-semibold transition-all group-hover:-translate-y-0.5 duration-200">Entrar na Fase {project.currentPhase} →</Button></div>
+        <div className="mt-5"><Button size="sm" className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold transition-all group-hover:-translate-y-0.5 duration-200">Entrar na Fase {project.currentPhase} →</Button></div>
       </div>
     </Link>
   );
@@ -102,7 +102,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
       <div className="grid grid-cols-3 gap-4 mb-10 max-w-lg w-full">
         {[{ step: "01", label: "Descreva sua ideia", desc: "Leva menos de 2 minutos" }, { step: "02", label: "IA gera os artefatos", desc: "PRD, personas, arquitetura..." }, { step: "03", label: "Avance fase a fase", desc: "Ate o lancamento" }].map((item, i) => <div key={i} className="glass-card rounded-xl p-4 text-left"><div className="text-xs font-mono text-primary/60 mb-2">{item.step}</div><div className="text-sm font-semibold text-foreground mb-0.5 leading-snug">{item.label}</div><div className="text-xs text-muted-foreground">{item.desc}</div></div>)}
       </div>
-      <Button onClick={onNew} className="bg-foreground hover:bg-foreground/85 text-background px-8 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">Criar meu primeiro projeto →</Button>
+      <Button onClick={onNew} className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">Criar meu primeiro projeto →</Button>
       <p className="text-xs font-mono text-muted-foreground/60 mt-4 uppercase tracking-wider">Sem cartao de credito</p>
     </div>
   );
@@ -111,8 +111,10 @@ function EmptyState({ onNew }: { onNew: () => void }) {
 type MetricVariant = "slate" | "terracotta" | "amber" | "emerald" | "danger";
 
 const METRIC_STYLES: Record<MetricVariant, { wrap: string; value: string; label: string; sub: string }> = {
-  slate:      { wrap: "bg-slate-100 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700",       value: "text-slate-800 dark:text-slate-100",      label: "text-slate-500 dark:text-slate-400",      sub: "text-slate-400 dark:text-slate-500" },
-  terracotta: { wrap: "bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800",    value: "text-orange-700 dark:text-orange-400",    label: "text-orange-600/70 dark:text-orange-500", sub: "text-orange-400 dark:text-orange-600" },
+  /* brand azul claro #EEF1FB family */
+  slate:      { wrap: "bg-blue-50 border border-blue-200 dark:bg-blue-950/40 dark:border-blue-800",            value: "text-blue-800 dark:text-blue-200",        label: "text-blue-500 dark:text-blue-400",        sub: "text-blue-400 dark:text-blue-500" },
+  /* brand laranja #FF8C42 family */
+  terracotta: { wrap: "bg-orange-50 border border-orange-200 dark:bg-orange-950/40 dark:border-orange-800",    value: "text-orange-700 dark:text-orange-300",    label: "text-orange-500 dark:text-orange-500",    sub: "text-orange-400 dark:text-orange-600" },
   amber:      { wrap: "bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-800",        value: "text-amber-700 dark:text-amber-400",      label: "text-amber-600/70 dark:text-amber-500",   sub: "text-amber-400 dark:text-amber-600" },
   emerald:    { wrap: "bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-800",value: "text-emerald-700 dark:text-emerald-400",  label: "text-emerald-600/70 dark:text-emerald-500",sub: "text-emerald-400 dark:text-emerald-600" },
   danger:     { wrap: "bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800",                value: "text-red-700 dark:text-red-400",          label: "text-red-600/70 dark:text-red-500",       sub: "text-red-400 dark:text-red-600" },
@@ -192,7 +194,7 @@ export function Dashboard() {
             <h1 className="text-3xl font-serif text-foreground">{user?.firstName ? `Ola, ${user.firstName}.` : "Bem-vindo."}</h1>
             <p className="text-muted-foreground text-sm mt-1">{projects.length === 0 ? "Nenhum projeto ainda — comece criando o seu." : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}</p>
           </div>
-          <Button onClick={() => setShowNew(true)} className="bg-foreground hover:bg-foreground/85 text-background font-semibold" data-testid="button-new-project">+ Nova construcao</Button>
+          <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold" data-testid="button-new-project">+ Nova construcao</Button>
         </div>
         {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
         {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
@@ -214,7 +216,7 @@ export function Dashboard() {
             <div><Label className="text-xs font-mono text-muted-foreground mb-2 block uppercase tracking-wider">Template (opcional)</Label><div className="grid grid-cols-3 gap-2">{EXAMPLE_TEMPLATES.map((t) => <button key={t.id} onClick={() => applyTemplate(t)} className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all ${selectedTemplate === t.id ? "border-primary bg-primary/5 text-primary" : "border-border bg-card hover:border-primary/30 text-foreground"}`}><span className="text-xl">{t.icon}</span><span className="text-xs font-medium leading-tight">{t.label}</span></button>)}</div></div>
             <div><Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label><Input id="proj-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: App de delivery para pets" className="mt-1.5" data-testid="input-project-name" /></div>
             <div><Label htmlFor="proj-briefing" className="text-sm font-medium">Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span></Label><Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais..." className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />{briefing.length > 0 && <p className="text-xs text-muted-foreground mt-1 font-mono">{briefing.length} chars — {briefing.length < 200 ? "adicione mais contexto" : "otimo nivel de detalhe"}</p>}</div>
-            <div className="flex justify-end gap-2 pt-1"><Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button><Button onClick={handleCreate} disabled={!name.trim() || !briefing.trim() || createProject.isPending} className="bg-foreground hover:bg-foreground/85 text-background font-semibold" data-testid="button-create-project">{createProject.isPending ? "Criando..." : "Criar projeto →"}</Button></div>
+            <div className="flex justify-end gap-2 pt-1"><Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button><Button onClick={handleCreate} disabled={!name.trim() || !briefing.trim() || createProject.isPending} className="bg-primary hover:bg-primary/90 text-white font-semibold" data-testid="button-create-project">{createProject.isPending ? "Criando..." : "Criar projeto →"}</Button></div>
           </div>
         </DialogContent>
       </Dialog>
