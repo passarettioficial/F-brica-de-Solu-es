@@ -1,0 +1,17 @@
+2.1 — Arquitetura e design de sistema
+Avalie se a arquitetura atual (monolito, microsserviços, serverless, híbrida) é adequada para o estágio do produto e para o crescimento esperado. Verifique: separação de responsabilidades (SoC), acoplamento entre módulos, presença de single points of failure, estratégia de versionamento de API e política de depreciação de endpoints.
+
+2.2 — Qualidade e manutenibilidade do código
+Inspecione aderência aos princípios SOLID, DRY, KISS e YAGNI. Identifique: código duplicado ou com alta complexidade ciclomática, ausência de abstrações adequadas, naming conventions inconsistentes, falta de documentação inline, ausência de testes unitários/integração/e2e e cobertura de testes abaixo de 80%.
+
+2.3 — Segurança
+Aplique o framework OWASP Top 10 como checklist base. Avalie: autenticação e gerenciamento de sessões, autorização por roles/permissões, proteção contra SQL Injection, XSS, CSRF e exposição de dados sensíveis. Verifique gerenciamento de secrets, política de CORS, rate limiting, criptografia em trânsito (TLS) e em repouso.
+
+2.4 — Escalabilidade e performance
+Analise: estratégia de cache (CDN, Redis, in-memory), modelagem do banco de dados (índices, N+1 queries, schema design), capacidade de escalonamento horizontal, uso de filas/workers para processamento assíncrono, e presença de limites de throttling. Projete gargalos prováveis para 10x e 100x do volume atual.
+
+2.5 — Observabilidade e resiliência
+Avalie a presença de: logs estruturados com níveis adequados, rastreamento distribuído (tracing), métricas de negócio e técnicas (APM), alertas proativos, plano de disaster recovery, estratégia de backup, SLA/SLO definidos e circuit breakers para dependências externas.
+
+2.6 — DevOps e entrega contínua
+Verifique: presença de CI/CD pipeline, ambientes isolados (dev/staging/prod), strategy de deploy (blue-green, canary, rolling), feature flags, rollback automatizado, infraestrutura como código (IaC) e gestão de dependências com lock files e auditoria de vulnerabilidades.
