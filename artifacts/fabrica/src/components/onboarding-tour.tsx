@@ -5,21 +5,21 @@ const STORAGE_KEY = "fabrica_onboarding_done";
 
 const STEPS = [
   {
-    title: "Bem-vindo à Fábrica de Soluções! 🏭",
+    title: "Bem-vindo a Fabrica de Solucoes!",
     description:
-      "Esta plataforma transforma sua ideia em um produto validado com o apoio da IA. Em apenas 6 fases estruturadas, você vai da concepção ao lançamento.",
+      "Esta plataforma transforma sua ideia em um produto validado com o apoio da IA. Em apenas 6 fases estruturadas, voce vai da concepcao ao lancamento.",
     icon: "🏭",
   },
   {
     title: "Crie seu primeiro projeto",
     description:
-      "Clique em '+ Iniciar nova construção' e descreva sua ideia. Quanto mais detalhes você fornecer no briefing, melhores serão os artefatos gerados pela IA.",
+      "Clique em '+ Iniciar nova construcao' e descreva sua ideia. Quanto mais detalhes voce fornecer no briefing, melhores serao os artefatos gerados pela IA.",
     icon: "📋",
   },
   {
     title: "6 fases sequenciais",
     description:
-      "Cada projeto passa por: Ideação → Definição → Especificação → Prototipação → Validação → Deploy. Você precisa concluir cada fase para avançar para a próxima.",
+      "Cada projeto passa por: Ideacao → Definicao → Especificacao → Prototipacao → Validacao → Deploy. Voce precisa concluir cada fase para avancar para a proxima.",
     icon: "🔄",
   },
   {
@@ -29,16 +29,16 @@ const STEPS = [
     icon: "🤖",
   },
   {
-    title: "Créditos de IA diários",
+    title: "Creditos de IA diarios",
     description:
-      "Cada geração consome 1 crédito. Os créditos se renovam todo dia à meia-noite. Faça upgrade do seu plano para mais créditos e recursos avançados.",
+      "Cada geracao consome 1 credito. Os creditos se renovam todo dia a meia-noite. Faca upgrade do seu plano para mais creditos e recursos avancados.",
     icon: "⚡",
   },
   {
-    title: "Suporte sempre disponível",
+    title: "Pronto para comecar?",
     description:
-      "Acesse nossa equipe pelo botão WhatsApp ou pela página de Atendimento. Também temos um AI Advisor no plano Avançado para consultas aprofundadas sobre o seu produto.",
-    icon: "💬",
+      "Voce esta a um clique de transformar sua ideia em um produto real. Vamos criar seu primeiro projeto agora — leva menos de 2 minutos.",
+    icon: "🚀",
   },
 ];
 
@@ -82,18 +82,16 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
 
   const current = STEPS[step]!;
   const progress = ((step + 1) / STEPS.length) * 100;
+  const isLastStep = step === STEPS.length - 1;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
         onClick={handleSkip}
       />
 
-      {/* Modal */}
       <div className="relative bg-card border border-card-border rounded-2xl shadow-2xl w-full max-w-md p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-        {/* Progress bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-2xl overflow-hidden">
           <div
             className="h-full bg-primary transition-all duration-500"
@@ -101,10 +99,8 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
           />
         </div>
 
-        {/* Icon */}
         <div className="text-5xl text-center mb-5 mt-2">{current.icon}</div>
 
-        {/* Step counter */}
         <div className="text-center mb-4">
           <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
             {step + 1} de {STEPS.length}
@@ -118,12 +114,12 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
           {current.description}
         </p>
 
-        {/* Dots */}
         <div className="flex items-center justify-center gap-1.5 mb-6">
           {STEPS.map((_, i) => (
             <button
               key={i}
               onClick={() => setStep(i)}
+              aria-label={`Ir para passo ${i + 1}`}
               className={`rounded-full transition-all duration-200 ${
                 i === step ? "w-5 h-2 bg-primary" : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
               }`}
@@ -131,7 +127,6 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex items-center justify-between">
           <button
             onClick={handleSkip}
@@ -141,9 +136,9 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
           </button>
           <Button
             onClick={handleNext}
-            className="bg-primary hover:bg-primary/90 text-white px-6"
+            className={`px-6 ${isLastStep ? "bg-primary hover:bg-primary/90 text-white gap-2" : "bg-primary hover:bg-primary/90 text-white"}`}
           >
-            {step < STEPS.length - 1 ? "Próximo →" : "Começar agora!"}
+            {isLastStep ? "Criar meu primeiro projeto!" : "Proximo →"}
           </Button>
         </div>
       </div>

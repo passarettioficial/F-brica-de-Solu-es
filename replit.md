@@ -81,6 +81,12 @@ Superusers bypass all plan limits — `getPlanConfig` returns unlimited config w
 - Greeting with user's first name
 - Metrics row: active projects, completed phases, AI usage %, plan name
 - Shortcuts grid: Assinatura, AI Advisor, Atendimento, Configurações
+- `ResumeCard` — hero card for most recent active project with progress bar and CTA
+- `AiLimitBanner` — contextual alert at 70%+ AI usage, red at 100%, with upgrade CTA
+- `ActivationChecklist` — 6-step onboarding progress tracker for new users (hidden after 3 phases or dismissed). Stored dismissal in localStorage `fabrica_activation_dismissed`
+- Toast on project creation success/error
+- Example templates (SaaS, App, Marketplace) pre-fill name+briefing in new project dialog
+- OnboardingTour completion callback auto-opens new project dialog
 
 **Settings enhancements:**
 - Plan management section with feature comparison

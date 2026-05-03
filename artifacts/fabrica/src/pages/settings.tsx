@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import { usePlan } from "@/hooks/usePlan";
 import { resetOnboarding } from "@/components/onboarding-tour";
 
@@ -20,6 +21,7 @@ export function SettingsPage() {
   const { user: clerkUser } = useUser();
   const { permissions } = usePlan();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: userProfile, isLoading } = useGetCurrentUser();
   const updateSettings = useUpdateUserSettings();
 
@@ -40,13 +42,17 @@ export function SettingsPage() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+          toast({ title: "Configuracoes salvas com sucesso!" });
+        },
+        onError: () => {
+          toast({ title: "Erro ao salvar", description: "Tente novamente.", variant: "destructive" });
         },
       }
     );
   }
 
   async function handleDeleteRequest() {
-    if (!confirm("Isso abrirá um chamado de exclusão de dados conforme a LGPD. Continuar?")) return;
+    if (!confirm("Isso abrira um chamado de exclusao de dados conforme a LGPD. Continuar?")) return;
     try {
       await fetch(`${basePath}/api/support/tickets`, {
         method: "POST",
@@ -122,9 +128,6 @@ export function SettingsPage() {
               >
                 {updateSettings.isPending ? "Salvando..." : "Salvar alterações"}
               </Button>
-              {updateSettings.isSuccess && (
-                <p className="text-sm text-primary" data-testid="text-settings-saved">Salvo com sucesso.</p>
-              )}
             </div>
           </div>
 
