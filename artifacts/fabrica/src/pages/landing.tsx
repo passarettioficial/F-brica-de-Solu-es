@@ -21,6 +21,14 @@ const faqs = [
   { q: "Posso evoluir depois?", a: "Sim. O upgrade acontece dentro do produto." },
 ];
 
+const footerLinks = [
+  { href: "/pricing", label: "Preços" },
+  { href: "/video-vendas", label: "Vídeo" },
+  { href: "/analise-mercado", label: "Mercado" },
+  { href: "/privacidade", label: "Privacidade" },
+  { href: "/atendimento", label: "Atendimento" },
+];
+
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -34,11 +42,11 @@ export function LandingPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/pricing" className="hidden text-sm text-muted-foreground hover:text-foreground md:inline-block">Preços</Link>
-            <Link href="/sign-in">
+            <Link href={`${base}/pricing`} className="hidden text-sm text-muted-foreground hover:text-foreground md:inline-block">Preços</Link>
+            <Link href={`${base}/sign-in`}>
               <Button variant="outline">Entrar</Button>
             </Link>
-            <Link href="/sign-up">
+            <Link href={`${base}/sign-up`}>
               <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Começar grátis</Button>
             </Link>
           </div>
@@ -60,10 +68,10 @@ export function LandingPage() {
                 Uma plataforma para founders estruturarem briefing, fases, artefatos e colaboração em um fluxo único e premium.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/sign-up">
+                <Link href={`${base}/sign-up`}>
                   <Button className="bg-primary text-white hover:bg-primary/90">Começar agora →</Button>
                 </Link>
-                <Link href="/dashboard">
+                <Link href={`${base}/dashboard`}>
                   <Button variant="outline">Ver produto</Button>
                 </Link>
               </div>
@@ -128,6 +136,37 @@ export function LandingPage() {
                 <div className="text-sm text-muted-foreground">{item.a}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="px-6 pb-20">
+          <div className="mx-auto max-w-6xl rounded-[2rem] border border-border bg-card px-6 py-8">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">Pronto para lançar</div>
+                <h2 className="text-2xl font-serif text-foreground">A landing agora encaminha para conversão.</h2>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link href={`${base}/sign-up`}>
+                  <Button className="bg-primary text-white hover:bg-primary/90">Criar conta</Button>
+                </Link>
+                <Link href={`${base}/pricing`}>
+                  <Button variant="outline">Ver planos</Button>
+                </Link>
+            <Link href={`${base}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground self-center">
+              Ir ao app →
+            </Link>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-3 md:grid-cols-5">
+              {footerLinks.map((item) => (
+                <Link key={item.href} href={`${base}${item.href}`}>
+                  <div className="rounded-xl border border-border/70 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors">
+                    {item.label}
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       </main>
