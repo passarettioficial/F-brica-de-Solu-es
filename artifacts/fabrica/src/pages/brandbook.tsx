@@ -13,6 +13,12 @@ export function BrandbookPage() {
     "UI com respiro e hierarquia visível.",
   ];
 
+  const usage = [
+    { label: "Primary", value: "#1A3FAB", note: "CTA, links e foco" },
+    { label: "Accent", value: "#FF8C42", note: "ações e momentos premium" },
+    { label: "Surface", value: "#F8F9FD", note: "base editorial limpa" },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/70 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
@@ -52,6 +58,22 @@ export function BrandbookPage() {
             <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Promessa</p>
             <p className="font-serif text-2xl text-foreground">Do caos à estrutura</p>
             <p className="text-sm text-muted-foreground mt-2">Transformar ideia em produto com método.</p>
+          </div>
+        </section>
+
+        <section className="glass-card rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-serif text-xl">Uso rápido</h3>
+            <span className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Aplicação prática</span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {usage.map((item) => (
+              <div key={item.label} className="rounded-xl border border-border bg-background p-4">
+                <div className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-2">{item.label}</div>
+                <div className="font-semibold text-foreground">{item.value}</div>
+                <div className="text-sm text-muted-foreground mt-1">{item.note}</div>
+              </div>
+            ))}
           </div>
         </section>
 
