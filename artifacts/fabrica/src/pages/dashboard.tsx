@@ -30,7 +30,7 @@ function PhaseBadge({ status, phaseNumber }: { status: string; phaseNumber: numb
   const phaseName = PHASES[phaseNumber - 1]?.name ?? "";
   const colors: Record<string, string> = {
     completed: "bg-primary/10 text-primary border border-primary/20",
-    active: "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+    active: "bg-secondary/70 text-primary border border-primary/15 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800",
     locked: "bg-muted text-muted-foreground border border-border",
   };
   return <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${colors[status] ?? colors.locked}`}>Fase {phaseNumber} — {phaseName}</span>;
@@ -110,23 +110,28 @@ function EmptyState({ onNew }: { onNew: () => void }) {
 
 type MetricVariant = "slate" | "terracotta" | "amber" | "emerald" | "danger";
 
-const METRIC_STYLES: Record<MetricVariant, { wrap: string; value: string; label: string; sub: string }> = {
-  /* brand azul claro #EEF1FB family */
-  slate:      { wrap: "bg-secondary/70 border border-primary/15 dark:bg-blue-950/40 dark:border-blue-800",      value: "text-primary dark:text-blue-200",         label: "text-primary/80 dark:text-blue-400",      sub: "text-primary/60 dark:text-blue-500" },
-  /* brand laranja #FF8C42 family */
-  terracotta: { wrap: "bg-accent/10 border border-accent/25 dark:bg-orange-950/40 dark:border-orange-800",     value: "text-accent dark:text-orange-300",        label: "text-accent/80 dark:text-orange-500",     sub: "text-accent/60 dark:text-orange-600" },
-  amber:      { wrap: "bg-secondary/60 border border-primary/10 dark:bg-blue-950/30 dark:border-blue-800",     value: "text-primary dark:text-blue-200",         label: "text-primary/70 dark:text-blue-400",      sub: "text-primary/55 dark:text-blue-500" },
-  emerald:    { wrap: "bg-secondary/60 border border-primary/10 dark:bg-blue-950/30 dark:border-blue-800",     value: "text-primary dark:text-blue-200",         label: "text-primary/70 dark:text-blue-400",      sub: "text-primary/55 dark:text-blue-500" },
-  danger:     { wrap: "bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-800",                value: "text-red-700 dark:text-red-400",          label: "text-red-600/70 dark:text-red-500",       sub: "text-red-400 dark:text-red-600" },
+const METRIC_VALUE_COLOR: Record<MetricVariant, string> = {
+  slate:      "text-primary",
+  terracotta: "text-accent",
+  amber:      "text-primary",
+  emerald:    "text-primary",
+  danger:     "text-destructive",
+};
+
+const METRIC_SUB_COLOR: Record<MetricVariant, string> = {
+  slate:      "text-muted-foreground",
+  terracotta: "text-muted-foreground",
+  amber:      "text-muted-foreground",
+  emerald:    "text-primary hover:text-primary/80 transition-colors",
+  danger:     "text-destructive/70",
 };
 
 function MetricCard({ label, value, sub, variant = "slate" }: { label: string; value: string | number; sub?: string; variant?: MetricVariant }) {
-  const s = METRIC_STYLES[variant];
   return (
-    <div className={`rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${s.wrap}`}>
-      <div className={`text-2xl font-bold font-serif mb-0.5 ${s.value}`}>{value}</div>
-      <div className={`text-xs font-medium ${s.label}`}>{label}</div>
-      {sub && <div className={`text-xs mt-0.5 font-mono ${s.sub}`}>{sub}</div>}
+    <div className="bg-card border border-card-border rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/20">
+      <div className={`text-2xl font-bold font-serif mb-0.5 ${METRIC_VALUE_COLOR[variant]}`}>{value}</div>
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      {sub && <div className={`text-xs mt-0.5 font-mono ${METRIC_SUB_COLOR[variant]}`}>{sub}</div>}
     </div>
   );
 }
@@ -201,8 +206,8 @@ export function Dashboard() {
         {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <MetricCard label="Projetos ativos" value={activeProjects} variant="slate" />
-          <MetricCard label="Fases concluidas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="terracotta" />
-          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant={aiUsagePct >= 90 ? "danger" : "amber"} />
+          <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="terracotta" />
+          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="amber" />
           <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="emerald" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">{SHORTCUTS.map((s) => { const locked = s.planRequired && !permissions.hasAiAdvisor; const href = locked ? "/pricing" : (s.href ?? "/pricing"); return <Link key={s.label} href={href}><div className="glass-card rounded-xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>; })}</div>
