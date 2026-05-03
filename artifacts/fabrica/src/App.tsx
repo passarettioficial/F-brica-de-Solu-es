@@ -22,6 +22,7 @@ import { SupportPage } from "@/pages/support";
 import { PrivacyPage } from "@/pages/privacy";
 import { MarketAnalysisPage } from "@/pages/market-analysis";
 import { BrandbookPage } from "@/pages/brandbook";
+import { SalesVideoPage } from "@/pages/sales-video";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const queryClient = new QueryClient();
