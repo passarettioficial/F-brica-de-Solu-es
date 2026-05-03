@@ -53,52 +53,52 @@
 }
 
 :root {
-  --background: 40 33% 98%;
-  --foreground: 0 0% 10%;
-  --card: 40 33% 100%;
-  --card-foreground: 0 0% 10%;
-  --card-border: 40 10% 90%;
-  --popover: 40 33% 100%;
-  --popover-foreground: 0 0% 10%;
-  --popover-border: 40 10% 90%;
-  --primary: 16 72% 42%;
+  --background: 36 28% 97%;
+  --foreground: 20 14% 8%;
+  --card: 36 20% 100%;
+  --card-foreground: 20 14% 8%;
+  --card-border: 36 15% 88%;
+  --popover: 36 20% 100%;
+  --popover-foreground: 20 14% 8%;
+  --popover-border: 36 15% 88%;
+  --primary: 16 72% 40%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 40 20% 90%;
-  --secondary-foreground: 0 0% 20%;
-  --muted: 40 10% 94%;
-  --muted-foreground: 0 0% 40%;
-  --accent: 40 15% 92%;
-  --accent-foreground: 16 72% 42%;
+  --secondary: 36 20% 92%;
+  --secondary-foreground: 20 14% 20%;
+  --muted: 36 12% 93%;
+  --muted-foreground: 20 8% 42%;
+  --accent: 36 18% 90%;
+  --accent-foreground: 16 72% 40%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 40 15% 88%;
-  --input: 40 15% 88%;
-  --ring: 16 72% 42%;
-  --radius: 0.5rem;
+  --border: 36 15% 86%;
+  --input: 36 15% 86%;
+  --ring: 16 72% 40%;
+  --radius: 0.625rem;
 }
 
 .dark {
-  --background: 0 0% 8%;
-  --foreground: 40 33% 98%;
-  --card: 0 0% 12%;
-  --card-foreground: 40 33% 98%;
-  --card-border: 0 0% 20%;
-  --popover: 0 0% 12%;
-  --popover-foreground: 40 33% 98%;
-  --popover-border: 0 0% 20%;
-  --primary: 16 72% 46%;
+  --background: 220 14% 7%;
+  --foreground: 36 28% 95%;
+  --card: 220 14% 11%;
+  --card-foreground: 36 28% 95%;
+  --card-border: 220 10% 18%;
+  --popover: 220 14% 11%;
+  --popover-foreground: 36 28% 95%;
+  --popover-border: 220 10% 18%;
+  --primary: 16 72% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 18%;
-  --secondary-foreground: 40 33% 98%;
-  --muted: 0 0% 14%;
-  --muted-foreground: 0 0% 64%;
-  --accent: 0 0% 18%;
-  --accent-foreground: 16 72% 46%;
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 40 33% 98%;
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
-  --ring: 16 72% 46%;
+  --secondary: 220 10% 17%;
+  --secondary-foreground: 36 28% 95%;
+  --muted: 220 10% 14%;
+  --muted-foreground: 220 8% 60%;
+  --accent: 220 10% 17%;
+  --accent-foreground: 16 72% 50%;
+  --destructive: 0 62% 36%;
+  --destructive-foreground: 36 28% 95%;
+  --border: 220 10% 18%;
+  --input: 220 10% 18%;
+  --ring: 16 72% 50%;
 }
 
 @layer base {
@@ -107,7 +107,6 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    background-image: radial-gradient(circle at top, hsl(var(--primary) / 0.08), transparent 38%), radial-gradient(circle at bottom right, hsl(220 90% 56% / 0.05), transparent 30%);
     min-height: 100vh;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -115,14 +114,116 @@
   }
 }
 
+/* ─── Glass / Blueprint card ─── */
 .glass-card {
-  @apply border border-border/70 bg-card/80 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.06)];
+  background: hsl(var(--card) / 0.85);
+  border: 1px solid hsl(var(--border) / 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
-
+.glass-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 16px 40px rgba(0,0,0,0.06);
+  border-color: hsl(var(--primary) / 0.25);
+}
 .dark .glass-card {
-  @apply border-border/70 bg-card/75 shadow-[0_10px_40px_rgba(0,0,0,0.25)];
+  background: hsl(var(--card) / 0.7);
+  border-color: hsl(var(--border) / 0.6);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.18);
+}
+.dark .glass-card:hover {
+  border-color: hsl(var(--primary) / 0.35);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3), 0 0 0 1px hsl(var(--primary) / 0.1);
 }
 
+/* ─── Hero grid overlay ─── */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(hsl(var(--foreground) / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
+}
+.dark .hero-grid {
+  background-image:
+    linear-gradient(hsl(var(--foreground) / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--foreground) / 0.06) 1px, transparent 1px);
+}
+
+/* ─── Hero glow ─── */
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.12), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.05), transparent 60%);
+}
+.dark .hero-glow {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, hsl(var(--primary) / 0.18), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 60%, hsl(220 80% 60% / 0.08), transparent 60%);
+}
+
+/* ─── Theme toggle ─── */
 .theme-toggle-button {
   @apply rounded-full border border-border bg-card/70 backdrop-blur-md;
+}
+
+/* ─── Phase node glow on active ─── */
+.phase-node-active {
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15), 0 0 20px hsl(var(--primary) / 0.2);
+}
+
+/* ─── Animated underline ─── */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.25s ease;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* ─── Stat counter shimmer ─── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.stat-shimmer {
+  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.6) 50%, hsl(var(--primary)) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ─── Subtle card number badge ─── */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+  letter-spacing: 0.02em;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
 }

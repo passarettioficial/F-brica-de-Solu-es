@@ -33,6 +33,16 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 AI-powered web app for founders. 6 sequential phases take a product from idea to validated deploy.
 
+### Visual Design Language (latest sprint)
+- **Typography**: Oversized Playfair Display serif headlines + Inter mono for labels/tags
+- **Blueprint aesthetic**: Subtle 48px grid overlay on hero, corner bracket marks, monospace uppercase labels
+- **Glass cards**: `glass-card` class — backdrop blur + card/border tokens, hover lifts
+- **Dark sections**: Testimonials on `bg-foreground` for contrast rhythm
+- **Shimmer stat effect**: `.stat-shimmer` CSS animation on key numbers
+- **CTAs**: `bg-foreground text-background` (near-black button) for strong conversion hierarchy
+- **Dark mode**: Full token-based `.dark` class, applied via `ThemeToggle` + `localStorage`
+- **Removed**: `UxStrategyCard` and `VisualModeCard` are internal dev tools — not shown to users
+
 ### Artifacts
 
 | Artifact | Path | Purpose |
