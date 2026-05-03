@@ -708,7 +708,7 @@ export function PhasePage() {
                       onChange={(e) => handleGateChange(gateNum, e.target.checked)}
                       disabled={isCompleted}
                       aria-label={gate}
-                      className="mt-0.5 w-4 h-4 accent-[#b8461e] rounded flex-shrink-0"
+                      className="mt-0.5 w-4 h-4 accent-primary rounded flex-shrink-0"
                     />
                     <span className={`text-sm leading-snug transition-colors ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>{gate}</span>
                   </label>

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const DIMENSIONS = [
   {
@@ -85,12 +86,15 @@ export function MarketAnalysisPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 sticky top-0 z-10 backdrop-blur">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            ← Voltar ao painel
+          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Início
           </Link>
-          <Link href="/pricing" className="text-sm text-primary hover:underline">
-            Ver planos
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link href="/pricing" className="text-sm text-primary hover:underline font-medium">
+              Ver planos →
+            </Link>
+          </div>
         </div>
       </header>
 

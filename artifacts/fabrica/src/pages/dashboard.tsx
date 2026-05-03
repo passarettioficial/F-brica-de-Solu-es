@@ -30,7 +30,7 @@ function PhaseBadge({ status, phaseNumber }: { status: string; phaseNumber: numb
   const phaseName = PHASES[phaseNumber - 1]?.name ?? "";
   const colors: Record<string, string> = {
     completed: "bg-primary/10 text-primary border border-primary/20",
-    active: "bg-secondary/70 text-primary border border-primary/15 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800",
+    active: "bg-secondary/70 text-primary border border-primary/15 dark:bg-primary/15 dark:text-primary dark:border-primary/25",
     locked: "bg-muted text-muted-foreground border border-border",
   };
   return <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${colors[status] ?? colors.locked}`}>Fase {phaseNumber} — {phaseName}</span>;
@@ -79,8 +79,8 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
     <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-secondary/70 border-primary/15 dark:bg-primary/10 dark:border-primary/20"}`} role="alert">
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-primary dark:text-blue-200"}`}>{isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}</p>
-        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-primary/70 dark:text-blue-300"}`}>{isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}</p>
+        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-primary"}`}>{isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}</p>
+        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-primary/70"}`}>{isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}</p>
       </div>
       <Link href="/pricing"><Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-primary/20 text-primary hover:bg-primary/5"}`}>Ver planos</Button></Link>
     </div>
@@ -108,25 +108,25 @@ function EmptyState({ onNew }: { onNew: () => void }) {
   );
 }
 
-type MetricVariant = "slate" | "terracotta" | "amber" | "emerald" | "danger";
+type MetricVariant = "default" | "accent" | "dim" | "link" | "danger";
 
 const METRIC_VALUE_COLOR: Record<MetricVariant, string> = {
-  slate:      "text-primary",
-  terracotta: "text-accent",
-  amber:      "text-primary",
-  emerald:    "text-primary",
-  danger:     "text-destructive",
+  default: "text-primary",
+  accent:  "text-accent",
+  dim:     "text-primary",
+  link:    "text-primary",
+  danger:  "text-destructive",
 };
 
 const METRIC_SUB_COLOR: Record<MetricVariant, string> = {
-  slate:      "text-muted-foreground",
-  terracotta: "text-muted-foreground",
-  amber:      "text-muted-foreground",
-  emerald:    "text-primary hover:text-primary/80 transition-colors",
-  danger:     "text-destructive/70",
+  default: "text-muted-foreground",
+  accent:  "text-muted-foreground",
+  dim:     "text-muted-foreground",
+  link:    "text-primary hover:text-primary/80 transition-colors",
+  danger:  "text-destructive/70",
 };
 
-function MetricCard({ label, value, sub, variant = "slate" }: { label: string; value: string | number; sub?: string; variant?: MetricVariant }) {
+function MetricCard({ label, value, sub, variant = "default" }: { label: string; value: string | number; sub?: string; variant?: MetricVariant }) {
   return (
     <div className="bg-card border border-card-border rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/20">
       <div className={`text-2xl font-bold font-serif mb-0.5 ${METRIC_VALUE_COLOR[variant]}`}>{value}</div>
@@ -205,10 +205,10 @@ export function Dashboard() {
         {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
         {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <MetricCard label="Projetos ativos" value={activeProjects} variant="slate" />
-          <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="terracotta" />
-          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="amber" />
-          <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="emerald" />
+          <MetricCard label="Projetos ativos" value={activeProjects} variant="default" />
+          <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="accent" />
+          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
+          <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="link" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">{SHORTCUTS.map((s) => { const locked = s.planRequired && !permissions.hasAiAdvisor; const href = locked ? "/pricing" : (s.href ?? "/pricing"); return <Link key={s.label} href={href}><div className="glass-card rounded-xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>; })}</div>
         <div className="flex items-center justify-between mb-5"><div><p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p><h2 className="font-serif text-xl text-foreground">Suas construcoes</h2></div>{projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">+ Novo</button>}</div>

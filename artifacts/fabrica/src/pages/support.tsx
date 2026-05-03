@@ -134,7 +134,7 @@ export function SupportPage() {
 
           <div className="bg-card border border-card-border rounded-2xl p-6">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b8461e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                 <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
@@ -145,15 +145,15 @@ export function SupportPage() {
           </div>
 
           <div className="bg-card border border-card-border rounded-2xl p-6">
-            <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center mb-4">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 16v-4M12 8h.01"/>
               </svg>
             </div>
             <h3 className="font-medium text-foreground mb-1">Base de Conhecimento</h3>
             <p className="text-sm text-muted-foreground">Perguntas frequentes e tutoriais sobre a plataforma</p>
-            <span className="text-xs text-blue-500 font-medium mt-2 block">Ver FAQ ↓</span>
+            <span className="text-xs text-primary font-medium mt-2 block">Ver FAQ ↓</span>
           </div>
         </div>
 

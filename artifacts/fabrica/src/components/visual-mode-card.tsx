@@ -1,7 +1,7 @@
 export function VisualModeCard() {
   return (
     <div className="glass-card rounded-2xl p-5 mb-8 overflow-hidden relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-blue-500/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />
       <div className="relative">
         <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">Visual</p>
         <h3 className="font-serif text-lg text-foreground mb-2">Liquid Glass leve, nao como skin pesada</h3>
