@@ -183,6 +183,7 @@ export function Dashboard() {
   const phase3Completed = totalCompletedPhases >= 3;
   const allPhasesCompleted = projects.some(p => p.completedPhases === 6);
   const showChecklist = !isLoading && totalCompletedPhases < 3;
+  const hasSharedProject = projects.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,7 +248,7 @@ export function Dashboard() {
               </div>
             </div>
             {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
-            {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} hasTemplates={selectedTemplate !== null} hasSharedProject={projects.length > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
+            {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} hasTemplates={selectedTemplate !== null} hasSharedProject={hasSharedProject} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
             {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
             <div className="flex items-start justify-between mb-8">
               <div />

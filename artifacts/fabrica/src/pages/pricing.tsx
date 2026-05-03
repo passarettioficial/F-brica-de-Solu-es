@@ -75,6 +75,21 @@ const PLANS = [
   },
 ];
 
+const FAQ = [
+  {
+    q: "Posso começar no grátis e evoluir depois?",
+    a: "Sim. O fluxo foi desenhado para mostrar valor antes da conversão.",
+  },
+  {
+    q: "O que diferencia o Pro do Avançado?",
+    a: "Pro libera edição, cópia e download; Avançado adiciona AI Advisor e uso ilimitado.",
+  },
+  {
+    q: "Os artefatos são reutilizáveis?",
+    a: "Sim. Eles funcionam como base viva para briefing, decisão e colaboração do time.",
+  },
+];
+
 export function PricingPage() {
   const { permissions } = usePlan();
   const [loading, setLoading] = useState<string | null>(null);
@@ -205,6 +220,18 @@ export function PricingPage() {
             Pagamentos processados com segurança pela Stripe. Cancele a qualquer momento.
           </p>
         </div>
+
+        <section className="mt-16 bg-card border border-card-border rounded-2xl p-6">
+          <h2 className="text-xl font-serif text-foreground mb-4">Perguntas frequentes</h2>
+          <div className="grid gap-3">
+            {FAQ.map((item) => (
+              <div key={item.q} className="rounded-xl border border-border p-4">
+                <div className="text-sm font-medium text-foreground mb-1">{item.q}</div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* Advanced plan differentiator callout */}
         <div className="mt-16">

@@ -102,6 +102,21 @@ export function SettingsPage() {
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">Ajuste seu perfil, plano e preferências.</p>
         </div>
 
+        <section className="grid gap-4 sm:grid-cols-3 mb-8">
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-2">Uso diário</div>
+            <div className="text-2xl font-serif text-foreground">{userProfile ? `${userProfile.dailyAiUsage}/${userProfile.dailyAiLimit}` : "—"}</div>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-2">Limite usado</div>
+            <div className="text-2xl font-serif text-foreground">{aiUsagePercent}%</div>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-2">Plano atual</div>
+            <div className="text-2xl font-serif text-foreground capitalize">{permissions.plan ?? "free"}</div>
+          </div>
+        </section>
+
         <div className="space-y-8">
           <section className="space-y-4">
             <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Perfil</h2>

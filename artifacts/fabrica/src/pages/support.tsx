@@ -43,6 +43,13 @@ const CATEGORIES = [
   { value: "lgpd", label: "Privacidade e LGPD" },
 ];
 
+const SUPPORT_SLA = [
+  { label: "Geral", value: "até 1 dia útil" },
+  { label: "Billing", value: "até 4 horas úteis" },
+  { label: "Técnico", value: "até 8 horas úteis" },
+  { label: "LGPD", value: "até 2 dias úteis" },
+];
+
 export function SupportPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [subject, setSubject] = useState("");
@@ -51,6 +58,7 @@ export function SupportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const selectedCategory = CATEGORIES.find((item) => item.value === category);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,6 +122,14 @@ export function SupportPage() {
           <p className="text-muted-foreground">Nossa equipe está disponível para apoiar o seu crescimento.</p>
         </div>
 
+        <div className="bg-card border border-card-border rounded-2xl p-6 text-center">
+          <div className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">Status do atendimento</div>
+          <div className="text-2xl font-serif text-foreground mb-1">{selectedCategory?.label ?? "Dúvida geral"}</div>
+          <p className="text-sm text-muted-foreground">
+            Resposta estimada: {SUPPORT_SLA.find((item) => item.label.toLowerCase() === category)?.value ?? "até 1 dia útil"}
+          </p>
+        </div>
+
         {/* Contact channels */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <a
@@ -156,6 +172,18 @@ export function SupportPage() {
             <span className="text-xs text-primary font-medium mt-2 block">Ver FAQ ↓</span>
           </div>
         </div>
+
+        <section className="bg-card border border-card-border rounded-2xl p-6">
+          <h2 className="text-xl font-serif text-foreground mb-4">Tempo de resposta</h2>
+          <div className="grid gap-3 md:grid-cols-2">
+            {SUPPORT_SLA.map((item) => (
+              <div key={item.label} className="flex items-center justify-between rounded-xl border border-border px-4 py-3">
+                <span className="text-sm text-foreground">{item.label}</span>
+                <span className="text-xs text-primary font-medium">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* FAQ */}
         <section>
@@ -211,6 +239,9 @@ export function SupportPage() {
                     <option key={c.value} value={c.value}>{c.label}</option>
                   ))}
                 </select>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                Direcione o chamado com contexto suficiente para reduzirmos o tempo de resposta.
               </div>
               <div>
                 <Label htmlFor="subject" className="text-sm font-medium">Assunto</Label>

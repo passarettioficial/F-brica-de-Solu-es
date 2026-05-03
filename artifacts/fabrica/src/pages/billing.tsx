@@ -12,6 +12,12 @@ const PLAN_DETAILS: Record<string, { price: string; description: string }> = {
   free: { price: "Grátis", description: "2 execuções de IA por dia" },
 };
 
+const BILLING_BENEFITS = [
+  "Upgrade imediato para liberar mais capacidade",
+  "Portal seguro para trocar ou cancelar quando quiser",
+  "Plano avançado com AI Advisor e consultas estratégicas",
+];
+
 export function BillingPage() {
   const { permissions, loading } = usePlan();
   const [portalLoading, setPortalLoading] = useState(false);
@@ -119,6 +125,18 @@ export function BillingPage() {
             </div>
           </div>
         )}
+
+        <div className="bg-card border border-card-border rounded-2xl p-6">
+          <h2 className="font-serif text-lg mb-4">Por que fazer upgrade?</h2>
+          <ul className="space-y-2">
+            {BILLING_BENEFITS.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-sm text-foreground">
+                <span className="text-primary mt-0.5">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {!permissions.hasAiAdvisor && !loading && (
           <div className="bg-card border border-card-border rounded-2xl p-6">
