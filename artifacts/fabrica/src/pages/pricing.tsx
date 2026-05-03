@@ -207,7 +207,11 @@ export function PricingPage() {
         </div>
 
         {/* Advanced plan differentiator callout */}
-        <div className="mt-16 glass-card rounded-2xl p-8">
+        <div className="mt-16">
+          <div className="mb-4">
+            <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Plano avançado</h2>
+          </div>
+          <div className="glass-card rounded-2xl p-8">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">🤖</div>
             <div>
@@ -228,6 +232,7 @@ export function PricingPage() {
                 ))}
               </div>
             </div>
+          </div>
           </div>
         </div>
       </main>

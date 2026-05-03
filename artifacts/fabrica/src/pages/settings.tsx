@@ -102,9 +102,10 @@ export function SettingsPage() {
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">Ajuste seu perfil, plano e preferências.</p>
         </div>
 
-        <div className="space-y-6">
-          {/* Profile */}
-          <div className="glass-card rounded-2xl p-6">
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Perfil</h2>
+            <div className="glass-card rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif text-lg">Perfil</h2>
               <span className="text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">essencial</span>
@@ -137,9 +138,11 @@ export function SettingsPage() {
               </Button>
             </div>
           </div>
+          </div>
 
-          {/* AI Usage */}
-          <div className="glass-card rounded-2xl p-6">
+          <div className="space-y-4">
+            <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Uso e plano</h2>
+            <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-4">Uso de IA hoje</h2>
             {isLoading ? (
               <div className="animate-pulse h-8 bg-muted rounded" />
@@ -159,8 +162,7 @@ export function SettingsPage() {
             )}
           </div>
 
-          {/* Plan Management */}
-          <div className="glass-card rounded-2xl p-6">
+            <div className="glass-card rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif text-lg">Plano atual</h2>
               <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
@@ -191,9 +193,11 @@ export function SettingsPage() {
               </Link>
             </div>
           </div>
+          </div>
 
-          {/* Shortcuts */}
-          <div className="glass-card rounded-2xl p-6">
+          <div className="space-y-4">
+            <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Atalhos e privacidade</h2>
+            <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-4">Atalhos</h2>
             <div className="grid grid-cols-2 gap-2">
               <Link href="/atendimento">
@@ -224,8 +228,7 @@ export function SettingsPage() {
             </div>
           </div>
 
-          {/* LGPD / Privacy */}
-          <div className="glass-card rounded-2xl p-6">
+            <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-1">Privacidade e LGPD</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Seus dados são protegidos conforme a Lei 13.709/2018 (LGPD). Você pode exercer seus direitos a qualquer momento.
@@ -256,6 +259,7 @@ export function SettingsPage() {
                 Solicitar exclusão de todos os meus dados
               </button>
             )}
+          </div>
           </div>
         </div>
       </main>

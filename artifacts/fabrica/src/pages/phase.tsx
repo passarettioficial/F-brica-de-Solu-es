@@ -563,7 +563,7 @@ export function PhasePage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
+      <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         {/* Phase header */}
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-start gap-4 mb-4">
@@ -645,7 +645,7 @@ export function PhasePage() {
           ) : generating ? (
             <GenerationLoadingState artifactCount={phaseDef?.artifacts?.length ?? 0} text={generatingText} />
           ) : (
-            <div className="space-y-3">
+          <div className="space-y-3">
               <Button
                 onClick={handleExecuteAI}
                 className="bg-primary hover:bg-primary/90 text-white"
@@ -677,13 +677,8 @@ export function PhasePage() {
 
         {/* Artifacts */}
         {artifacts.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-serif text-lg">Artefatos gerados</h2>
-              <span className="text-xs text-muted-foreground">
-                {generatedCount}/{totalCount} gerados
-              </span>
-            </div>
+          <div className="space-y-3">
+            <h2 className="font-serif text-lg">Artefatos gerados</h2>
             {artifacts.map((artifact) => (
               <ArtifactCard
                 key={artifact.id}
