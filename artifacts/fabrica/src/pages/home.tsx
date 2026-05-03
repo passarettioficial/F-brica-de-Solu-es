@@ -142,8 +142,8 @@ export function Home() {
                   Iniciar minha construcao →
                 </Button>
               </Link>
-              <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver planos e precos</Link>
-              <Link href="/video-vendas" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver video de vendas</Link>
+              <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver planos e preços</Link>
+              <Link href="/video-vendas" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver vídeo de vendas</Link>
               </div>
               <p className="text-xs text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
             </div>

@@ -1008,6 +1008,7 @@ function SettingsTab() {
 export function AdminPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(true);
   const [, navigate] = useLocation();
 
   useEffect(() => {
@@ -1016,10 +1017,11 @@ export function AdminPage() {
         if (r.status === 403 || r.status === 401) { navigate("/dashboard"); return; }
         return r.json();
       })
-      .then(d => { if (d) setIsAdmin(d.isAdmin || d.isSuperuser); });
+      .then(d => { if (d) setIsAdmin(d.isAdmin || d.isSuperuser); })
+      .finally(() => setChecking(false));
   }, [navigate]);
 
-  if (isAdmin === null) {
+  if (checking || isAdmin === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-muted-foreground text-sm">Verificando permissões...</div>
