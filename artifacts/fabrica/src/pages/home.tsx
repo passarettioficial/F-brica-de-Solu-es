@@ -73,6 +73,12 @@ const VALUE_CARDS = [
   { title: "Pronto para vender", text: "Artefatos compartilháveis que apoiam decisão e execução." },
 ];
 
+const FAQ_CARDS = [
+  { q: "Preciso começar no plano pago?", a: "Não. Você pode testar o fluxo e evoluir quando fizer sentido." },
+  { q: "O produto serve para equipe?", a: "Sim. O processo foi desenhado para colaboração e alinhamento." },
+  { q: "Tem saída para apresentação?", a: "Sim. Você chega em artefatos que ajudam a vender e executar." },
+];
+
 const SALES_SCRIPT = [
   "Todo bom produto começa com clareza.",
   "A Fábrica de Soluções transforma briefing em direção.",
@@ -200,6 +206,19 @@ export function Home() {
                 <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="px-6 pb-16">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid gap-4 md:grid-cols-3">
+              {FAQ_CARDS.map((item) => (
+                <div key={item.q} className="glass-card rounded-2xl p-5">
+                  <div className="text-sm font-semibold text-foreground mb-2">{item.q}</div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
