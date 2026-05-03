@@ -96,6 +96,36 @@ const PRIORITIES = [
   "5) Distribuição por conteúdo e ativos compartilháveis.",
 ];
 
+const FAILURE_LAYER = [
+  {
+    title: "Padrões de mortalidade",
+    items: [
+      "Problema fraco ou pouco urgente.",
+      "Produto genérico sem vantagem defensável.",
+      "CAC alto, retenção baixa e time-to-value longo.",
+      "Mercado amplo demais antes de dominar um nicho.",
+    ],
+  },
+  {
+    title: "Como usar sem inflar o produto",
+    items: [
+      "Mostrar como insight opcional na fase de ideia.",
+      "Agrupar por segmento, com 3 a 5 casos comparáveis.",
+      "Tradução direta: sinal → risco → recomendação.",
+      "Não virar biblioteca nem etapa obrigatória.",
+    ],
+  },
+  {
+    title: "Valor para o founder",
+    items: [
+      "Antecipar armadilhas antes de escrever muito.",
+      "Comparar com o que já deu errado no mesmo mercado.",
+      "Refinar tese, posicionamento e go-to-market.",
+      "Aumentar confiança na decisão de seguir, pivotar ou matar.",
+    ],
+  },
+];
+
 export function MarketAnalysisPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -132,6 +162,28 @@ export function MarketAnalysisPage() {
               </li>
             ))}
           </ol>
+        </section>
+
+        <section className="bg-card border border-card-border rounded-2xl p-6">
+          <h2 className="text-xl font-serif text-foreground mb-4">Camada extra opcional</h2>
+          <p className="text-sm text-muted-foreground mb-5">
+            Esta camada não substitui a análise atual; ela adiciona padrões de sobrevivência com base em falhas reais.
+          </p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {FAILURE_LAYER.map((block) => (
+              <div key={block.title} className="rounded-xl border border-border bg-background p-4">
+                <h3 className="font-medium text-foreground mb-3">{block.title}</h3>
+                <ul className="space-y-2 text-sm text-foreground">
+                  {block.items.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </section>
 
         <div className="grid gap-6">
