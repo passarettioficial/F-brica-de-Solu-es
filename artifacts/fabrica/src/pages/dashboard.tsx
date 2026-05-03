@@ -138,6 +138,7 @@ function MetricCard({ label, value, sub, variant = "default" }: { label: string;
 
 const SHORTCUTS = [
   { label: "Assinatura", href: "/billing", icon: "💳", desc: "Planos e faturamento" },
+  { label: "Brandbook", href: "/brandbook", icon: "🎨", desc: "Guia visual da marca" },
   { label: "AI Advisor", href: null, icon: "🤖", desc: "Consultor de produto", planRequired: true },
   { label: "Atendimento", href: "/atendimento", icon: "💬", desc: "Suporte e WhatsApp" },
   { label: "Configuracoes", href: "/settings", icon: "⚙️", desc: "Conta e preferencias" },

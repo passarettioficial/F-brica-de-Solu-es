@@ -21,6 +21,7 @@ import { AdminPage } from "@/pages/admin";
 import { SupportPage } from "@/pages/support";
 import { PrivacyPage } from "@/pages/privacy";
 import { MarketAnalysisPage } from "@/pages/market-analysis";
+import { BrandbookPage } from "@/pages/brandbook";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const queryClient = new QueryClient();
@@ -144,6 +145,7 @@ function Router() {
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/pricing" component={PricingPage} />
+      <Route path="/brandbook" component={BrandbookPage} />
       <Route path="/privacidade" component={PrivacyPage} />
       <Route path="/analise-mercado" component={MarketAnalysisPage} />
       <Route path="/dashboard">
