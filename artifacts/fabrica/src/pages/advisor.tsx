@@ -31,10 +31,14 @@ export function AdvisorPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
   const { data: project } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
   });
+  const quickFacts = [
+    { label: "Projeto", value: project?.name ?? "—" },
+    { label: "Status", value: project ? "Em construção" : "Carregando" },
+    { label: "Plano", value: permissions.planName },
+  ];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -170,6 +174,14 @@ export function AdvisorPage() {
       </header>
 
       <div className="flex-1 max-w-3xl w-full mx-auto px-6 flex flex-col py-6 gap-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {quickFacts.map((item) => (
+            <div key={item.label} className="rounded-2xl border border-card-border bg-card px-4 py-3">
+              <div className="text-[11px] font-mono uppercase tracking-[0.18em] text-muted-foreground mb-1">{item.label}</div>
+              <div className="text-sm font-medium text-foreground">{item.value}</div>
+            </div>
+          ))}
+        </div>
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col justify-center">
             <div className="text-center mb-8">

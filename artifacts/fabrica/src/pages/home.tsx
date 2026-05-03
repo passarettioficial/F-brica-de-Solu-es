@@ -67,6 +67,12 @@ const TESTIMONIALS = [
   },
 ];
 
+const VALUE_CARDS = [
+  { title: "Clareza imediata", text: "Transforme ideia solta em direção concreta em minutos." },
+  { title: "Fluxo contínuo", text: "Cada fase entrega o próximo passo sem travar o time." },
+  { title: "Pronto para vender", text: "Artefatos compartilháveis que apoiam decisão e execução." },
+];
+
 const SALES_SCRIPT = [
   "Todo bom produto começa com clareza.",
   "A Fábrica de Soluções transforma briefing em direção.",
@@ -183,6 +189,17 @@ export function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="px-6 pb-8">
+          <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
+            {VALUE_CARDS.map((card) => (
+              <div key={card.title} className="glass-card rounded-2xl p-5">
+                <div className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-2">{card.title}</div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
+              </div>
+            ))}
           </div>
         </section>
 
