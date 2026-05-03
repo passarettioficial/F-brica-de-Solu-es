@@ -17,9 +17,12 @@ export function BrandbookPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/70 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Fábrica de Soluções" className="w-9 h-9 rounded-xl bg-card ring-1 ring-border/70" />
+            <div>
             <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary">Brandbook</p>
             <h1 className="font-serif text-lg text-foreground">Fábrica de Soluções</h1>
+            </div>
           </div>
           <a href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Voltar ao painel</a>
         </div>
