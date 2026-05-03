@@ -53,72 +53,52 @@
 }
 
 :root {
-  /* Warm off-white #fdfcfa */
   --background: 40 33% 98%;
-  /* Dark charcoal #1a1a1a */
   --foreground: 0 0% 10%;
-  
   --card: 40 33% 100%;
   --card-foreground: 0 0% 10%;
   --card-border: 40 10% 90%;
-
   --popover: 40 33% 100%;
   --popover-foreground: 0 0% 10%;
   --popover-border: 40 10% 90%;
-
-  /* Terracotta orange #b8461e */
   --primary: 16 72% 42%;
   --primary-foreground: 0 0% 100%;
-  
   --secondary: 40 20% 90%;
   --secondary-foreground: 0 0% 20%;
-
   --muted: 40 10% 94%;
   --muted-foreground: 0 0% 40%;
-
   --accent: 40 15% 92%;
   --accent-foreground: 16 72% 42%;
-
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-
   --border: 40 15% 88%;
   --input: 40 15% 88%;
   --ring: 16 72% 42%;
-  
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 0 0% 10%;
+  --background: 0 0% 8%;
   --foreground: 40 33% 98%;
-  
-  --card: 0 0% 13%;
+  --card: 0 0% 12%;
   --card-foreground: 40 33% 98%;
   --card-border: 0 0% 20%;
-
-  --popover: 0 0% 13%;
+  --popover: 0 0% 12%;
   --popover-foreground: 40 33% 98%;
   --popover-border: 0 0% 20%;
-
-  --primary: 16 72% 42%;
+  --primary: 16 72% 46%;
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 0 0% 20%;
+  --secondary: 0 0% 18%;
   --secondary-foreground: 40 33% 98%;
-
-  --muted: 0 0% 16%;
-  --muted-foreground: 0 0% 65%;
-
-  --accent: 0 0% 20%;
-  --accent-foreground: 16 72% 42%;
-
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 64%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 16 72% 46%;
   --destructive: 0 62% 30%;
   --destructive-foreground: 40 33% 98%;
-
   --border: 0 0% 20%;
   --input: 0 0% 20%;
-  --ring: 16 72% 42%;
+  --ring: 16 72% 46%;
 }
 
 @layer base {
@@ -127,8 +107,22 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    background-image: radial-gradient(circle at top, hsl(var(--primary) / 0.08), transparent 38%), radial-gradient(circle at bottom right, hsl(220 90% 56% / 0.05), transparent 30%);
+    min-height: 100vh;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-normal;
   }
+}
+
+.glass-card {
+  @apply border border-white/10 bg-white/60 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.06)];
+}
+
+.dark .glass-card {
+  @apply border-white/10 bg-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.25)];
+}
+
+.theme-toggle-button {
+  @apply rounded-full border border-border bg-card/70 backdrop-blur-md;
 }

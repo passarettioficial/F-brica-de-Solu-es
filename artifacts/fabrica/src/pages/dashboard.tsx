@@ -18,6 +18,8 @@ import { usePlan } from "@/hooks/usePlan";
 import { NotificationBell } from "@/components/notification-bell";
 import { OnboardingTour } from "@/components/onboarding-tour";
 import { ActivationChecklist } from "@/components/activation-checklist";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UxStrategyCard } from "@/components/ux-strategy-card";
 
 const PHASE_STATUS_LABELS: Record<string, string> = {
   completed: "Concluida",
@@ -81,7 +83,6 @@ function ProgressBar({ completed, total = 6 }: { completed: number; total?: numb
 function ResumeCard({ project }: { project: { projectId: number; name: string; currentPhase: number; completedPhases: number; phaseStatuses?: string[] } }) {
   const phaseName = PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`;
   const pct = Math.round((project.completedPhases / 6) * 100);
-
   const motivations = [
     "Voce esta indo muito bem — continue!",
     "Quase la! Falta pouco para concluir esta fase.",
@@ -92,7 +93,7 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
 
   return (
     <Link href={`/projects/${project.projectId}/phases/${project.currentPhase}`}>
-      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group mb-8">
+      <div className="glass-card rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer group mb-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -124,25 +125,19 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
   );
 }
 
-function AiLimitBanner({ used, limit, planName }: { used: number; limit: number; planName: string }) {
+function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
   const pct = Math.round((used / limit) * 100);
   if (pct < 70) return null;
-
   const isExhausted = used >= limit;
-
   return (
     <div className={`border rounded-xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200" : "bg-amber-50 border-amber-200"}`} role="alert">
       <span className="text-lg flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium ${isExhausted ? "text-red-800" : "text-amber-800"}`}>
-          {isExhausted
-            ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje`
-            : `Voce usou ${pct}% das suas geracoes de IA hoje (${used}/${limit})`}
+          {isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `Voce usou ${pct}% das suas geracoes de IA hoje (${used}/${limit})`}
         </p>
         <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600" : "text-amber-600"}`}>
-          {isExhausted
-            ? "Os creditos se renovam a meia-noite. Faca upgrade para nao perder o ritmo."
-            : "Faca upgrade para mais geracoes e nunca perder o ritmo."}
+          {isExhausted ? "Os creditos se renovam a meia-noite. Faca upgrade para nao perder o ritmo." : "Faca upgrade para mais geracoes e nunca perder o ritmo."}
         </p>
       </div>
       <Link href="/pricing">
@@ -166,21 +161,19 @@ function EmptyState({ onNew }: { onNew: () => void }) {
       <p className="text-muted-foreground max-w-md mb-8 text-sm leading-relaxed">
         Cada grande produto comeca com uma ideia e um processo rigoroso. Crie seu primeiro projeto e deixe a IA guiar voce pelas 6 fases de construcao — da ideia ao lancamento.
       </p>
-
       <div className="grid grid-cols-3 gap-4 mb-8 max-w-lg w-full text-left">
         {[
           { step: "1", label: "Descreva sua ideia", desc: "Leva menos de 2 minutos" },
           { step: "2", label: "IA gera os artefatos", desc: "PRD, personas, arquitetura..." },
           { step: "3", label: "Valide e avance", desc: "Fase a fase ate o lancamento" },
         ].map((item, i) => (
-          <div key={i} className="bg-card border border-card-border rounded-xl p-4">
+          <div key={i} className="glass-card rounded-xl p-4">
             <div className="text-xs font-semibold text-primary mb-1">Passo {item.step}</div>
             <div className="text-sm font-medium text-foreground mb-0.5">{item.label}</div>
             <div className="text-xs text-muted-foreground">{item.desc}</div>
           </div>
         ))}
       </div>
-
       <Button onClick={onNew} className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 text-base" data-testid="button-new-project-empty">
         Criar meu primeiro projeto
       </Button>
@@ -253,18 +246,11 @@ export function Dashboard() {
           setName("");
           setBriefing("");
           setSelectedTemplate(null);
-          toast({
-            title: "Projeto criado com sucesso!",
-            description: `"${project.name}" esta pronto. Vamos comecar a Fase 1.`,
-          });
+          toast({ title: "Projeto criado com sucesso!", description: `"${project.name}" esta pronto. Vamos comecar a Fase 1.` });
           setLocation(`/projects/${project.id}`);
         },
         onError: () => {
-          toast({
-            title: "Erro ao criar projeto",
-            description: "Tente novamente em alguns instantes.",
-            variant: "destructive",
-          });
+          toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" });
         },
       }
     );
@@ -274,11 +260,7 @@ export function Dashboard() {
   const completedProjects = projects.filter(p => p.completedPhases === 6).length;
   const activeProjects = projects.filter(p => p.completedPhases < 6).length;
   const aiUsagePct = dashboard ? Math.round((dashboard.dailyAiUsage / dashboard.dailyAiLimit) * 100) : 0;
-
-  const mostRecentActive = projects
-    .filter(p => p.completedPhases < 6)
-    .sort((a, b) => (b.projectId ?? 0) - (a.projectId ?? 0))[0];
-
+  const mostRecentActive = projects.filter(p => p.completedPhases < 6).sort((a, b) => (b.projectId ?? 0) - (a.projectId ?? 0))[0];
   const totalCompletedPhases = projects.reduce((s, p) => s + p.completedPhases, 0);
   const phase1Completed = totalCompletedPhases >= 1;
   const phase3Completed = totalCompletedPhases >= 3;
@@ -288,28 +270,18 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <OnboardingTour onComplete={handleTourComplete} />
-
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <img
-              src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`}
-              alt="Logo"
-              className="w-7 h-7 rounded"
-            />
+            <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Logo" className="w-7 h-7 rounded" />
             <span className="font-serif text-lg font-semibold text-foreground">Fabrica de Solucoes</span>
           </Link>
           <nav className="flex items-center gap-3">
-            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              {permissions.planName}
-            </Link>
-            <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Assinatura
-            </Link>
+            <ThemeToggle />
+            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{permissions.planName}</Link>
+            <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Assinatura</Link>
             {permissions.isAdmin && (
-              <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium" data-testid="link-admin">
-                Admin
-              </Link>
+              <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium" data-testid="link-admin">Admin</Link>
             )}
             <NotificationBell />
             <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-settings">
@@ -318,104 +290,48 @@ export function Dashboard() {
           </nav>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-6 py-10">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-serif text-foreground mb-1">
-              {user?.firstName ? `Ola, ${user.firstName}!` : "Bem-vindo!"}
-            </h1>
+            <h1 className="text-3xl font-serif text-foreground mb-1">{user?.firstName ? `Ola, ${user.firstName}!` : "Bem-vindo!"}</h1>
             <p className="text-muted-foreground text-sm">
-              {projects.length === 0
-                ? "Nenhum projeto ainda — comece criando o seu."
-                : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}
+              {projects.length === 0 ? "Nenhum projeto ainda — comece criando o seu." : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects} concluido${completedProjects !== 1 ? "s" : ""}`}
             </p>
           </div>
-          <Button
-            onClick={() => setShowNew(true)}
-            className="bg-primary hover:bg-primary/90 text-white"
-            data-testid="button-new-project"
-          >
-            + Iniciar nova construcao
-          </Button>
+          <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-new-project">+ Iniciar nova construcao</Button>
         </div>
-
-        {/* AI Limit Banner */}
-        {!isLoading && dashboard && (
-          <AiLimitBanner
-            used={dashboard.dailyAiUsage}
-            limit={dashboard.dailyAiLimit}
-            planName={permissions.planName}
-          />
-        )}
-
-        {/* Activation checklist — shown until 3 phases completed */}
-        {showChecklist && (
-          <ActivationChecklist
-            hasProjects={projects.length > 0}
-            hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0}
-            phase1Completed={phase1Completed}
-            phase3Completed={phase3Completed}
-            allPhasesCompleted={allPhasesCompleted}
-            onNewProject={() => setShowNew(true)}
-          />
-        )}
-
-        {/* Resume card */}
-        {!isLoading && mostRecentActive && projects.length > 0 && (
-          <ResumeCard project={mostRecentActive} />
-        )}
-
-        {/* Metrics */}
+        {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
+        {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
+        <UxStrategyCard />
+        {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           <MetricCard label="Projetos ativos" value={activeProjects} color="default" />
           <MetricCard label="Fases concluidas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} color="primary" />
-          <MetricCard
-            label="IA hoje"
-            value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`}
-            sub={`${aiUsagePct}% usado`}
-            color={aiUsagePct >= 90 ? "primary" : "blue"}
-          />
+          <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} color={aiUsagePct >= 90 ? "primary" : "blue"} />
           <MetricCard label="Plano" value={permissions.planName} sub="Ver planos →" color="green" />
         </div>
-
-        {/* Shortcuts */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           {SHORTCUTS.map((s) => {
             const locked = s.planRequired && !permissions.hasAiAdvisor;
             const href = locked ? "/pricing" : (s.href ?? "/pricing");
             return (
               <Link key={s.label} href={href}>
-                <div className="bg-card border border-card-border rounded-xl p-4 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer group" role="button" aria-label={s.label}>
+                <div className="glass-card rounded-xl p-4 cursor-pointer group" role="button" aria-label={s.label}>
                   <div className="text-xl mb-2">{s.icon}</div>
                   <div className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{s.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {locked ? "Plano Avancado" : s.desc}
-                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div>
                 </div>
               </Link>
             );
           })}
         </div>
-
-        {/* Projects grid */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-serif text-xl text-foreground">Seus projetos</h2>
-          {projects.length > 0 && (
-            <button
-              onClick={() => setShowNew(true)}
-              className="text-xs text-primary hover:text-primary/80 transition-colors font-medium"
-            >
-              + Novo projeto
-            </button>
-          )}
+          {projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs text-primary hover:text-primary/80 transition-colors font-medium">+ Novo projeto</button>}
         </div>
-
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card border border-card-border rounded-xl p-5 animate-pulse h-40" />
-            ))}
+            {[1, 2, 3].map((i) => <div key={i} className="bg-card border border-card-border rounded-xl p-5 animate-pulse h-40" />)}
           </div>
         ) : projects.length === 0 ? (
           <EmptyState onNew={() => setShowNew(true)} />
@@ -424,20 +340,12 @@ export function Dashboard() {
             {projects.map((project) => {
               const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active";
               return (
-                <Link
-                  key={project.projectId}
-                  href={`/projects/${project.projectId}`}
-                  data-testid={`card-project-${project.projectId}`}
-                >
+                <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}>
                   <div className="bg-card border border-card-border rounded-xl p-5 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group h-full">
                     <div className="flex items-start justify-between mb-3">
-                      <h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">
-                        {project.name}
-                      </h3>
+                      <h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">{project.name}</h3>
                     </div>
-                    <div className="mb-4">
-                      <PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} />
-                    </div>
+                    <div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                       <span>{project.completedPhases} de 6 fases concluidas</span>
                       <span>{Math.round((project.completedPhases / 6) * 100)}%</span>
@@ -450,75 +358,35 @@ export function Dashboard() {
           </div>
         )}
       </main>
-
-      {/* New project dialog */}
       <Dialog open={showNew} onOpenChange={(open) => { setShowNew(open); if (!open) { setSelectedTemplate(null); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Nova construcao</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            {/* Templates */}
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-2 block">Comecar com um exemplo (opcional)</Label>
               <div className="grid grid-cols-3 gap-2">
                 {EXAMPLE_TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => applyTemplate(t)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all text-sm ${
-                      selectedTemplate === t.id
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-card-border bg-card hover:border-primary/30 text-foreground"
-                    }`}
-                  >
+                  <button key={t.id} onClick={() => applyTemplate(t)} className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all text-sm ${selectedTemplate === t.id ? "border-primary bg-primary/5 text-primary" : "border-card-border bg-card hover:border-primary/30 text-foreground"}`}>
                     <span className="text-xl">{t.icon}</span>
                     <span className="text-xs font-medium leading-tight">{t.label}</span>
                   </button>
                 ))}
               </div>
             </div>
-
             <div>
               <Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label>
-              <Input
-                id="proj-name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Ex: App de delivery para pets"
-                className="mt-1.5"
-                data-testid="input-project-name"
-                aria-required="true"
-              />
+              <Input id="proj-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: App de delivery para pets" className="mt-1.5" data-testid="input-project-name" aria-required="true" />
             </div>
             <div>
-              <Label htmlFor="proj-briefing" className="text-sm font-medium">
-                Briefing inicial
-                <span className="text-xs font-normal text-muted-foreground ml-2">— Quanto mais detalhe, melhor a IA</span>
-              </Label>
-              <Textarea
-                id="proj-briefing"
-                value={briefing}
-                onChange={e => setBriefing(e.target.value)}
-                placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais. Quanto mais detalhe, melhores os artefatos..."
-                className="mt-1.5 min-h-[140px]"
-                data-testid="textarea-project-briefing"
-                aria-required="true"
-              />
-              {briefing.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">{briefing.length} caracteres — {briefing.length < 200 ? "adicione mais contexto para melhores resultados" : "otimo nivel de detalhe!"}</p>
-              )}
+              <Label htmlFor="proj-briefing" className="text-sm font-medium">Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Quanto mais detalhe, melhor a IA</span></Label>
+              <Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais. Quanto mais detalhe, melhores os artefatos..." className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" aria-required="true" />
+              {briefing.length > 0 && <p className="text-xs text-muted-foreground mt-1">{briefing.length} caracteres — {briefing.length < 200 ? "adicione mais contexto para melhores resultados" : "otimo nivel de detalhe!"}</p>}
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button>
-              <Button
-                onClick={handleCreate}
-                disabled={!name.trim() || !briefing.trim() || createProject.isPending}
-                className="bg-primary hover:bg-primary/90 text-white"
-                data-testid="button-create-project"
-              >
-                {createProject.isPending ? "Criando..." : "Criar projeto"}
-              </Button>
+              <Button onClick={handleCreate} disabled={!name.trim() || !briefing.trim() || createProject.isPending} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-create-project">{createProject.isPending ? "Criando..." : "Criar projeto"}</Button>
             </div>
           </div>
         </DialogContent>

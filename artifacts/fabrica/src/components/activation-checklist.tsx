@@ -3,15 +3,6 @@ import { Link } from "wouter";
 
 const DISMISSED_KEY = "fabrica_activation_dismissed";
 
-interface ChecklistStep {
-  id: string;
-  label: string;
-  description: string;
-  done: boolean;
-  href?: string;
-  cta?: string;
-}
-
 interface ActivationChecklistProps {
   hasProjects: boolean;
   hasAiUsage: boolean;
@@ -30,64 +21,41 @@ export function ActivationChecklist({
   onNewProject,
 }: ActivationChecklistProps) {
   const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem(DISMISSED_KEY) === "1"; } catch { return false; }
+    try {
+      return localStorage.getItem(DISMISSED_KEY) === "1";
+    } catch {
+      return false;
+    }
   });
 
   function dismiss() {
-    try { localStorage.setItem(DISMISSED_KEY, "1"); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(DISMISSED_KEY, "1");
+    } catch {
+      return;
+    }
     setDismissed(true);
   }
 
   if (dismissed) return null;
 
-  const steps: ChecklistStep[] = [
-    {
-      id: "account",
-      label: "Criar sua conta",
-      description: "Voce ja esta aqui!",
-      done: true,
-    },
-    {
-      id: "project",
-      label: "Criar o primeiro projeto",
-      description: "Descreva sua ideia e deixe a IA trabalhar.",
-      done: hasProjects,
-      cta: "Criar projeto",
-    },
-    {
-      id: "ai",
-      label: "Gerar artefatos com IA",
-      description: "Clique em Gerar com IA na Fase 1 do seu projeto.",
-      done: hasAiUsage,
-    },
-    {
-      id: "phase1",
-      label: "Concluir a Fase 1 — Ideacao",
-      description: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.",
-      done: phase1Completed,
-      href: hasProjects ? undefined : undefined,
-    },
-    {
-      id: "phase3",
-      label: "Chegar na metade — Fase 3",
-      description: "Produto definido com PRD, personas e roadmap.",
-      done: phase3Completed,
-    },
-    {
-      id: "complete",
-      label: "Concluir as 6 fases",
-      description: "Da ideia ao lancamento — produto pronto!",
-      done: allPhasesCompleted,
-    },
+  const steps = [
+    { id: "account", label: "Criar sua conta", description: "Voce ja esta aqui.", done: true },
+    { id: "project", label: "Criar o primeiro projeto", description: "Descreva sua ideia e deixe a IA trabalhar.", done: hasProjects, cta: "Criar projeto" },
+    { id: "ai", label: "Gerar artefatos com IA", description: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: hasAiUsage },
+    { id: "phase1", label: "Concluir a Fase 1 — Ideacao", description: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed, href: hasProjects ? "/dashboard" : undefined },
+    { id: "phase3", label: "Chegar na metade — Fase 3", description: "Produto definido com PRD, personas e roadmap.", done: phase3Completed },
+    { id: "complete", label: "Concluir as 6 fases", description: "Da ideia ao lancamento — produto pronto.", done: allPhasesCompleted },
   ];
 
-  const doneCount = steps.filter((s) => s.done).length;
+  const doneCount = steps.filter((step) => step.done).length;
   const pct = Math.round((doneCount / steps.length) * 100);
+  const nextStep = steps.find((step) => !step.done);
   const allDone = doneCount === steps.length;
 
   if (allDone) {
     return (
-      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 mb-8 flex items-center gap-4">
+      <div className="glass-card rounded-2xl p-5 mb-8 flex items-center gap-4">
         <div className="text-3xl flex-shrink-0">🏆</div>
         <div className="flex-1">
           <h3 className="font-serif text-lg text-foreground mb-0.5">Ativacao completa!</h3>
@@ -100,10 +68,8 @@ export function ActivationChecklist({
     );
   }
 
-  const nextStep = steps.find((s) => !s.done);
-
   return (
-    <div className="bg-card border border-card-border rounded-2xl p-5 mb-8">
+    <div className="glass-card rounded-2xl p-5 mb-8">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="font-serif text-base text-foreground">Primeiros passos</h3>
@@ -119,10 +85,7 @@ export function ActivationChecklist({
       </div>
 
       <div className="w-full bg-muted rounded-full h-1.5 mb-5" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${pct}% das etapas concluidas`}>
-        <div
-          className="bg-primary h-1.5 rounded-full transition-all duration-700"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="bg-primary h-1.5 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
 
       <div className="space-y-2">
@@ -131,24 +94,12 @@ export function ActivationChecklist({
           return (
             <div
               key={step.id}
-              className={`flex items-start gap-3 p-3 rounded-xl transition-all ${
-                step.done
-                  ? "opacity-50"
-                  : isNext
-                    ? "bg-primary/5 border border-primary/20"
-                    : "opacity-60"
-              }`}
+              className={`flex items-start gap-3 p-3 rounded-xl transition-all ${step.done ? "opacity-50" : isNext ? "bg-primary/5 border border-primary/20" : "opacity-60"}`}
             >
-              <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border mt-0.5 ${
-                step.done
-                  ? "bg-primary border-primary"
-                  : isNext
-                    ? "border-primary/50 bg-white"
-                    : "border-muted-foreground/30 bg-background"
-              }`} aria-hidden="true">
+              <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center border mt-0.5 ${step.done ? "bg-primary border-primary" : isNext ? "border-primary/50 bg-background" : "border-muted-foreground/30 bg-background"}`} aria-hidden="true">
                 {step.done ? (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 ) : (
                   <span className="text-[9px] font-bold text-muted-foreground">{i + 1}</span>
@@ -158,15 +109,10 @@ export function ActivationChecklist({
                 <div className={`text-sm font-medium leading-snug ${step.done ? "line-through text-muted-foreground" : isNext ? "text-foreground" : "text-muted-foreground"}`}>
                   {step.label}
                 </div>
-                {!step.done && (
-                  <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{step.description}</div>
-                )}
+                {!step.done && <div className="text-xs text-muted-foreground mt-0.5 leading-snug">{step.description}</div>}
               </div>
               {isNext && step.cta && (
-                <button
-                  onClick={onNewProject}
-                  className="text-xs text-white bg-primary hover:bg-primary/90 px-3 py-1 rounded-lg flex-shrink-0 font-medium transition-colors"
-                >
+                <button onClick={onNewProject} className="text-xs text-white bg-primary hover:bg-primary/90 px-3 py-1 rounded-lg flex-shrink-0 font-medium transition-colors">
                   {step.cta}
                 </button>
               )}
