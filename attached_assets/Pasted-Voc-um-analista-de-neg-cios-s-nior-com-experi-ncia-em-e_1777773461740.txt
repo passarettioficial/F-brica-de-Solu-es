@@ -1,0 +1,63 @@
+Você é um analista de negócios sênior com experiência em estratégia competitiva, product management e venture capital. Realize uma análise mercadológica profunda e estruturada da Fábrica.
+
+---
+
+DIMENSÃO 1 — PROPOSTA DE VALOR
+• Qual é o problema central que este produto resolve? O problema é latente ou manifesto?
+• A solução é 10x melhor que as alternativas atuais (status quo, concorrentes diretos e indiretos)?
+• O value prop é claro, específico e crível para o público-alvo?
+• Existe job-to-be-done dominante? Qual é o ganho funcional, emocional e social entregue?
+• O produto resolve uma dor intensa ou um desejo aspiracional? Como isso impacta a disposição a pagar?
+
+DIMENSÃO 2 — MOAT & VANTAGENS COMPETITIVAS
+• Classifique e avalie as vantagens competitivas presentes: efeitos de rede, custos de troca, economias de escala, ativos intangíveis (marca, dados, IP), vantagem de custo estrutural.
+• O MOAT é defensável no horizonte de 3, 5 e 10 anos? Quais forças podem erodí-lo?
+• Existe acúmulo de dados ou flywheel que se fortalece com o tempo?
+• Qual é a dificuldade real de replicação por um player capitalizado?
+• O negócio é winner-takes-all, winner-takes-most ou fragmentado? Por quê?
+
+DIMENSÃO 3 — ENGAJAMENTO & RETENÇÃO
+• Qual é o loop de engajamento central (Hook Model: trigger → action → variable reward → investment)?
+• Existem habit loops estruturais ou o produto depende de motivação consciente?
+• Como se comporta a curva de retenção por coorte? Quais são os sinais de churn precoce?
+• Qual é o momento "aha" do produto e em quanto tempo o usuário o atinge?
+• Existem camadas de engajamento (usuário casual → poder → evangelizador)? Como se dá a progressão?
+• O produto cria ou destrói capital social do usuário? Como isso afeta retenção de longo prazo?
+
+DIMENSÃO 4 — MERCADO & TIMING
+• Estime TAM, SAM e SOM com premissas explícitas. O mercado é grande o suficiente?
+• O mercado está em expansão, estável ou em declínio? Qual é o driver macro?
+• O timing é correto? Quais vetores tecnológicos, regulatórios, culturais ou comportamentais habilitam este produto agora e não há 3 anos?
+• Existe risco de mercado prematuro (too early) ou de ser tarde demais (commoditização)?
+• Quem são os segmentos de early adopters e qual é o caminho para o mainstream?
+
+DIMENSÃO 5 — MODELO DE RECEITA & UNIT ECONOMICS
+• O modelo de receita é alinhado ao valor entregue ao cliente?
+• Estime (ou avalie criticamente) CAC, LTV, payback period e margem de contribuição.
+• A estrutura de preços captura o máximo de willingness to pay ou deixa valor na mesa?
+• O negócio escala com margem crescente ou decrescente? Onde está o ponto de inflexão?
+• Existe potencial de expansão de receita via upsell, cross-sell ou expansão de segmento?
+
+DIMENSÃO 6 — GO-TO-MARKET & DISTRIBUIÇÃO
+• Qual é o canal de distribuição primário e por que ele é o correto para este público?
+• A estratégia de aquisição é sustentável e escalável, ou depende de canais caros/frágeis?
+• Existe um motion de crescimento dominante: product-led, sales-led, marketing-led ou community-led?
+• Como o produto se beneficia (ou não) de network effects na distribuição?
+• Qual é a estratégia de entrada no mercado: nicho de beachhead → expansão ou ataque direto ao mainstream?
+
+DIMENSÃO 7 — RISCOS CRÍTICOS & MITIGAÇÃO
+• Mapeie os 5 principais riscos (tecnológico, competitivo, regulatório, comportamental, financeiro).
+• Quais hipóteses centrais precisam ser verdadeiras para o sucesso do negócio? Qual o grau de incerteza de cada uma?
+• Existem riscos de dependência de plataforma, de concentração de clientes ou de fornecedores?
+• Como o negócio se comporta em cenários adversos (recessão, entrada de big tech, mudança regulatória)?
+
+---
+
+SÍNTESE EXECUTIVA
+Ao final, entregue:
+1. Score por dimensão (1 a 10) com justificativa de 1 linha
+2. Os 3 pontos fortes mais defensáveis do negócio
+3. As 3 vulnerabilidades mais críticas a endereçar
+4. Veredicto geral: este negócio tem potencial para ser uma empresa de valor duradouro? Por quê?
+
+Use linguagem direta, evite generalidades. Quando não houver dados suficientes, sinalize a premissa adotada e indique o que precisaria ser validado.
