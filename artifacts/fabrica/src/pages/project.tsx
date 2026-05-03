@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const ENCOURAGEMENT: Record<number, string> = {
   0: "Tudo comeca aqui. Vamos validar sua ideia.",
@@ -90,6 +92,7 @@ export function ProjectPage() {
   const updateProject = useUpdateProject();
   const [editingBriefing, setEditingBriefing] = useState(false);
   const [briefingDraft, setBriefingDraft] = useState("");
+  const [collaboratorEmail, setCollaboratorEmail] = useState("");
   const [activeTab, setActiveTab] = useState<"briefing" | "artifacts">("briefing");
 
   if (isLoading) {
@@ -129,6 +132,14 @@ export function ProjectPage() {
   const completedPhases = phases.filter((p: any) => p.status === "completed").length;
   const progressPct = Math.round((completedPhases / 6) * 100);
   const encouragement = ENCOURAGEMENT[completedPhases] ?? "";
+  const nextPhase = useMemo(() => phases.find((p: any) => p.status !== "completed"), [phases]);
+  const recentArtifacts = useMemo(() => {
+    return phases.flatMap((phase: any) => (phase.artifacts ?? []).map((artifact: any) => ({
+      phaseNumber: phase.phaseNumber,
+      key: artifact.artifactKey,
+      hasContent: !!artifact.content?.trim(),
+    }))).filter((artifact: any) => artifact.hasContent).slice(-6).reverse();
+  }, [phases]);
 
   function saveBriefing() {
     updateProject.mutate(
@@ -145,6 +156,24 @@ export function ProjectPage() {
         },
       }
     );
+  }
+
+  function shareProject() {
+    const shareUrl = `${window.location.origin}${basePath}/projects/${projectId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({ title: "Link copiado", description: "Compartilhe esse projeto com sua equipe." });
+    }).catch(() => {
+      toast({ title: "Nao foi possivel copiar", variant: "destructive" });
+    });
+  }
+
+  function addCollaborator() {
+    if (!collaboratorEmail.trim()) return;
+    toast({
+      title: "Convite preparado",
+      description: `${collaboratorEmail} sera adicionado assim que a camada de colaboracao estiver ativa.`,
+    });
+    setCollaboratorEmail("");
   }
 
   return (
@@ -236,7 +265,7 @@ export function ProjectPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border mb-6" role="tablist">
-          {(["briefing", "artifacts"] as const).map((tab) => (
+          {(["briefing", "artifacts", "collaboration"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -249,7 +278,7 @@ export function ProjectPage() {
               }`}
               data-testid={`tab-${tab}`}
             >
-              {tab === "briefing" ? "Briefing" : "Artefatos"}
+              {tab === "briefing" ? "Briefing" : tab === "artifacts" ? "Artefatos" : "Colaboração"}
             </button>
           ))}
         </div>
@@ -339,6 +368,64 @@ export function ProjectPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {activeTab === "collaboration" && (
+          <div className="space-y-4" role="tabpanel">
+            <div className="bg-card border border-card-border rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-serif text-lg">Compartilhar projeto</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Copie um link para revisao e contexto compartilhado.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={shareProject}>Copiar link</Button>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={collaboratorEmail}
+                  onChange={(e) => setCollaboratorEmail(e.target.value)}
+                  placeholder="email@empresa.com"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+                <Button onClick={addCollaborator} className="bg-primary hover:bg-primary/90 text-white">Convidar</Button>
+              </div>
+            </div>
+
+            <div className="bg-card border border-card-border rounded-xl p-6">
+              <h3 className="font-serif text-lg mb-4">Ultimas entregas</h3>
+              <div className="space-y-3">
+                {recentArtifacts.length > 0 ? recentArtifacts.map((item: any, index: number) => (
+                  <div key={`${item.phaseNumber}-${item.key}-${index}`} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                    <div>
+                      <div className="text-sm font-medium text-foreground">{item.key}</div>
+                      <div className="text-xs text-muted-foreground">Fase {item.phaseNumber}</div>
+                    </div>
+                    <span className="text-xs text-primary">pronto</span>
+                  </div>
+                )) : (
+                  <p className="text-sm text-muted-foreground">Nenhum artefato gerado ainda.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-card border border-card-border rounded-xl p-6">
+              <h3 className="font-serif text-lg mb-4">Próximos passos</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Fase atual</span>
+                  <span className="font-medium text-foreground">{PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Próxima fase</span>
+                  <span className="font-medium text-foreground">{nextPhase ? PHASES[nextPhase.phaseNumber - 1]?.name : "Projeto concluído"}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Progresso</span>
+                  <span className="font-medium text-foreground">{progressPct}%</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>

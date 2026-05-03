@@ -422,6 +422,12 @@ export function PhasePage() {
 
   const phaseDef = PHASES[phaseNumber - 1];
   const artifacts: any[] = (phase as any)?.artifacts ?? [];
+  const artifactGroups = artifacts.reduce((acc: Record<string, any[]>, artifact: any) => {
+    const key = artifact.content?.trim() ? "preenchidos" : "vazios";
+    acc[key] ??= [];
+    acc[key].push(artifact);
+    return acc;
+  }, {});
   const allGatesChecked = phase?.gate1Checked && phase?.gate2Checked && phase?.gate3Checked;
   const isLocked = phase?.status === "locked";
   const isCompleted = phase?.status === "completed";
@@ -678,7 +684,23 @@ export function PhasePage() {
         {/* Artifacts */}
         {artifacts.length > 0 && (
           <div className="space-y-3">
-            <h2 className="font-serif text-lg">Artefatos gerados</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-lg">Artefatos gerados</h2>
+              <span className="text-xs text-muted-foreground">{generatedCount}/{totalCount} prontos</span>
+            </div>
+            {artifactGroups.preenchidos?.length > 0 && (
+              <div className="bg-card border border-card-border rounded-xl p-4">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Entregas concluídas</div>
+                <div className="space-y-2">
+                  {artifactGroups.preenchidos.map((artifact: any) => (
+                    <div key={artifact.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                      <span className="text-sm text-foreground">{artifact.artifactKey}</span>
+                      <span className="text-xs text-primary">pronto</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {artifacts.map((artifact) => (
               <ArtifactCard
                 key={artifact.id}
@@ -773,6 +795,32 @@ export function PhasePage() {
             </div>
           </div>
         )}
+
+        <div className="bg-card border border-card-border rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="font-serif text-lg">Colaboração do time</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Espaço para alinhar decisões e manter contexto.</p>
+            </div>
+            <Link href={`/projects/${projectId}`}>
+              <Button variant="outline" size="sm">Ver projeto</Button>
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-border p-4">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Resumo da fase</div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {phaseDef?.motivation}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border p-4">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Ação seguinte</div>
+              <p className="text-sm text-foreground leading-relaxed">
+                {allGatesChecked ? "Concluir a fase agora." : "Marcar os critérios de saída e revisar os artefatos."}
+              </p>
+            </div>
+          </div>
+        </div>
 
         {phaseNumber > 1 && (
           <div className="text-center pb-6">
