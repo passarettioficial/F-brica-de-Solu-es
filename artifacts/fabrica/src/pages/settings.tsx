@@ -76,7 +76,7 @@ export function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/70 bg-background/90 sticky top-0 z-10 backdrop-blur-xl">
+      <header className="border-b border-border/70 bg-background/85 sticky top-0 z-10 backdrop-blur-xl">
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="text-muted-foreground hover:text-primary text-sm transition-colors">
@@ -96,15 +96,15 @@ export function SettingsPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-6 py-10">
-        <div className="mb-8 rounded-3xl border border-border bg-card p-6 shadow-sm">
-          <p className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-2">PAINEL DE CONFIGURAÇÕES</p>
+        <div className="mb-8">
+          <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">PAINEL DE CONFIGURAÇÕES</p>
           <h1 className="text-3xl font-serif text-foreground">Configurações da conta</h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-xl">Ajuste seu perfil, plano e preferências com a linguagem visual da marca: azul estrutural, laranja de ação e superfícies claras.</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl">Ajuste seu perfil, plano e preferências.</p>
         </div>
 
         <div className="space-y-6">
           {/* Profile */}
-          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
+          <div className="glass-card rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif text-lg">Perfil</h2>
               <span className="text-xs font-mono uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">essencial</span>
@@ -139,7 +139,7 @@ export function SettingsPage() {
           </div>
 
           {/* AI Usage */}
-          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
+          <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-4">Uso de IA hoje</h2>
             {isLoading ? (
               <div className="animate-pulse h-8 bg-muted rounded" />
@@ -160,7 +160,7 @@ export function SettingsPage() {
           </div>
 
           {/* Plan Management */}
-          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
+          <div className="glass-card rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-serif text-lg">Plano atual</h2>
               <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
@@ -174,7 +174,7 @@ export function SettingsPage() {
                 { label: "Download de artefatos", value: permissions.canDownload ? "✓" : "✕" },
                 { label: "AI Advisor", value: permissions.hasAiAdvisor ? "✓" : "✕" },
               ].map(item => (
-                <div key={item.label} className="flex items-center justify-between bg-secondary/60 rounded-lg px-3 py-2 border border-border/60">
+                <div key={item.label} className="flex items-center justify-between bg-secondary/40 rounded-lg px-3 py-2 border border-border/60">
                   <span className="text-muted-foreground text-xs">{item.label}</span>
                   <span className={`text-xs font-medium ${item.value === "✕" ? "text-muted-foreground" : "text-foreground"}`}>{item.value}</span>
                 </div>
@@ -193,7 +193,7 @@ export function SettingsPage() {
           </div>
 
           {/* Shortcuts */}
-          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
+          <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-4">Atalhos</h2>
             <div className="grid grid-cols-2 gap-2">
               <Link href="/atendimento">
@@ -225,7 +225,7 @@ export function SettingsPage() {
           </div>
 
           {/* LGPD / Privacy */}
-          <div className="bg-card border border-card-border rounded-2xl p-6 shadow-sm">
+          <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-1">Privacidade e LGPD</h2>
             <p className="text-sm text-muted-foreground mb-4">
               Seus dados são protegidos conforme a Lei 13.709/2018 (LGPD). Você pode exercer seus direitos a qualquer momento.

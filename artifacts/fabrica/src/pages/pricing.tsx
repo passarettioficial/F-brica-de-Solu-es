@@ -126,7 +126,7 @@ export function PricingPage() {
             Escolha o plano certo para você
           </h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Transforme ideias em produtos com IA. De validação até o lançamento, em 6 fases estruturadas.
+            Transforme ideias em produtos com IA.
           </p>
         </div>
 
@@ -207,7 +207,7 @@ export function PricingPage() {
         </div>
 
         {/* Advanced plan differentiator callout */}
-        <div className="mt-16 bg-card border border-card-border rounded-2xl p-8">
+        <div className="mt-16 glass-card rounded-2xl p-8">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-xl flex-shrink-0">🤖</div>
             <div>

@@ -546,7 +546,7 @@ export function PhasePage() {
         <style>{`@media print { .no-print-content { display: none !important; } body::after { content: "Impressao disponivel apenas no plano Avancado."; display: block; padding: 2rem; } }`}</style>
       )}
 
-      <header className="border-b bg-card/50 sticky top-0 z-10">
+      <header className="border-b border-border/70 bg-background/85 sticky top-0 z-10 backdrop-blur-xl">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3 text-sm" aria-label="Navegacao">
           <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Painel</Link>
           <span className="text-muted-foreground" aria-hidden="true">/</span>
@@ -565,7 +565,7 @@ export function PhasePage() {
 
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-6">
         {/* Phase header */}
-        <div className="bg-card border border-card-border rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <div className="flex items-start gap-4 mb-4">
             <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
               isCompleted ? "bg-primary text-white" : isLocked ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary border border-primary/30"
@@ -618,7 +618,7 @@ export function PhasePage() {
         </div>
 
         {/* AI Execution */}
-        <div className="bg-card border border-card-border rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6">
           <div className="flex items-start justify-between mb-1">
             <h2 className="font-serif text-lg">Gerar com IA</h2>
             {hasArtifacts && !generating && (
@@ -654,15 +654,15 @@ export function PhasePage() {
                 {hasArtifacts ? "Regenerar todos os artefatos" : `Gerar artefatos da fase ${phaseDef?.name} com IA`}
               </Button>
               {generationError && (
-                <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4" role="alert">
-                  <span className="text-red-500 flex-shrink-0">⚠️</span>
+                <div className="flex items-start gap-3 bg-destructive/10 border border-destructive/20 rounded-xl p-4" role="alert">
+                  <span className="text-destructive flex-shrink-0">⚠️</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-red-700 font-medium">Erro na geracao</p>
-                    <p className="text-xs text-red-600 mt-0.5">{generationError}</p>
+                    <p className="text-sm text-destructive font-medium">Erro na geracao</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{generationError}</p>
                   </div>
                   <button
                     onClick={handleExecuteAI}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium flex-shrink-0 underline"
+                    className="text-xs text-primary hover:text-primary/80 font-medium flex-shrink-0 underline"
                   >
                     Tentar novamente
                   </button>
@@ -705,7 +705,7 @@ export function PhasePage() {
 
         {/* Gate */}
         {!isLocked && !justCompleted && (
-          <div className="bg-card border border-card-border rounded-2xl p-6">
+          <div className="glass-card rounded-2xl p-6">
             <h2 className="font-serif text-lg mb-1">Portao de saida</h2>
             <p className="text-xs text-muted-foreground mb-5">Marque os 3 criterios para avancar. Nao avance ate estar genuinamente satisfeito.</p>
             <div className="space-y-4" role="group" aria-label="Criterios de saida da fase">
@@ -767,7 +767,7 @@ export function PhasePage() {
 
         {/* Upgrade prompt for free plan */}
         {permissions.plan === "free" && hasArtifacts && (
-          <div className="bg-card border border-card-border rounded-2xl p-5 flex items-start gap-4">
+          <div className="glass-card rounded-2xl p-5 flex items-start gap-4">
             <div className="text-2xl flex-shrink-0">⬆️</div>
             <div className="flex-1">
               <h3 className="font-medium text-foreground mb-1">Copie, edite e baixe seus artefatos</h3>
