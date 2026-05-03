@@ -30,9 +30,26 @@ export function BrandbookPage() {
           <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">Guia de marca</p>
           <h2 className="font-serif text-3xl text-foreground mb-3">Base visual e verbal do produto</h2>
           <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            Este brandbook define a identidade da Fábrica de Soluções: uma marca SaaS clara, confiável e acolhedora,
-            com estética moderna, hierarquia forte e foco em legibilidade.
+            Identidade para uma marca SaaS clara, confiável e acolhedora.
           </p>
+        </section>
+
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="glass-card rounded-2xl p-5">
+            <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Arquétipo</p>
+            <p className="font-serif text-2xl text-foreground">O conselheiro</p>
+            <p className="text-sm text-muted-foreground mt-2">Guiar com clareza, reduzir fricção e transmitir confiança.</p>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Personalidade</p>
+            <p className="font-serif text-2xl text-foreground">Precisa e humana</p>
+            <p className="text-sm text-muted-foreground mt-2">Técnica sem rigidez, elegante sem excessos.</p>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <p className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Promessa</p>
+            <p className="font-serif text-2xl text-foreground">Do caos à estrutura</p>
+            <p className="text-sm text-muted-foreground mt-2">Transformar ideia em produto com método.</p>
+          </div>
         </section>
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
