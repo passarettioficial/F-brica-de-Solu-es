@@ -74,10 +74,13 @@ export function Home() {
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
 
       {/* ── Header ── */}
-      <header className="py-4 px-8 flex justify-between items-center border-b border-border/60 bg-background/80 sticky top-0 z-20 backdrop-blur-xl">
-        <div className="flex items-center gap-2.5">
-          <img src={`${base}/logo.svg`} alt="Fabrica" className="w-7 h-7 rounded-md" />
-          <span className="font-serif text-base font-semibold text-foreground tracking-tight">Fabrica de Solucoes</span>
+      <header className="py-4 px-6 md:px-8 flex justify-between items-center border-b border-border/60 bg-background/85 sticky top-0 z-20 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <img src={`${base}/logo.svg`} alt="Fabrica" className="w-8 h-8 rounded-xl ring-1 ring-border/70 bg-card" />
+          <div className="leading-tight">
+            <span className="font-serif text-base font-semibold text-foreground tracking-tight block">Fabrica de Solucoes</span>
+            <span className="text-[11px] text-muted-foreground font-mono uppercase tracking-[0.18em]">SaaS product system</span>
+          </div>
         </div>
         <nav className="flex gap-1 items-center">
           <ThemeToggle />
@@ -90,7 +93,7 @@ export function Home() {
       <main className="flex-1 flex flex-col">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-center px-6 pt-28 pb-32 text-center overflow-hidden">
+        <section className="relative flex flex-col items-center justify-center px-6 pt-24 pb-28 text-center overflow-hidden">
           <div className="hero-glow" />
           <div className="hero-grid" />
 
@@ -100,13 +103,13 @@ export function Home() {
           <div className="absolute bottom-8 left-8 w-6 h-6 border-b border-l border-primary/20 hidden md:block" />
           <div className="absolute bottom-8 right-8 w-6 h-6 border-b border-r border-primary/20 hidden md:block" />
 
-          <div className="relative z-10 max-w-4xl mx-auto w-full">
-            <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/25 bg-primary/5 tracking-wider">
+          <div className="relative z-10 max-w-5xl mx-auto w-full">
+            <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/20 bg-white/70 shadow-sm tracking-wider">
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
               PLATAFORMA DE PRODUTO COM IA — v2.0
             </div>
 
-            <h1 className="text-6xl md:text-8xl font-serif text-foreground leading-[0.95] tracking-tight mb-8">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
               A linha de<br />
               montagem para<br />
               <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders serios</span>.
@@ -119,14 +122,11 @@ export function Home() {
             </p>
 
             {/* Stats row */}
-            <div className="flex items-center justify-center gap-0 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-0 md:divide-x md:divide-border/60 mb-12 max-w-3xl mx-auto bg-card/70 backdrop-blur-sm border border-border/60 rounded-2xl overflow-hidden">
               {STATS.map((stat, i) => (
-                <div key={i} className="flex items-stretch">
-                  <div className="text-center px-6 py-0">
+                <div key={i} className="text-center px-6 py-5">
                     <div className="stat-shimmer text-3xl font-bold font-serif">{stat.value}</div>
                     <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mt-0.5">{stat.label}</div>
-                  </div>
-                  {i < STATS.length - 1 && <div className="w-px bg-border/60 self-stretch" />}
                 </div>
               ))}
             </div>
@@ -154,14 +154,14 @@ export function Home() {
             {/* Desktop pipeline */}
             <div className="hidden md:grid grid-cols-6 gap-0 relative">
               {/* Connector line */}
-              <div className="absolute top-[22px] left-[8.33%] right-[8.33%] h-px bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
+              <div className="absolute top-[22px] left-[8.33%] right-[8.33%] h-px bg-gradient-to-r from-primary/15 via-primary/35 to-primary/15" />
 
               {PHASES.map((phase, i) => (
                 <div key={i} className="flex flex-col items-center relative group">
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold font-mono z-10 mb-3 transition-all duration-300 border-2 ${
                     i === 0
                       ? "bg-primary border-primary text-primary-foreground phase-node-active"
-                      : "bg-background border-border text-muted-foreground group-hover:border-primary/40 group-hover:text-primary"
+                      : "bg-card border-border text-muted-foreground group-hover:border-primary/40 group-hover:text-primary"
                   }`}>
                     {phase.num}
                   </div>
@@ -175,9 +175,9 @@ export function Home() {
             {/* Mobile pipeline */}
             <div className="md:hidden space-y-3">
               {PHASES.map((phase, i) => (
-                <div key={i} className="flex items-center gap-4 glass-card rounded-xl p-4">
+                <div key={i} className="flex items-center gap-4 glass-card rounded-2xl p-4">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold font-mono flex-shrink-0 border-2 ${
-                    i === 0 ? "bg-primary border-primary text-primary-foreground" : "bg-background border-border text-muted-foreground"
+                    i === 0 ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-muted-foreground"
                   }`}>{phase.num}</div>
                   <div className="flex-1">
                     <div className="text-sm font-semibold text-foreground">{phase.name}</div>
@@ -205,7 +205,7 @@ export function Home() {
                 <div key={i} className="glass-card rounded-2xl p-7 group cursor-default">
                   <div className="flex items-start justify-between mb-5">
                     <span className="text-xs font-mono text-primary/60 tracking-wider">{f.step}</span>
-                    <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">{f.tag}</span>
+                    <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full border border-border/60">{f.tag}</span>
                   </div>
                   <div className="text-primary text-lg mb-3 font-mono">{f.icon}</div>
                   <h3 className="font-serif text-xl mb-3 text-foreground group-hover:text-primary transition-colors duration-200">{f.title}</h3>
@@ -230,7 +230,7 @@ export function Home() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {TESTIMONIALS.map((t, i) => (
-                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/5 backdrop-blur-sm">
+                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm">
                   <div className="text-primary text-3xl font-serif mb-4 leading-none">"</div>
                   <p className="text-sm text-background/80 leading-relaxed mb-6 italic">{t.quote}</p>
                   <div className="flex items-center justify-between border-t border-background/10 pt-4">

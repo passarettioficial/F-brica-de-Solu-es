@@ -106,7 +106,7 @@ export function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50">
+      <header className="border-b border-border/60 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             ← Voltar ao painel
@@ -121,7 +121,7 @@ export function PricingPage() {
 
       <main className="max-w-5xl mx-auto px-6 py-16">
         <div className="text-center mb-14">
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-3">Planos</p>
+          <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.22em] mb-3">Planos</p>
           <h1 className="font-serif text-4xl text-foreground mb-4">
             Escolha o plano certo para você
           </h1>
@@ -136,7 +136,7 @@ export function PricingPage() {
               key={plan.id}
               className={`relative rounded-2xl border p-7 flex flex-col ${
                 plan.highlight
-                  ? "border-primary shadow-lg bg-card"
+                  ? "border-primary/30 shadow-lg bg-card"
                   : "border-card-border bg-card"
               }`}
             >

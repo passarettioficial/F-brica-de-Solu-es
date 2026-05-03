@@ -128,7 +128,7 @@ const METRIC_SUB_COLOR: Record<MetricVariant, string> = {
 
 function MetricCard({ label, value, sub, variant = "default" }: { label: string; value: string | number; sub?: string; variant?: MetricVariant }) {
   return (
-    <div className="bg-card border border-card-border rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/20">
+    <div className="bg-card border border-card-border rounded-2xl p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/20">
       <div className={`text-2xl font-bold font-serif mb-0.5 ${METRIC_VALUE_COLOR[variant]}`}>{value}</div>
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       {sub && <div className={`text-xs mt-0.5 font-mono ${METRIC_SUB_COLOR[variant]}`}>{sub}</div>}
