@@ -25,6 +25,13 @@ const scenes = [
   },
 ];
 
+const script = [
+  "Todo bom produto começa com clareza.",
+  "A Fábrica de Soluções transforma briefing em direção.",
+  "Você avança por 6 fases, com artefatos que reduzem ambiguidade.",
+  "O resultado é um produto mais forte, mais rápido e pronto para vender.",
+];
+
 export function SalesVideoPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +60,14 @@ export function SalesVideoPage() {
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Brandbook aplicado</span>
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">6 fases</span>
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">45+ artefatos</span>
+            </div>
+            <div className="mt-8 space-y-3">
+              {script.map((line, index) => (
+                <div key={index} className="flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-3">
+                  <span className="text-xs font-mono text-primary mt-0.5">0{index + 1}</span>
+                  <p className="text-sm text-foreground leading-relaxed">{line}</p>
+                </div>
+              ))}
             </div>
           </div>
 
