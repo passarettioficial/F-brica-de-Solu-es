@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MarketingVideo } from "@/components/marketing-video";
 
 const STATS = [
   { value: "6", label: "fases" },
@@ -91,13 +92,6 @@ const FINAL_CHECKLIST = [
   "Brandbook e vídeo de vendas publicados",
 ];
 
-const SALES_SCRIPT = [
-  "Todo bom produto começa com clareza.",
-  "A Fábrica de Soluções transforma briefing em direção.",
-  "Você avança por 6 fases, com artefatos que reduzem ambiguidade.",
-  "O resultado é um produto mais forte, mais rápido e pronto para vender.",
-];
-
 export function Home() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -141,7 +135,7 @@ export function Home() {
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
               A linha de<br />
               montagem para<br />
-              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders serios</span>.
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders</span>.
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl font-sans leading-relaxed">
@@ -313,54 +307,15 @@ export function Home() {
         </section>
 
         <section className="py-24 px-6">
-          <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_0.9fr] gap-6 items-stretch">
-            <div className="glass-card rounded-3xl p-8">
-              <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-3">Vídeo de vendas</p>
-              <h2 className="font-serif text-4xl text-foreground leading-tight mb-4">Um vídeo curto para vender a ideia com força.</h2>
-              <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-                Estruturamos uma peça com abertura, problema, processo, resultado e CTA final para explicar o valor da plataforma em segundos.
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">VÍDEO DE APRESENTAÇÃO</p>
+              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-3">Da ideia ao produto em 6 fases.</h2>
+              <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
+                Veja como a plataforma transforma um briefing em artefatos prontos — PRD, arquitetura, go-to-market e mais.
               </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Roteiro pronto</span>
-                <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Brandbook aplicado</span>
-                <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">CTA claro</span>
-              </div>
-              <div className="mt-8 space-y-3">
-                {SALES_SCRIPT.map((line, index) => (
-                  <div key={index} className="flex items-start gap-3 rounded-2xl border border-border bg-background px-4 py-3">
-                    <span className="text-xs font-mono text-primary mt-0.5">0{index + 1}</span>
-                    <p className="text-sm text-foreground leading-relaxed">{line}</p>
-                  </div>
-                ))}
-              </div>
             </div>
-
-            <div className="glass-card rounded-3xl p-6 flex flex-col justify-between">
-              <div>
-                <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-3">Estrutura do vídeo</p>
-                <div className="space-y-3">
-                  {[
-                    ["01", "Pare de começar pelo código", "Uma ideia sem estrutura vira retrabalho."],
-                    ["02", "6 fases, 45+ artefatos", "Lean Canvas, PRD, arquitetura e go-to-market."],
-                    ["03", "Visual limpo, processo sério", "Branding consistente e decisões mais claras."],
-                    ["04", "Pronto para vender", "Crie, valide e lance com mais confiança."],
-                  ].map(([k, title, text]) => (
-                    <div key={k} className="rounded-2xl border border-border bg-background p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-mono text-primary">Cena {k}</span>
-                        <span className="text-[11px] text-muted-foreground uppercase tracking-wider">6–8s</span>
-                      </div>
-                      <p className="font-serif text-lg text-foreground mb-1">{title}</p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-6 rounded-2xl bg-primary/5 border border-primary/15 p-4">
-                <p className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-1">Fechamento</p>
-                <p className="text-sm text-foreground">Crie seu primeiro projeto em menos de 2 minutos. Sem cartão de crédito.</p>
-              </div>
-            </div>
+            <MarketingVideo />
           </div>
         </section>
 

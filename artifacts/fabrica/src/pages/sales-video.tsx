@@ -52,7 +52,7 @@ export function SalesVideoPage() {
         <section className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 items-stretch">
           <div className="glass-card rounded-3xl p-8">
             <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-3">Roteiro principal</p>
-            <h2 className="font-serif text-4xl text-foreground leading-tight mb-4">A linha de montagem para founders sérios.</h2>
+            <h2 className="font-serif text-4xl text-foreground leading-tight mb-4">A linha de montagem para founders.</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
               Um vídeo curto, direto e premium para mostrar a proposta: sair da ideia solta e chegar em produto com estrutura, artefatos e direção.
             </p>
