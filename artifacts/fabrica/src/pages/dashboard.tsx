@@ -229,40 +229,8 @@ export function Dashboard() {
         </div>
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           <section className="space-y-6">
-            <div className="surface-panel rounded-2xl p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="font-serif text-lg text-foreground">Primeiros passos</h2>
-                  <p className="text-sm text-muted-foreground">{Math.min(6, Math.max(1, projects.length || 1))} de 6 etapas concluídas</p>
-                </div>
-                <span className="text-xs text-muted-foreground">Ocultar</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-1.5 mb-5">
-                <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.max(8, Math.min(100, (projects.length ? (projects.reduce((s, p) => s + p.completedPhases, 0) / 6) * 100 : 16)))}%` }} />
-              </div>
-              <div className="space-y-2">
-                {[
-                  { n: 1, title: "Criar sua conta", desc: "Voce ja está aqui.", done: true },
-                  { n: 2, title: "Criar o primeiro projeto", desc: "Descreva sua ideia e deixe a IA trabalhar.", done: projects.length > 0, cta: "Criar projeto" },
-                  { n: 3, title: "Usar um template", desc: "Comece por um modelo mais forte e mais rápido.", done: selectedTemplate !== null },
-                  { n: 4, title: "Gerar artefatos com IA", desc: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: (dashboard?.dailyAiUsage ?? 0) > 0 },
-                  { n: 5, title: "Concluir a Fase 1 — Ideação", desc: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed },
-                  { n: 6, title: "Chegar na metade — Fase 3", desc: "Produto definido com PRD, personas e roadmap.", done: phase3Completed },
-                  { n: 7, title: "Concluir as 6 fases", desc: "Da ideia ao lançamento — produto pronto.", done: allPhasesCompleted },
-                ].map((step) => (
-                  <div key={step.n} className={`flex items-center gap-3 p-3 rounded-xl border ${step.done ? "bg-secondary/35 border-border/70" : "bg-background border-border/70"}`}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border ${step.done ? "bg-primary border-primary text-white" : "border-border text-muted-foreground"}`}>{step.done ? "✓" : step.n}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium ${step.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{step.title}</div>
-                      {!step.done && <div className="text-xs text-muted-foreground">{step.desc}</div>}
-                    </div>
-                    {!step.done && step.cta && <Button size="sm" className="rounded-full bg-primary text-white">Criar projeto</Button>}
-                  </div>
-                ))}
-              </div>
-            </div>
-            {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
             {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} hasTemplates={selectedTemplate !== null} hasSharedProject={hasSharedProject} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
+            {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
             {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
             <div className="flex items-start justify-between mb-8">
               <div />
