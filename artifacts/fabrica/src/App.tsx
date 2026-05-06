@@ -1,5 +1,6 @@
 import { useEffect, useRef, ComponentType } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
@@ -140,8 +141,26 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function Router() {
   return (
+    <PageTransition>
     <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/landing" component={LandingPage} />
@@ -178,6 +197,7 @@ function Router() {
       </Route>
       <Route component={NotFound} />
     </Switch>
+    </PageTransition>
   );
 }
 

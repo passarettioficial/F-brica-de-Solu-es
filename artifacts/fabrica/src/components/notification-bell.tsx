@@ -121,9 +121,12 @@ export function NotificationBell() {
             {loading ? (
               <div className="py-8 text-center text-sm text-muted-foreground">Carregando...</div>
             ) : notifications.length === 0 ? (
-              <div className="py-10 text-center">
-                <div className="text-3xl mb-2">🔔</div>
-                <p className="text-sm text-muted-foreground">Nenhuma notificação ainda</p>
+              <div className="py-8 px-4 text-center">
+                <div className="text-2xl mb-2">🔔</div>
+                <p className="text-sm font-medium text-foreground mb-1">Tudo em dia por aqui</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Você verá alertas aqui quando houver novidades — artefatos gerados, lembretes de fase ou atualizações da plataforma.
+                </p>
               </div>
             ) : (
               notifications.map(n => (

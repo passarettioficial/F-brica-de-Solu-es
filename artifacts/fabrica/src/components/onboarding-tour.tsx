@@ -5,40 +5,25 @@ const STORAGE_KEY = "fabrica_onboarding_done";
 
 const STEPS = [
   {
-    title: "Bem-vindo a Fabrica de Solucoes!",
+    title: "Bem-vindo à Fábrica!",
     description:
-      "Esta plataforma transforma sua ideia em um produto validado com o apoio da IA. Em apenas 6 fases estruturadas, voce vai da concepcao ao lancamento.",
+      "Transformamos sua ideia em produto validado em 6 fases estruturadas — da ideação ao lançamento, com IA guiando cada etapa.",
     icon: "🏭",
+    tag: "Passo 1 de 3",
   },
   {
-    title: "Crie seu primeiro projeto",
+    title: "IA gera seus artefatos",
     description:
-      "Clique em '+ Iniciar nova construcao' e descreva sua ideia. Quanto mais detalhes voce fornecer no briefing, melhores serao os artefatos gerados pela IA.",
-    icon: "📋",
-  },
-  {
-    title: "6 fases sequenciais",
-    description:
-      "Cada projeto passa por: Ideacao → Definicao → Especificacao → Prototipacao → Validacao → Deploy. Voce precisa concluir cada fase para avancar para a proxima.",
-    icon: "🔄",
-  },
-  {
-    title: "Artefatos gerados por IA",
-    description:
-      "Em cada fase, a IA gera documentos detalhados como PRD, personas, diagramas de arquitetura, planos de marketing e muito mais — tudo baseado no seu briefing.",
+      "Descreva sua ideia no briefing e a IA gera PRD, personas, arquitetura, go-to-market e mais — cada fase com entregáveis prontos para usar.",
     icon: "🤖",
+    tag: "Passo 2 de 3",
   },
   {
-    title: "Creditos de IA diarios",
+    title: "Pronto para começar?",
     description:
-      "Cada geracao consome 1 credito. Os creditos se renovam todo dia a meia-noite. Faca upgrade do seu plano para mais creditos e recursos avancados.",
-    icon: "⚡",
-  },
-  {
-    title: "Pronto para comecar?",
-    description:
-      "Voce esta a um clique de transformar sua ideia em um produto real. Vamos criar seu primeiro projeto agora — leva menos de 2 minutos.",
+      "Crie seu primeiro projeto agora. Leva menos de 2 minutos e você já terá seus primeiros artefatos gerados pela IA.",
     icon: "🚀",
+    tag: "Passo 3 de 3",
   },
 ];
 
@@ -81,36 +66,32 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
   if (!visible) return null;
 
   const current = STEPS[step]!;
-  const progress = ((step + 1) / STEPS.length) * 100;
   const isLastStep = step === STEPS.length - 1;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-foreground/50 backdrop-blur-sm"
-        onClick={handleSkip}
-      />
+      <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm" onClick={handleSkip} />
 
-      <div className="relative bg-card border border-card-border rounded-2xl shadow-2xl w-full max-w-md p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="relative bg-card border border-card-border rounded-2xl shadow-2xl w-full max-w-sm p-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-2xl overflow-hidden">
           <div
             className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${progress}%` }}
+            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
           />
         </div>
 
-        <div className="text-5xl text-center mb-5 mt-2">{current.icon}</div>
+        <div className="text-4xl text-center mb-4 mt-1">{current.icon}</div>
 
-        <div className="text-center mb-4">
-          <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-            {step + 1} de {STEPS.length}
+        <div className="text-center mb-3">
+          <span className="text-[11px] font-mono font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
+            {current.tag}
           </span>
         </div>
 
-        <h2 className="font-serif text-2xl text-foreground text-center mb-3 leading-snug">
+        <h2 className="font-serif text-xl text-foreground text-center mb-3 leading-snug">
           {current.title}
         </h2>
-        <p className="text-sm text-muted-foreground text-center leading-relaxed mb-8">
+        <p className="text-sm text-muted-foreground text-center leading-relaxed mb-7">
           {current.description}
         </p>
 
@@ -121,24 +102,18 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
               onClick={() => setStep(i)}
               aria-label={`Ir para passo ${i + 1}`}
               className={`rounded-full transition-all duration-200 ${
-                i === step ? "w-5 h-2 bg-primary" : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                i === step ? "w-6 h-2 bg-primary" : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
               }`}
             />
           ))}
         </div>
 
         <div className="flex items-center justify-between">
-          <button
-            onClick={handleSkip}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Pular tour
+          <button onClick={handleSkip} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Pular
           </button>
-          <Button
-            onClick={handleNext}
-            className={`px-6 ${isLastStep ? "bg-primary hover:bg-primary/90 text-white gap-2" : "bg-primary hover:bg-primary/90 text-white"}`}
-          >
-            {isLastStep ? "Criar meu primeiro projeto!" : "Proximo →"}
+          <Button onClick={handleNext} className="bg-primary hover:bg-primary/90 text-white px-6">
+            {isLastStep ? "Criar meu projeto →" : "Próximo →"}
           </Button>
         </div>
       </div>

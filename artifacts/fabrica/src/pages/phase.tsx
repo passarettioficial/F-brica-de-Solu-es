@@ -623,6 +623,38 @@ export function PhasePage() {
           )}
         </div>
 
+        {/* Phase Preview — shown before first generation */}
+        {!hasArtifacts && !isLocked && phaseDef?.artifacts && phaseDef.artifacts.length > 0 && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <p className="text-xs font-mono font-semibold text-primary uppercase tracking-wider">O que você vai receber nesta fase</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {phaseDef.artifacts.slice(0, 6).map((art) => {
+                const meta = ARTIFACT_LABELS[art.key];
+                return (
+                  <div key={art.key} className="flex items-start gap-2.5 bg-card/80 rounded-xl px-3 py-2.5 border border-border/60">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 flex-shrink-0 mt-1.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground leading-snug">{meta?.label ?? art.key}</p>
+                      {meta?.description && <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{meta.description}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+              {phaseDef.artifacts.length > 6 && (
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <p className="text-xs text-muted-foreground">+{phaseDef.artifacts.length - 6} entregáveis adicionais</p>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 leading-relaxed">
+              Clique em <span className="font-semibold text-primary">Gerar com IA</span> abaixo para produzir todos estes artefatos personalizados para o seu produto.
+            </p>
+          </div>
+        )}
+
         {/* AI Execution */}
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-start justify-between mb-1">

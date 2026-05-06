@@ -26,19 +26,92 @@ const EXAMPLE_TEMPLATES = [
   { id: "marketplace", label: "Marketplace", icon: "🛒", name: "Marketplace de serviços criativos", briefing: "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de conteúdo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiáveis. Público-alvo: startups e agências de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissão de 15% por transação." },
 ];
 
-function PhaseBadge({ status, phaseNumber }: { status: string; phaseNumber: number }) {
-  const phaseName = PHASES[phaseNumber - 1]?.name ?? "";
-  const colors: Record<string, string> = {
-    completed: "bg-primary/10 text-primary border border-primary/20",
-    active: "bg-secondary/70 text-primary border border-primary/15 dark:bg-primary/15 dark:text-primary dark:border-primary/25",
-    locked: "bg-muted text-muted-foreground border border-border",
+function MiniPipeline({ completedPhases, currentPhase }: { completedPhases: number; currentPhase: number }) {
+  return (
+    <div className="flex items-center gap-1 mb-3">
+      {Array.from({ length: 6 }, (_, i) => {
+        const phaseNum = i + 1;
+        const isDone = phaseNum <= completedPhases;
+        const isCurrent = phaseNum === currentPhase && !isDone;
+        return (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div
+              className={`w-full h-1.5 rounded-full transition-all duration-500 ${
+                isDone ? "bg-primary" : isCurrent ? "bg-primary/35" : "bg-muted"
+              }`}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProjectCard({ project, onContinue }: {
+  project: { projectId: number; name: string; currentPhase: number; completedPhases: number; phaseStatuses?: string[] };
+  onContinue?: () => void;
+}) {
+  const phaseName = PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`;
+  const pct = Math.round((project.completedPhases / 6) * 100);
+  const isComplete = project.completedPhases === 6;
+
+  const nextActions: Record<number, string> = {
+    1: "Gerar Lean Canvas e validar ideia",
+    2: "Escrever PRD e definir personas",
+    3: "Documentar arquitetura e API",
+    4: "Criar milestones e sprint inicial",
+    5: "Executar plano de testes QA",
+    6: "Preparar runbook e go-to-market",
   };
-  return <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${colors[status] ?? colors.locked}`}>Fase {phaseNumber} — {phaseName}</span>;
+
+  return (
+    <Link href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}>
+      <div className="glass-card rounded-2xl p-5 cursor-pointer group h-full relative overflow-hidden flex flex-col">
+        <div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/35 transition-colors" />
+
+        <div className="flex-1">
+          <h3 className="font-serif text-base font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-6 mb-3">
+            {project.name}
+          </h3>
+
+          <MiniPipeline completedPhases={project.completedPhases} currentPhase={project.currentPhase} />
+
+          <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground mb-3 uppercase tracking-wider">
+            <span>{isComplete ? "Completo!" : `Fase ${project.currentPhase} — ${phaseName}`}</span>
+            <span className={`font-semibold ${isComplete ? "text-primary" : ""}`}>{pct}%</span>
+          </div>
+
+          {!isComplete && (
+            <p className="text-xs text-muted-foreground leading-snug mb-4">
+              {nextActions[project.currentPhase] ?? "Continuar de onde parou"}
+            </p>
+          )}
+        </div>
+
+        {!isComplete && (
+          <div className="pt-2 border-t border-border/60">
+            <span className="text-xs font-semibold text-primary group-hover:underline underline-offset-2 transition-all">
+              Continuar Fase {project.currentPhase} →
+            </span>
+          </div>
+        )}
+        {isComplete && (
+          <div className="pt-2 border-t border-border/60">
+            <span className="text-xs font-semibold text-primary">Produto completo ✓</span>
+          </div>
+        )}
+      </div>
+    </Link>
+  );
 }
 
 function ProgressBar({ completed, total = 6 }: { completed: number; total?: number }) {
   const pct = Math.round((completed / total) * 100);
-  return <div className="w-full bg-muted rounded-full h-1 mt-3" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><div className="bg-primary h-1 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} /></div>;
+  return (
+    <div className="w-full bg-muted rounded-full h-1 mt-3" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+      <div className="bg-primary h-1 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+    </div>
+  );
 }
 
 function ResumeCard({ project }: { project: { projectId: number; name: string; currentPhase: number; completedPhases: number } }) {
@@ -48,11 +121,14 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
   const motivation = motivations[project.completedPhases % motivations.length];
   return (
     <Link href={`/projects/${project.projectId}/phases/${project.currentPhase}`}>
-      <div className="glass-card rounded-2xl p-6 cursor-pointer group mb-8 relative overflow-hidden">
+      <div className="glass-card rounded-2xl p-6 cursor-pointer group mb-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none"><div className="absolute top-3 right-3 w-4 h-4 border-t border-r border-primary/20" /></div>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2"><span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse flex-shrink-0" /><span className="text-xs font-mono font-semibold text-primary uppercase tracking-wider">Continuar de onde parou</span></div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse flex-shrink-0" />
+              <span className="text-xs font-mono font-semibold text-primary uppercase tracking-wider">Continuar de onde parou</span>
+            </div>
             <h3 className="font-serif text-xl text-foreground group-hover:text-primary transition-colors truncate mb-1">{project.name}</h3>
             <p className="text-xs text-muted-foreground">{motivation}</p>
           </div>
@@ -62,10 +138,17 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
           </div>
         </div>
         <div className="mt-5">
-          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider"><span>Fase {project.currentPhase} — {phaseName}</span><span>{project.completedPhases}/6</span></div>
+          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
+            <span>Fase {project.currentPhase} — {phaseName}</span>
+            <span>{project.completedPhases}/6</span>
+          </div>
           <ProgressBar completed={project.completedPhases} />
         </div>
-        <div className="mt-5"><Button size="sm" className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold transition-all group-hover:-translate-y-0.5 duration-200">Entrar na Fase {project.currentPhase} →</Button></div>
+        <div className="mt-5">
+          <Button size="sm" className="bg-primary hover:bg-primary/90 text-white text-xs font-semibold transition-all group-hover:-translate-y-0.5 duration-200">
+            Entrar na Fase {project.currentPhase} →
+          </Button>
+        </div>
       </div>
     </Link>
   );
@@ -79,31 +162,58 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
     <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-secondary/70 border-primary/15 dark:bg-primary/10 dark:border-primary/20"}`} role="alert">
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-primary"}`}>{isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}</p>
-        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-primary/70"}`}>{isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}</p>
+        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-primary"}`}>
+          {isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}
+        </p>
+        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-primary/70"}`}>
+          {isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}
+        </p>
       </div>
-      <Link href="/pricing"><Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-primary/20 text-primary hover:bg-primary/5"}`}>Ver planos</Button></Link>
+      <Link href="/pricing">
+        <Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-primary/20 text-primary hover:bg-primary/5"}`}>
+          Ver planos
+        </Button>
+      </Link>
     </div>
   );
 }
 
-function EmptyState({ onNew }: { onNew: () => void }) {
+function EmptyState({ onNew, onTemplate }: { onNew: () => void; onTemplate: (t: typeof EXAMPLE_TEMPLATES[0]) => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="relative mb-8">
-        <div className="w-20 h-20 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-center">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="text-primary"><rect x="6" y="4" width="24" height="28" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M11 12h14M11 17h14M11 22h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M27 27l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    <div className="flex flex-col items-center py-16 text-center">
+      <div className="relative mb-7">
+        <div className="w-16 h-16 rounded-2xl bg-primary/8 border border-primary/15 flex items-center justify-center">
+          <svg width="30" height="30" viewBox="0 0 36 36" fill="none" className="text-primary">
+            <rect x="6" y="4" width="24" height="28" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M11 12h14M11 17h14M11 22h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
         </div>
         <div className="absolute -top-1 -right-1 w-3 h-3 border-t border-r border-primary/30" />
-        <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b border-l border-primary/20" />
       </div>
-      <h2 className="text-2xl font-serif text-foreground mb-3">Sua linha de montagem aguarda</h2>
-      <p className="text-muted-foreground max-w-md mb-10 text-sm leading-relaxed">Cada grande produto comeca com uma ideia e um processo rigoroso. Crie seu primeiro projeto e deixe a IA guiar voce pelas 6 fases — da ideia ao lancamento.</p>
-      <div className="grid grid-cols-3 gap-4 mb-10 max-w-lg w-full">
-        {[{ step: "01", label: "Descreva sua ideia", desc: "Leva menos de 2 minutos" }, { step: "02", label: "IA gera os artefatos", desc: "PRD, personas, arquitetura..." }, { step: "03", label: "Avance fase a fase", desc: "Ate o lancamento" }].map((item, i) => <div key={i} className="glass-card rounded-xl p-4 text-left"><div className="text-xs font-mono text-primary/60 mb-2">{item.step}</div><div className="text-sm font-semibold text-foreground mb-0.5 leading-snug">{item.label}</div><div className="text-xs text-muted-foreground">{item.desc}</div></div>)}
+
+      <h2 className="text-2xl font-serif text-foreground mb-2">Sua linha de montagem aguarda</h2>
+      <p className="text-muted-foreground max-w-sm mb-8 text-sm leading-relaxed">
+        Da ideia ao lançamento em 6 fases — PRD, arquitetura, go-to-market e mais. Comece em 2 minutos.
+      </p>
+
+      <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-3">Comece por um template</p>
+      <div className="grid grid-cols-3 gap-3 mb-7 max-w-sm w-full">
+        {EXAMPLE_TEMPLATES.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => onTemplate(t)}
+            className="glass-card rounded-xl p-3 text-center hover:border-primary/40 hover:shadow-md transition-all group"
+          >
+            <div className="text-2xl mb-1.5">{t.icon}</div>
+            <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors leading-snug">{t.label}</div>
+          </button>
+        ))}
       </div>
-      <Button onClick={onNew} className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">Criar meu primeiro projeto →</Button>
-      <p className="text-xs font-mono text-muted-foreground/60 mt-4 uppercase tracking-wider">Sem cartao de credito</p>
+
+      <Button onClick={onNew} className="bg-primary hover:bg-primary/90 text-white px-7 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">
+        Criar do zero →
+      </Button>
+      <p className="text-xs font-mono text-muted-foreground/60 mt-3 uppercase tracking-wider">Sem cartão de crédito</p>
     </div>
   );
 }
@@ -153,13 +263,21 @@ export function Dashboard() {
   const [name, setName] = useState("");
   const [briefing, setBriefing] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { permissions } = usePlan();
 
   const { data: dashboard, isLoading } = useGetDashboard();
   const createProject = useCreateProject();
 
   const handleTourComplete = useCallback(() => { setTimeout(() => setShowNew(true), 400); }, []);
-  function applyTemplate(template: typeof EXAMPLE_TEMPLATES[0]) { setName(template.name); setBriefing(template.briefing); setSelectedTemplate(template.id); }
+
+  function applyTemplate(template: typeof EXAMPLE_TEMPLATES[0]) {
+    setName(template.name);
+    setBriefing(template.briefing);
+    setSelectedTemplate(template.id);
+    setShowNew(true);
+  }
+
   function handleCreate() {
     if (!name.trim() || !briefing.trim()) return;
     createProject.mutate({ data: { name: name.trim(), briefing: briefing.trim() } }, {
@@ -185,6 +303,10 @@ export function Dashboard() {
   const showChecklist = !isLoading && totalCompletedPhases < 3;
   const hasSharedProject = projects.length > 0;
 
+  const filteredProjects = searchQuery.trim()
+    ? projects.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : projects;
+
   return (
     <div className="min-h-screen bg-background">
       <OnboardingTour onComplete={handleTourComplete} />
@@ -204,78 +326,209 @@ export function Dashboard() {
           </nav>
         </div>
       </header>
+
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex items-start justify-between mb-8">
           <div>
             <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-1.5">PAINEL DE CONTROLE</p>
             <h1 className="text-3xl font-serif text-foreground">{user?.firstName ? `Ola, ${user.firstName}.` : "Bem-vindo."}</h1>
-            <p className="text-muted-foreground text-sm mt-1">{projects.length === 0 ? "Nenhum projeto ainda — comece criando o seu." : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects !== 1 ? completedProjects + " concluídos" : "1 concluído"}`}</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              {projects.length === 0
+                ? "Nenhum projeto ainda — comece criando o seu."
+                : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects !== 1 ? completedProjects + " concluídos" : "1 concluído"}`}
+            </p>
           </div>
-          <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold rounded-full" data-testid="button-new-project">+ Nova construção</Button>
+          <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold rounded-full" data-testid="button-new-project">
+            + Nova construção
+          </Button>
         </div>
-        <div className="grid gap-3 md:grid-cols-3 mb-6">
-          <div className="surface-panel rounded-2xl p-4">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Resumo</div>
-            <div className="text-xl font-serif text-foreground">{projects.length > 0 ? "Fluxo ativo" : "Pronto para começar"}</div>
-          </div>
-          <div className="surface-panel rounded-2xl p-4">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Template favorito</div>
-            <div className="text-xl font-serif text-foreground">{selectedTemplate ? EXAMPLE_TEMPLATES.find((item) => item.id === selectedTemplate)?.label ?? "Nenhum" : "Nenhum ainda"}</div>
-          </div>
-          <div className="surface-panel rounded-2xl p-4">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Convite</div>
-            <div className="text-xl font-serif text-foreground">{hasSharedProject ? "Projeto compartilhado" : "Compartilhe depois"}</div>
-          </div>
-        </div>
-        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-          <section className="space-y-6">
-            {showChecklist && <ActivationChecklist hasProjects={projects.length > 0} hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0} hasTemplates={selectedTemplate !== null} hasSharedProject={hasSharedProject} phase1Completed={phase1Completed} phase3Completed={phase3Completed} allPhasesCompleted={allPhasesCompleted} onNewProject={() => setShowNew(true)} />}
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+          <section className="space-y-6 min-w-0">
+            {showChecklist && (
+              <ActivationChecklist
+                hasProjects={projects.length > 0}
+                hasAiUsage={(dashboard?.dailyAiUsage ?? 0) > 0}
+                hasTemplates={selectedTemplate !== null}
+                hasSharedProject={hasSharedProject}
+                phase1Completed={phase1Completed}
+                phase3Completed={phase3Completed}
+                allPhasesCompleted={allPhasesCompleted}
+                onNewProject={() => setShowNew(true)}
+              />
+            )}
+
             {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
             {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
-            <div className="flex items-start justify-between mb-8">
-              <div />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <MetricCard label="Projetos ativos" value={activeProjects} variant="default" />
-              <MetricCard label="Fases concluídas" value={projects.reduce((s, p) => s + p.completedPhases, 0)} variant="accent" />
+              <MetricCard label="Fases concluídas" value={totalCompletedPhases} variant="accent" />
               <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
               <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="link" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {SHORTCUTS.map((s) => {
                 const locked = s.planRequired && !permissions.hasAiAdvisor;
                 const href = locked ? "/pricing" : (s.href ?? "/pricing");
-                return <Link key={s.label} href={href}><div className="glass-card rounded-2xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}><div className="text-xl mb-2.5">{s.icon}</div><div className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div><div className="text-xs text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div></div></Link>;
+                return (
+                  <Link key={s.label} href={href}>
+                    <div className="glass-card rounded-2xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}>
+                      <div className="text-xl mb-2">{s.icon}</div>
+                      <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div>
+                    </div>
+                  </Link>
+                );
               })}
             </div>
-            <div className="flex items-center justify-between mb-5"><div><p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p><h2 className="font-serif text-xl text-foreground">Suas construções</h2></div>{projects.length > 0 && <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">+ Novo</button>}</div>
-            {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-44" />)}</div> : projects.length === 0 ? <EmptyState onNew={() => setShowNew(true)} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">{projects.map((project) => { const currentPhaseStatus = project.phaseStatuses?.[project.currentPhase - 1] ?? "active"; return <Link key={project.projectId} href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}><div className="glass-card rounded-2xl p-5 cursor-pointer group h-full relative overflow-hidden"><div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/30 transition-colors" /><div className="flex items-start justify-between mb-3"><h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-primary transition-colors leading-snug pr-4">{project.name}</h3></div><div className="mb-4"><PhaseBadge status={currentPhaseStatus} phaseNumber={project.currentPhase} /></div><div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1 uppercase tracking-wider"><span>{project.completedPhases}/6 fases</span><span>{Math.round((project.completedPhases / 6) * 100)}%</span></div><ProgressBar completed={project.completedPhases} /></div></Link>; })}</div>}
-          </section>
-          <aside className="space-y-4 lg:pt-[72px]">
-            <div className="surface-panel rounded-[1.75rem] p-5">
-              <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-2">Atalho visual</p>
-              <h3 className="font-serif text-2xl text-foreground">Interface mais limpa</h3>
-              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">Blocos altos, bordas suaves e leitura mais direta para parecer um produto SaaS moderno.</p>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-0.5">PROJETOS</p>
+                  <h2 className="font-serif text-xl text-foreground">Suas construções</h2>
+                </div>
+                {projects.length > 0 && (
+                  <button onClick={() => setShowNew(true)} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
+                    + Novo
+                  </button>
+                )}
+              </div>
+
+              {projects.length > 2 && (
+                <div className="relative mb-4">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Buscar projeto..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary/40 transition-all"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm">
+                      ✕
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-44" />)}
+                </div>
+              ) : projects.length === 0 ? (
+                <EmptyState onNew={() => setShowNew(true)} onTemplate={applyTemplate} />
+              ) : filteredProjects.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">
+                  Nenhum projeto encontrado para "{searchQuery}"
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredProjects.map((project) => (
+                    <ProjectCard key={project.projectId} project={project} />
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="surface-panel rounded-[1.75rem] p-5">
-              <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em] mb-3">Status</p>
+          </section>
+
+          <aside className="space-y-4 lg:pt-0">
+            <div className="surface-panel rounded-2xl p-5">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em] mb-3">Status de uso</p>
               <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">Projetos</span><span className="font-medium text-foreground">{projects.length}</span></div>
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">Fases concluidas</span><span className="font-medium text-foreground">{projects.reduce((s, p) => s + p.completedPhases, 0)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-muted-foreground">IA hoje</span><span className="font-medium text-foreground">{dashboard?.dailyAiUsage ?? 0}/{dashboard?.dailyAiLimit ?? 2}</span></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Projetos</span>
+                  <span className="font-semibold text-foreground">{projects.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Fases concluidas</span>
+                  <span className="font-semibold text-foreground">{totalCompletedPhases}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">IA hoje</span>
+                  <span className="font-semibold text-foreground">{dashboard?.dailyAiUsage ?? 0}/{dashboard?.dailyAiLimit ?? 2}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Plano</span>
+                  <span className="font-semibold text-primary">{permissions.planName}</span>
+                </div>
+              </div>
+              {aiUsagePct >= 50 && (
+                <Link href="/pricing">
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <div className="w-full bg-muted rounded-full h-1.5 mb-2">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${aiUsagePct >= 100 ? "bg-destructive" : aiUsagePct >= 80 ? "bg-accent" : "bg-primary"}`}
+                        style={{ width: `${Math.min(100, aiUsagePct)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{aiUsagePct}% do limite de IA usado</p>
+                  </div>
+                </Link>
+              )}
+            </div>
+
+            <div className="surface-panel rounded-2xl p-5">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em] mb-3">Fases do processo</p>
+              <div className="space-y-2">
+                {PHASES.slice(0, 6).map((phase, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border flex-shrink-0 ${
+                      i < totalCompletedPhases ? "bg-primary border-primary text-white" : "border-border text-muted-foreground"
+                    }`}>
+                      {i < totalCompletedPhases ? "✓" : i + 1}
+                    </div>
+                    <span className={`text-xs ${i < totalCompletedPhases ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                      {phase.name}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </aside>
         </div>
       </main>
+
       <Dialog open={showNew} onOpenChange={(open) => { setShowNew(open); if (!open) setSelectedTemplate(null); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle className="font-serif text-xl">Nova construcao</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
-            <div><Label className="text-xs font-mono text-muted-foreground mb-2 block uppercase tracking-wider">Template (opcional)</Label><div className="grid grid-cols-3 gap-2">{EXAMPLE_TEMPLATES.map((t) => <button key={t.id} onClick={() => applyTemplate(t)} className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all ${selectedTemplate === t.id ? "border-primary bg-primary/5 text-primary" : "border-border bg-card hover:border-primary/30 text-foreground"}`}><span className="text-xl">{t.icon}</span><span className="text-xs font-medium leading-tight">{t.label}</span></button>)}</div></div>
-            <div><Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label><Input id="proj-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: App de delivery para pets" className="mt-1.5" data-testid="input-project-name" /></div>
-            <div><Label htmlFor="proj-briefing" className="text-sm font-medium">Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span></Label><Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais..." className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />{briefing.length > 0 && <p className="text-xs text-muted-foreground mt-1 font-mono">{briefing.length} chars — {briefing.length < 200 ? "adicione mais contexto" : "otimo nivel de detalhe"}</p>}</div>
-            <div className="flex justify-end gap-2 pt-1"><Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button><Button onClick={handleCreate} disabled={!name.trim() || !briefing.trim() || createProject.isPending} className="bg-primary hover:bg-primary/90 text-white font-semibold" data-testid="button-create-project">{createProject.isPending ? "Criando..." : "Criar projeto →"}</Button></div>
+            <div>
+              <Label className="text-xs font-mono text-muted-foreground mb-2 block uppercase tracking-wider">Template (opcional)</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {EXAMPLE_TEMPLATES.map((t) => (
+                  <button key={t.id} onClick={() => { setName(t.name); setBriefing(t.briefing); setSelectedTemplate(t.id); }}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all ${selectedTemplate === t.id ? "border-primary bg-primary/5 text-primary" : "border-border bg-card hover:border-primary/30 text-foreground"}`}>
+                    <span className="text-xl">{t.icon}</span>
+                    <span className="text-xs font-medium leading-tight">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="proj-name" className="text-sm font-medium">Nome do projeto</Label>
+              <Input id="proj-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: App de delivery para pets" className="mt-1.5" data-testid="input-project-name" />
+            </div>
+            <div>
+              <Label htmlFor="proj-briefing" className="text-sm font-medium">
+                Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span>
+              </Label>
+              <Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais..." className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />
+              {briefing.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1 font-mono">{briefing.length} chars — {briefing.length < 200 ? "adicione mais contexto" : "otimo nivel de detalhe"}</p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button>
+              <Button onClick={handleCreate} disabled={!name.trim() || !briefing.trim() || createProject.isPending} className="bg-primary hover:bg-primary/90 text-white font-semibold" data-testid="button-create-project">
+                {createProject.isPending ? "Criando..." : "Criar projeto →"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

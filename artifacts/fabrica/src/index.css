@@ -143,12 +143,12 @@
 }
 .dark .glass-card {
   background: hsl(var(--card));
-  border-color: hsl(var(--border) / 0.9);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 10px 24px rgba(0,0,0,0.18);
+  border-color: hsl(var(--card-border));
+  box-shadow: 0 1px 3px rgba(0,0,0,0.28), 0 10px 28px rgba(0,0,0,0.22);
 }
 .dark .glass-card:hover {
-  border-color: hsl(var(--border));
-  box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+  border-color: hsl(var(--primary) / 0.35);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.28);
 }
 
 .hero-grid {
@@ -188,6 +188,13 @@
 
 .dark .surface-panel {
   background: linear-gradient(180deg, hsl(var(--card) / 0.97), hsl(var(--background-elevated) / 0.94));
+  border-color: hsl(var(--card-border));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .surface-panel {
+    border-color: hsl(var(--card-border));
+  }
 }
 
 .theme-toggle-button {
