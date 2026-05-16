@@ -71,7 +71,7 @@ function ScorePotencial({ content }: { content: string }) {
   const recColors: Record<string, string> = {
     "AVANCAR": "bg-primary/10 text-primary border-primary/30",
     "PIVOTAR": "bg-accent/10 text-accent-foreground border-accent/30",
-    "ABANDONAR": "bg-red-50 text-red-600 border-red-200",
+    "ABANDONAR": "bg-red-950/20 text-red-400 border-red-800/50",
   };
 
   return (

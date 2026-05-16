@@ -159,18 +159,18 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
   if (pct < 70) return null;
   const isExhausted = used >= limit;
   return (
-    <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900" : "bg-secondary/70 border-primary/15 dark:bg-primary/10 dark:border-primary/20"}`} role="alert">
+    <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-950/20 border-red-900/60" : "bg-primary/8 border-primary/20"}`} role="alert">
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium ${isExhausted ? "text-red-800 dark:text-red-300" : "text-primary"}`}>
+        <p className={`text-sm font-medium ${isExhausted ? "text-red-300" : "text-primary"}`}>
           {isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}
         </p>
-        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-600 dark:text-red-400" : "text-primary/70"}`}>
+        <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-400/80" : "text-primary/70"}`}>
           {isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}
         </p>
       </div>
       <Link href="/pricing">
-        <Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-300 text-red-700 hover:bg-red-50" : "border-primary/20 text-primary hover:bg-primary/5"}`}>
+        <Button size="sm" variant="outline" className={`text-xs flex-shrink-0 ${isExhausted ? "border-red-800/60 text-red-400 hover:bg-red-950/40" : "border-primary/20 text-primary hover:bg-primary/5"}`}>
           Ver planos
         </Button>
       </Link>

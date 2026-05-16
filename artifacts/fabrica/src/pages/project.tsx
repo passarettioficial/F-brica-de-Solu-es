@@ -57,7 +57,7 @@ function PhasePipeline({ phases, currentPhase, projectId }: {
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all
                   ${isCompleted ? "bg-primary border-primary text-white" : ""}
-                  ${isActive ? "bg-white border-primary text-primary shadow-sm shadow-primary/20" : ""}
+                  ${isActive ? "bg-primary/15 border-primary text-primary shadow-sm shadow-primary/20" : ""}
                   ${isLocked ? "bg-muted border-muted-foreground/20 text-muted-foreground" : ""}
                   ${isClickable ? "group-hover:scale-110" : ""}
                 `}
@@ -94,7 +94,7 @@ export function ProjectPage() {
   const [editingBriefing, setEditingBriefing] = useState(false);
   const [briefingDraft, setBriefingDraft] = useState("");
   const [collaboratorEmail, setCollaboratorEmail] = useState("");
-  const [activeTab, setActiveTab] = useState<"briefing" | "artifacts">("briefing");
+  const [activeTab, setActiveTab] = useState<"briefing" | "artifacts" | "collaboration">("briefing");
 
   if (isLoading) {
     return (

@@ -125,7 +125,7 @@ export function Home() {
 
           <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/20 bg-white/70 shadow-sm tracking-wider">
+              <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/20 bg-primary/8 tracking-wider">
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
               PLATAFORMA DE PRODUTO COM IA — v2.0
               </div>
