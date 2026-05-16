@@ -8,6 +8,27 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const PLANS = [
   {
+    id: "free",
+    name: "Grátis",
+    price: "R$0",
+    period: "",
+    description: "Experimente o fluxo completo sem cartão de crédito.",
+    highlight: false,
+    badge: null,
+    features: [
+      "2 execuções de IA por dia",
+      "1 projeto ativo",
+      "Visualização dos artefatos na plataforma",
+      "Acesso às 6 fases",
+    ],
+    limitations: [
+      "Sem cópia de conteúdo",
+      "Sem download de artefatos",
+      "Sem AI Advisor",
+    ],
+    cta: "Começar grátis",
+  },
+  {
     id: "basic",
     name: "Básico",
     price: "R$49",
@@ -153,22 +174,26 @@ export function PricingPage() {
           </p>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3 mb-10">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-10">
           <div className="glass-card rounded-2xl p-5">
             <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Entrada</div>
-            <div className="text-xl font-serif text-foreground">Comece no grátis</div>
+            <div className="text-base font-serif text-foreground">Comece grátis</div>
+          </div>
+          <div className="glass-card rounded-2xl p-5">
+            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Básico</div>
+            <div className="text-base font-serif text-foreground">Leia na plataforma</div>
           </div>
           <div className="glass-card rounded-2xl p-5">
             <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Expansão</div>
-            <div className="text-xl font-serif text-foreground">Suba para Pro</div>
+            <div className="text-base font-serif text-foreground">Suba para Pro</div>
           </div>
           <div className="glass-card rounded-2xl p-5">
             <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Premium</div>
-            <div className="text-xl font-serif text-foreground">Adicione AI Advisor</div>
+            <div className="text-base font-serif text-foreground">Adicione AI Advisor</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -224,6 +249,10 @@ export function PricingPage() {
                 <div className="w-full py-2.5 text-center rounded-lg bg-muted text-muted-foreground text-sm font-medium">
                   Plano atual
                 </div>
+              ) : plan.id === "free" ? (
+                <Link href="/sign-up">
+                  <Button className="w-full" variant="outline">{plan.cta}</Button>
+                </Link>
               ) : (
                 <Button
                   onClick={() => handleSubscribe(plan.id)}
