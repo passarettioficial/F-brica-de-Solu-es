@@ -183,9 +183,6 @@ export function Home() {
                         <span className="text-xs font-mono text-primary">01</span>
                       </div>
                       <div className="text-lg font-serif text-foreground mt-1">Ideia e validacao</div>
-                      <div className="mt-3 h-2 rounded-full bg-background">
-                        <div className="h-2 w-[22%] rounded-full bg-primary" />
-                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl border border-border/60 bg-card p-4">
