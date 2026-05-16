@@ -25,7 +25,7 @@ export function PrivacyPage() {
           <p className="text-muted-foreground">Atualizada em Janeiro de 2025 · Conforme a Lei 13.709/2018 (LGPD)</p>
         </div>
 
-        <div className="prose prose-sm max-w-none space-y-8 text-foreground">
+        <div className="prose prose-sm max-w-none space-y-8 text-foreground prose-headings:text-foreground">
 
           <section className="bg-card border border-card-border rounded-2xl p-6">
             <h2 className="font-serif text-xl mb-3">1. Quem somos</h2>
