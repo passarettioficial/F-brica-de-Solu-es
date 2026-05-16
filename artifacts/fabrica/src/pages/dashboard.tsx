@@ -18,7 +18,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { NotificationBell } from "@/components/notification-bell";
 import { OnboardingTour } from "@/components/onboarding-tour";
 import { ActivationChecklist } from "@/components/activation-checklist";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const EXAMPLE_TEMPLATES = [
   { id: "saas", label: "SaaS B2B", icon: "💼", name: "Plataforma de gestão para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e médias empresas gerenciarem projetos, clientes e receitas. Problema: PMEs perdem contratos por falta de acompanhamento. Público-alvo: donos de empresas de 5-50 funcionários. Diferencial: simplicidade e preço acessível (R$99/mês). Modelo: freemium com limite de projetos." },
@@ -308,39 +308,44 @@ export function Dashboard() {
     : projects;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-shell">
       <OnboardingTour onComplete={handleTourComplete} />
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <img src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/logo.svg`} alt="Logo" className="w-7 h-7 rounded-xl bg-card ring-1 ring-border/60" />
-            <span className="font-serif text-base font-semibold text-foreground tracking-tight">Fabrica</span>
-          </Link>
-          <nav className="flex items-center gap-1">
-            <ThemeToggle />
-            <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all">{permissions.planName}</Link>
-            <Link href="/billing" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all">Assinatura</Link>
-            {permissions.isAdmin && <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all font-medium" data-testid="link-admin">Admin</Link>}
-            <NotificationBell />
-            <Link href="/settings" className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted/60 transition-all" data-testid="link-settings">{user?.firstName ?? user?.emailAddresses?.[0]?.emailAddress ?? "Conta"}</Link>
-          </nav>
-        </div>
-      </header>
+      <AppSidebar />
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-1.5">PAINEL DE CONTROLE</p>
-            <h1 className="text-3xl font-serif text-foreground">{user?.firstName ? `Ola, ${user.firstName}.` : "Bem-vindo."}</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {projects.length === 0
-                ? "Nenhum projeto ainda — comece criando o seu."
-                : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects !== 1 ? completedProjects + " concluídos" : "1 concluído"}`}
-            </p>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Topbar */}
+        <div className="topbar">
+          <div className="flex items-center gap-3">
+            <p className="text-xs font-mono uppercase tracking-[0.18em]" style={{ color: "var(--text-tertiary)" }}>Painel</p>
+            <span style={{ color: "var(--border-default)" }}>/</span>
+            <span className="font-serif text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              {user?.firstName ? `Olá, ${user.firstName}.` : "Dashboard"}
+            </span>
           </div>
-          <Button onClick={() => setShowNew(true)} className="bg-primary hover:bg-primary/90 text-white font-semibold rounded-full" data-testid="button-new-project">
-            + Nova construção
-          </Button>
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all hover:-translate-y-px"
+              style={{ background: "var(--phase-accent)", boxShadow: "0 4px 16px var(--phase-glow)" }}
+              data-testid="button-new-project"
+            >
+              + Nova construção
+            </button>
+          </div>
+        </div>
+
+      <main className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="mb-8">
+          <p className="text-xs font-mono uppercase tracking-[0.18em] mb-1" style={{ color: "var(--text-tertiary)" }}>PAINEL DE CONTROLE</p>
+          <h1 className="text-2xl font-serif mb-1" style={{ color: "var(--text-primary)" }}>
+            {user?.firstName ? `Olá, ${user.firstName}.` : "Bem-vindo."}
+          </h1>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            {projects.length === 0
+              ? "Nenhum projeto ainda — comece criando o seu."
+              : `${activeProjects} projeto${activeProjects !== 1 ? "s" : ""} em andamento · ${completedProjects !== 1 ? completedProjects + " concluídos" : "1 concluído"}`}
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
@@ -532,6 +537,7 @@ export function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

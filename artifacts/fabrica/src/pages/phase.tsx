@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -532,44 +533,56 @@ export function PhasePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card/50 sticky top-0 z-10">
-          <div className="max-w-3xl mx-auto px-6 py-4">
-            <div className="h-4 bg-muted rounded w-64 animate-pulse" />
+      <div className="app-shell">
+        <div className="sidebar">
+          <div className="px-4 py-5"><div className="skeleton h-7 w-24" /></div>
+        </div>
+        <div className="flex-1 flex flex-col">
+          <div className="topbar"><div className="skeleton h-4 w-48" /></div>
+          <div className="flex-1 px-8 py-8 space-y-4 max-w-3xl mx-auto w-full">
+            <div className="surface-2 animate-pulse h-40 w-full" />
+            <div className="surface-2 animate-pulse h-32 w-full" />
           </div>
-        </header>
-        <main className="max-w-3xl mx-auto px-6 py-10 space-y-4">
-          <div className="bg-card border border-card-border rounded-2xl p-6 animate-pulse h-40" />
-          <div className="bg-card border border-card-border rounded-2xl p-6 animate-pulse h-32" />
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen bg-background ${noPrint ? "no-print-content" : ""}`}>
+    <div className={`app-shell ${noPrint ? "no-print-content" : ""}`} data-phase={phaseNumber}>
       {noPrint && (
         <style>{`@media print { .no-print-content { display: none !important; } body::after { content: "Impressao disponivel apenas no plano Avancado."; display: block; padding: 2rem; } }`}</style>
       )}
 
-      <header className="border-b border-border/70 bg-background/85 sticky top-0 z-10 backdrop-blur-xl">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3 text-sm" aria-label="Navegacao">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Painel</Link>
-          <span className="text-muted-foreground" aria-hidden="true">/</span>
-          <Link href={`/projects/${projectId}`} className="text-muted-foreground hover:text-foreground transition-colors truncate max-w-[120px]">
-            {project?.name ?? "Projeto"}
-          </Link>
-          <span className="text-muted-foreground" aria-hidden="true">/</span>
-          <span className="text-foreground font-medium">Fase {phaseNumber} — {phaseDef?.name}</span>
+      {/* Sidebar with phase context */}
+      <AppSidebar
+        currentPhase={phaseNumber}
+        projectId={projectId}
+        projectName={project?.name}
+        phaseStatuses={(project as any)?.phases?.map((p: { status: string }) => ({ status: p.status })) ?? []}
+      />
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Topbar */}
+        <div className="topbar">
+          <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }} aria-label="Navegacao">
+            <Link href="/dashboard" className="hover:text-[var(--text-primary)] transition-colors">Painel</Link>
+            <span>/</span>
+            <Link href={`/projects/${projectId}`} className="hover:text-[var(--text-primary)] transition-colors truncate max-w-[100px]">
+              {project?.name ?? "Projeto"}
+            </Link>
+            <span>/</span>
+            <span style={{ color: "var(--phase-accent)", fontWeight: 500 }}>Fase {phaseNumber} — {phaseDef?.name}</span>
+          </div>
           {permissions.hasAiAdvisor && (
-            <Link href={`/projects/${projectId}/advisor`} className="ml-auto text-xs text-primary hover:underline flex items-center gap-1">
-              <span>🤖</span> AI Advisor
+            <Link href={`/projects/${projectId}/advisor`} className="flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80" style={{ color: "var(--phase-accent)" }}>
+              <span>✦</span> AI Advisor
             </Link>
           )}
         </div>
-      </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="max-w-3xl mx-auto space-y-8">
         {/* Phase header */}
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-start gap-4 mb-4">
@@ -861,7 +874,9 @@ export function PhasePage() {
             </Link>
           </div>
         )}
+        </div>
       </main>
+      </div>
     </div>
   );
 }
