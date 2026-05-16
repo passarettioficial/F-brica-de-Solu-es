@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useUser } from "@clerk/react";
+import { useUser, useClerk } from "@clerk/react";
 import { usePlan } from "@/hooks/usePlan";
 import { PHASES } from "@/lib/constants";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -32,6 +32,7 @@ export function AppSidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [location] = useLocation();
   const { user } = useUser();
+  const { signOut } = useClerk();
   const { permissions } = usePlan();
 
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -212,10 +213,33 @@ export function AppSidebar({
             </div>
           )}
         </Link>
-        <div className={`mt-1 flex ${collapsed ? "justify-center" : "justify-start px-1"}`}>
-          <ThemeToggle size={16} />
+        <div className={`mt-1 flex items-center ${collapsed ? "justify-center" : "justify-between px-1"}`}>
+          <div className="flex items-center gap-1">
+            <ThemeToggle size={16} />
+            {!collapsed && (
+              <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>Tema</span>
+            )}
+          </div>
           {!collapsed && (
-            <span className="ml-2 text-xs" style={{ color: "var(--text-tertiary)", lineHeight: "2rem" }}>Tema</span>
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors hover:bg-muted"
+              style={{ color: "var(--text-tertiary)" }}
+              title="Sair"
+            >
+              <SignOutIcon size={14} />
+              Sair
+            </button>
+          )}
+          {collapsed && (
+            <button
+              onClick={() => signOut({ redirectUrl: "/" })}
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-muted"
+              style={{ color: "var(--text-tertiary)" }}
+              title="Sair"
+            >
+              <SignOutIcon size={15} />
+            </button>
           )}
         </div>
       </div>
@@ -264,6 +288,13 @@ function AdminIcon({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M10 2L3 5v5c0 4 3 7.5 7 8.5C17 17.5 20 14 20 10V5l-7-3z" transform="scale(0.85) translate(1.5 1.5)" />
+    </svg>
+  );
+}
+function SignOutIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h3M13 14l4-4-4-4M17 10H7" />
     </svg>
   );
 }

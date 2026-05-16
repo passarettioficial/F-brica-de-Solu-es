@@ -85,6 +85,7 @@ export function ProjectPage() {
   const queryClient = useQueryClient();
   const { permissions } = usePlan();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const { data: project, isLoading } = useGetProject(projectId, {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) },
@@ -175,6 +176,31 @@ export function ProjectPage() {
       description: `${collaboratorEmail} sera adicionado assim que a camada de colaboracao estiver ativa.`,
     });
     setCollaboratorEmail("");
+  }
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function deleteProject() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${projectId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok || res.status === 204) {
+        queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+        navigate("/dashboard");
+        toast({ title: "Projeto apagado." });
+      } else {
+        toast({ title: "Erro ao apagar projeto.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro de conexão.", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
   }
 
   return (
@@ -434,8 +460,49 @@ export function ProjectPage() {
             </div>
           </div>
         )}
+          {/* Danger zone */}
+          <div className="mt-10 border border-destructive/20 rounded-2xl p-6">
+            <h3 className="text-sm font-semibold text-destructive mb-1">Zona de risco</h3>
+            <p className="text-xs text-muted-foreground mb-4">Esta ação é irreversível. Todos os artefatos e dados do projeto serão excluídos permanentemente.</p>
+            <Button
+              variant="outline"
+              className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive"
+              onClick={() => setConfirmDelete(true)}
+            >
+              Apagar projeto
+            </Button>
+          </div>
         </main>
       </div>
+
+      {/* Confirm delete modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4" style={{ background: "var(--color-error-bg)" }}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-error)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10 4v6M10 14h.01M3 10a7 7 0 1 0 14 0 7 7 0 0 0-14 0Z" />
+              </svg>
+            </div>
+            <h2 className="font-serif text-lg mb-1" style={{ color: "var(--text-primary)" }}>Apagar projeto?</h2>
+            <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+              O projeto <strong style={{ color: "var(--text-primary)" }}>{project.name}</strong> e todos os seus artefatos serão excluídos permanentemente. Não é possível desfazer.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1 bg-destructive hover:bg-destructive/90 text-white"
+                onClick={deleteProject}
+                disabled={deleting}
+              >
+                {deleting ? "Apagando…" : "Sim, apagar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
