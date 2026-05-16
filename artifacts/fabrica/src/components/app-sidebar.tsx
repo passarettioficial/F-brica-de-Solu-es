@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useUser } from "@clerk/react";
 import { usePlan } from "@/hooks/usePlan";
 import { PHASES } from "@/lib/constants";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const PHASE_COLORS: Record<number, string> = {
   1: "#7724FD", 2: "#2D9CDB", 3: "#00C2A8",
@@ -211,6 +212,12 @@ export function AppSidebar({
             </div>
           )}
         </Link>
+        <div className={`mt-1 flex ${collapsed ? "justify-center" : "justify-start px-1"}`}>
+          <ThemeToggle size={16} />
+          {!collapsed && (
+            <span className="ml-2 text-xs" style={{ color: "var(--text-tertiary)", lineHeight: "2rem" }}>Tema</span>
+          )}
+        </div>
       </div>
     </aside>
   );

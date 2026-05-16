@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -130,11 +131,14 @@ export function PricingPage() {
           <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             ← Voltar ao painel
           </Link>
-          {permissions.plan !== "free" && (
-            <Link href="/billing" className="text-sm text-primary hover:underline">
-              Gerenciar assinatura
-            </Link>
-          )}
+          <div className="flex items-center gap-3">
+            <ThemeToggle size={16} />
+            {permissions.plan !== "free" && (
+              <Link href="/billing" className="text-sm text-primary hover:underline">
+                Gerenciar assinatura
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
