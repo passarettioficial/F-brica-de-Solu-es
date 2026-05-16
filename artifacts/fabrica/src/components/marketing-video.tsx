@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const SCENES = [
   {
     key: "hook",
-    duration: 3200,
+    duration: 5000,
     tag: "O problema",
     headline: ["Toda grande", "ideia trava", "no início."],
     sub: "Sem estrutura, o esforço vira retrabalho.",
@@ -12,7 +12,7 @@ const SCENES = [
   },
   {
     key: "solution",
-    duration: 3400,
+    duration: 5200,
     tag: "A solução",
     headline: ["6 fases.", "45+ artefatos.", "Um processo."],
     sub: "Da validação ao lançamento — em sequência.",
@@ -20,7 +20,7 @@ const SCENES = [
   },
   {
     key: "proof",
-    duration: 3200,
+    duration: 5000,
     tag: "O que você recebe",
     headline: ["PRD. Personas.", "Arquitetura.", "Go-to-market."],
     sub: "Tudo gerado com IA a partir do seu briefing.",
@@ -28,7 +28,7 @@ const SCENES = [
   },
   {
     key: "outcome",
-    duration: 3400,
+    duration: 5200,
     tag: "O resultado",
     headline: ["Produto mais forte,", "mais rápido,", "pronto para vender."],
     sub: "Sem achismos. Sem retrabalho. Com direção.",
@@ -36,7 +36,7 @@ const SCENES = [
   },
   {
     key: "cta",
-    duration: 3000,
+    duration: 4800,
     tag: "Fábrica de Soluções",
     headline: ["Comece em", "2 minutos."],
     sub: "Sem cartão de crédito.",
