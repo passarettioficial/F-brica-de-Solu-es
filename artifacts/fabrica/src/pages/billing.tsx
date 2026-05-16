@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -53,18 +54,19 @@ export function BillingPage() {
   const hasPaidPlan = permissions.plan !== "free";
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50">
-        <div className="max-w-2xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">Painel</Link>
+    <div className="app-shell">
+      <AppSidebar />
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="topbar">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-tertiary)" }}>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Painel</Link>
             <span>/</span>
-            <span className="text-foreground">Assinatura</span>
+            <span style={{ color: "var(--text-primary)" }}>Assinatura</span>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+        <main className="flex-1 overflow-y-auto px-8 py-8 max-w-2xl w-full mx-auto space-y-6">
         <div>
           <h1 className="font-serif text-2xl mb-1">Sua assinatura</h1>
           <p className="text-sm text-muted-foreground">Gerencie seu plano e método de pagamento.</p>
@@ -154,7 +156,8 @@ export function BillingPage() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

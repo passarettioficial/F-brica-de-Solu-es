@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   useGetCurrentUser,
   useUpdateUserSettings,
@@ -75,27 +76,24 @@ export function SettingsPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/70 bg-background/85 sticky top-0 z-10 backdrop-blur-xl">
-        <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-              Painel
-            </Link>
-            <span className="text-muted-foreground text-sm">/</span>
-            <span className="text-foreground text-sm font-medium">Configurações</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {permissions.isAdmin && (
-              <Link href="/admin" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-                Admin
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+    <div className="app-shell">
+      <AppSidebar />
 
-      <main className="max-w-2xl mx-auto px-6 py-10">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="topbar">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-tertiary)" }}>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Painel</Link>
+            <span>/</span>
+            <span style={{ color: "var(--text-primary)" }}>Configurações</span>
+          </div>
+          {permissions.isAdmin && (
+            <Link href="/admin" className="text-xs font-mono uppercase tracking-widest hover:text-white transition-colors" style={{ color: "var(--text-tertiary)" }}>
+              Admin Panel
+            </Link>
+          )}
+        </div>
+
+        <main className="flex-1 overflow-y-auto px-8 py-8 max-w-2xl w-full mx-auto">
         <div className="mb-8">
           <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">PAINEL DE CONFIGURAÇÕES</p>
           <h1 className="text-3xl font-serif text-foreground">Configurações da conta</h1>
@@ -277,7 +275,8 @@ export function SettingsPage() {
             </div>
           </section>
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

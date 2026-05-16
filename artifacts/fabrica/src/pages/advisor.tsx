@@ -5,6 +5,7 @@ import { getGetProjectQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { usePlan } from "@/hooks/usePlan";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -158,22 +159,27 @@ export function AdvisorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b bg-card/50 flex-shrink-0">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center gap-3 text-sm">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">Painel</Link>
-          <span className="text-muted-foreground">/</span>
-          <Link href={`/projects/${projectId}`} className="text-muted-foreground hover:text-foreground truncate max-w-[120px]">
-            {project?.name ?? "Projeto"}
-          </Link>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-foreground font-medium flex items-center gap-1.5">
-            <span>🤖</span> AI Advisor
-          </span>
-        </div>
-      </header>
+    <div className="app-shell">
+      <AppSidebar
+        projectId={projectId ? Number(projectId) : undefined}
+        projectName={project?.name}
+        phaseStatuses={(project as any)?.phases?.map((p: { status: string }) => ({ status: p.status })) ?? []}
+      />
 
-      <div className="flex-1 max-w-3xl w-full mx-auto px-6 flex flex-col py-6 gap-4">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="topbar">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-tertiary)" }}>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Painel</Link>
+            <span>/</span>
+            <Link href={`/projects/${projectId}`} className="hover:text-white transition-colors truncate max-w-[120px]">
+              {project?.name ?? "Projeto"}
+            </Link>
+            <span>/</span>
+            <span style={{ color: "var(--text-primary)" }}>AI Advisor</span>
+          </div>
+        </div>
+
+        <div className="flex-1 max-w-3xl w-full mx-auto px-6 flex flex-col py-6 gap-4 overflow-y-auto">
         <div className="grid gap-3 sm:grid-cols-3">
           {quickFacts.map((item) => (
             <div key={item.label} className="rounded-2xl border border-card-border bg-card px-4 py-3">
@@ -253,6 +259,7 @@ export function AdvisorPage() {
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">Enter para enviar · Shift+Enter para nova linha</p>
+        </div>
         </div>
       </div>
     </div>

@@ -34,17 +34,17 @@ const script = [
 
 export function SalesVideoPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border/70 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
+    <div className="min-h-screen" style={{ background: "var(--bg-base)" }}>
+      <header className="border-b sticky top-0 z-10 backdrop-blur-xl" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={`${base}/logo.svg`} alt="Fábrica de Soluções" className="w-9 h-9 rounded-xl bg-card ring-1 ring-border/70" />
+            <img src={`${base}/logo.svg`} alt="Fábrica de Soluções" className="w-9 h-9 rounded-xl" style={{ background: "var(--surface-2)" }} />
             <div>
-              <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary">Vídeo de vendas</p>
-              <h1 className="font-serif text-lg text-foreground">Fábrica de Soluções</h1>
+              <p className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "var(--brand-primary)" }}>Vídeo de vendas</p>
+              <h1 className="font-serif text-lg" style={{ color: "var(--text-primary)" }}>Fábrica de Soluções</h1>
             </div>
           </div>
-          <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Voltar ao painel</Link>
+          <Link href="/dashboard" className="text-sm transition-colors hover:text-white" style={{ color: "var(--text-tertiary)" }}>Voltar ao painel</Link>
         </div>
       </header>
 

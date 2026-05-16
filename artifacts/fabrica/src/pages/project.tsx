@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
+import { AppSidebar } from "@/components/app-sidebar";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -177,18 +178,23 @@ export function ProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-3" aria-label="Navegacao">
-          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
-            Painel
-          </Link>
-          <span className="text-muted-foreground text-sm" aria-hidden="true">/</span>
-          <span className="text-foreground text-sm font-medium truncate">{project.name}</span>
-        </div>
-      </header>
+    <div className="app-shell">
+      <AppSidebar
+        projectId={projectId}
+        projectName={project.name}
+        phaseStatuses={(project as any).phases?.map((p: { status: string }) => ({ status: p.status })) ?? []}
+      />
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="topbar">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-tertiary)" }}>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Painel</Link>
+            <span>/</span>
+            <span className="truncate max-w-[200px]" style={{ color: "var(--text-primary)" }}>{project.name}</span>
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto px-8 py-8 max-w-5xl w-full mx-auto">
         {/* Project title + progress */}
         <div className="mb-8">
           <h1 className="text-3xl font-serif text-foreground mb-1">{project.name}</h1>
@@ -428,7 +434,8 @@ export function ProjectPage() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

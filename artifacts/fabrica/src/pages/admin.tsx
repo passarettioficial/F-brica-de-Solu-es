@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "wouter";
+import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1052,38 +1053,37 @@ export function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 sticky top-0 z-10 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              ← Painel
-            </Link>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-sm font-medium flex items-center gap-1.5">
-              <span>⚙️</span> Administração
-            </span>
+    <div className="app-shell">
+      <AppSidebar />
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="topbar">
+          <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-tertiary)" }}>
+            <Link href="/dashboard" className="hover:text-white transition-colors">Painel</Link>
+            <span>/</span>
+            <span style={{ color: "var(--text-primary)" }}>Administração</span>
           </div>
-          <span className="text-xs px-2.5 py-1 bg-primary/10 text-primary rounded-full font-medium border border-primary/20">
-            Admin
+          <span className="text-xs px-2.5 py-1 rounded-full font-mono font-medium border" style={{ background: "color-mix(in srgb, var(--brand-primary) 15%, transparent)", color: "var(--brand-primary)", borderColor: "color-mix(in srgb, var(--brand-primary) 30%, transparent)" }}>
+            ADMIN
           </span>
         </div>
-        <div className="max-w-6xl mx-auto px-6 pb-3 flex gap-1 overflow-x-auto">
+
+        <div className="border-b px-6 flex gap-1 overflow-x-auto" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
           {tabs.map(t => (
             <TabButton key={t.id} label={t.label} active={tab === t.id} onClick={() => setTab(t.id)} />
           ))}
         </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        {tab === "overview" && <OverviewTab />}
-        {tab === "users" && <UsersTab />}
-        {tab === "coupons" && <CouponsTab />}
-        {tab === "plans" && <PlansTab />}
-        {tab === "deliverables" && <DeliverablesTab />}
-        {tab === "theme" && <ThemeTab />}
-        {tab === "settings" && <SettingsTab />}
-      </main>
+        <main className="flex-1 overflow-y-auto px-6 py-8 max-w-6xl w-full mx-auto">
+          {tab === "overview" && <OverviewTab />}
+          {tab === "users" && <UsersTab />}
+          {tab === "coupons" && <CouponsTab />}
+          {tab === "plans" && <PlansTab />}
+          {tab === "deliverables" && <DeliverablesTab />}
+          {tab === "theme" && <ThemeTab />}
+          {tab === "settings" && <SettingsTab />}
+        </main>
+      </div>
     </div>
   );
 }
