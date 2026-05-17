@@ -1,27 +1,31 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc, count, sql } from "drizzle-orm";
+import { eq, desc, count, sql, gte, and, isNull } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, couponsTable, settingsTable, projectsTable } from "@workspace/db";
+import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable } from "@workspace/db";
 import { requireAdmin } from "../lib/adminAuth";
 import { logger } from "../lib/logger";
+import { auditLog } from "../lib/audit";
 
 const router: IRouter = Router();
 
-// GET /admin/me — check if caller is admin
+// ─── Admin Identity ───────────────────────────────────────────────────────────
+
 router.get("/admin/me", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
   res.json({ isAdmin: admin.isAdmin, isSuperuser: admin.isSuperuser });
 });
 
-// GET /admin/stats — overview dashboard stats
+// ─── Stats Overview ───────────────────────────────────────────────────────────
+
 router.get("/admin/stats", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
 
   try {
     const [userCount] = await db.select({ count: count() }).from(usersTable);
-    const [projectCount] = await db.select({ count: count() }).from(projectsTable);
+    const [projectCount] = await db.select({ count: count() }).from(projectsTable).where(isNull(projectsTable.deletedAt));
+    const [trashedCount] = await db.select({ count: count() }).from(projectsTable).where(sql`${projectsTable.deletedAt} IS NOT NULL`);
     const [adminCount] = await db.select({ count: count() }).from(usersTable).where(eq(usersTable.isAdmin, true));
     const [superuserCount] = await db.select({ count: count() }).from(usersTable).where(eq(usersTable.isSuperuser, true));
     const [couponCount] = await db.select({ count: count() }).from(couponsTable).where(eq(couponsTable.active, true));
@@ -31,13 +35,61 @@ router.get("/admin/stats", async (req: Request, res: Response): Promise<void> =>
       .from(usersTable)
       .groupBy(usersTable.plan);
 
+    // Paid plans
+    const paidPlans = ["starter", "basic", "pro", "advanced"];
+    const paidUsers = planStats.filter(p => paidPlans.includes(p.plan)).reduce((s, p) => s + Number(p.count), 0);
+
+    // New users last 30 days
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [newUsersResult] = await db
+      .select({ count: count() })
+      .from(usersTable)
+      .where(gte(usersTable.createdAt, thirtyDaysAgo));
+
+    // New signups per day (last 30 days)
+    const signupsPerDay = await db.execute(sql`
+      SELECT DATE(created_at AT TIME ZONE 'UTC') as day, COUNT(*)::int as count
+      FROM users
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY day
+      ORDER BY day ASC
+    `);
+
+    // AI usage per day (last 30 days) - approximation from audit logs
+    const aiPerDay = await db.execute(sql`
+      SELECT DATE(created_at AT TIME ZONE 'UTC') as day, COUNT(*)::int as count
+      FROM audit_logs
+      WHERE event_type = 'user.ai.used'
+        AND created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY day
+      ORDER BY day ASC
+    `);
+
+    // Inactive users (no activity in 30 days = no updatedAt in 30 days)
+    const [inactive30] = await db
+      .select({ count: count() })
+      .from(usersTable)
+      .where(sql`${usersTable.updatedAt} < NOW() - INTERVAL '30 days'`);
+
+    const [inactive14] = await db
+      .select({ count: count() })
+      .from(usersTable)
+      .where(sql`${usersTable.updatedAt} < NOW() - INTERVAL '14 days'`);
+
     res.json({
       users: userCount?.count ?? 0,
       projects: projectCount?.count ?? 0,
+      trashedProjects: trashedCount?.count ?? 0,
       admins: adminCount?.count ?? 0,
       superusers: superuserCount?.count ?? 0,
       activeCoupons: couponCount?.count ?? 0,
+      paidUsers,
+      newUsers30d: newUsersResult?.count ?? 0,
+      inactiveUsers30d: inactive30?.count ?? 0,
+      inactiveUsers14d: inactive14?.count ?? 0,
       planBreakdown: planStats,
+      signupsPerDay: signupsPerDay.rows,
+      aiPerDay: aiPerDay.rows,
     });
   } catch (err) {
     logger.error({ err }, "Admin stats error");
@@ -45,7 +97,8 @@ router.get("/admin/stats", async (req: Request, res: Response): Promise<void> =>
   }
 });
 
-// GET /admin/users — list all users
+// ─── Users ────────────────────────────────────────────────────────────────────
+
 router.get("/admin/users", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -56,8 +109,7 @@ router.get("/admin/users", async (req: Request, res: Response): Promise<void> =>
     const offset = (page - 1) * limit;
     const search = String(req.query.search ?? "");
 
-    let query = db.select().from(usersTable).orderBy(desc(usersTable.createdAt)).limit(limit).offset(offset);
-    const users = await query;
+    const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt)).limit(limit).offset(offset);
 
     const filtered = search
       ? users.filter(u =>
@@ -73,7 +125,6 @@ router.get("/admin/users", async (req: Request, res: Response): Promise<void> =>
   }
 });
 
-// PATCH /admin/users/:clerkId — update a user (plan, isAdmin, isSuperuser)
 router.patch("/admin/users/:clerkId", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -100,6 +151,18 @@ router.patch("/admin/users/:clerkId", async (req: Request, res: Response): Promi
       .returning();
 
     if (!updated) { res.status(404).json({ error: "Usuário não encontrado" }); return; }
+
+    // Audit log
+    if (plan !== undefined) {
+      await auditLog({ eventType: "admin.user.plan_changed", actorClerkId: admin.clerkId, actorName: admin.displayName, targetClerkId: clerkId, targetName: updated.displayName, meta: { plan }, req });
+    }
+    if (isAdmin !== undefined) {
+      await auditLog({ eventType: "admin.user.admin_toggled", actorClerkId: admin.clerkId, actorName: admin.displayName, targetClerkId: clerkId, targetName: updated.displayName, meta: { isAdmin }, req });
+    }
+    if (isSuperuser !== undefined) {
+      await auditLog({ eventType: "admin.user.superuser_toggled", actorClerkId: admin.clerkId, actorName: admin.displayName, targetClerkId: clerkId, targetName: updated.displayName, meta: { isSuperuser }, req });
+    }
+
     res.json({ user: updated });
   } catch (err) {
     logger.error({ err }, "Admin update user error");
@@ -107,7 +170,8 @@ router.patch("/admin/users/:clerkId", async (req: Request, res: Response): Promi
   }
 });
 
-// GET /admin/coupons — list coupons
+// ─── Coupons ──────────────────────────────────────────────────────────────────
+
 router.get("/admin/coupons", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -121,7 +185,6 @@ router.get("/admin/coupons", async (req: Request, res: Response): Promise<void> 
   }
 });
 
-// POST /admin/coupons — create coupon
 router.post("/admin/coupons", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -154,6 +217,8 @@ router.post("/admin/coupons", async (req: Request, res: Response): Promise<void>
       usesCount: 0,
     }).returning();
 
+    await auditLog({ eventType: "admin.coupon.created", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { code: coupon.code, discountType, discountValue, maxUses, expiresAt }, req });
+
     res.status(201).json({ coupon });
   } catch (err: unknown) {
     if (err && typeof err === "object" && "code" in err && (err as any).code === "23505") {
@@ -165,7 +230,6 @@ router.post("/admin/coupons", async (req: Request, res: Response): Promise<void>
   }
 });
 
-// PATCH /admin/coupons/:id — update coupon
 router.patch("/admin/coupons/:id", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -195,6 +259,9 @@ router.patch("/admin/coupons/:id", async (req: Request, res: Response): Promise<
 
     const [updated] = await db.update(couponsTable).set(updates).where(eq(couponsTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Cupom não encontrado" }); return; }
+
+    await auditLog({ eventType: "admin.coupon.updated", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { id, ...updates }, req });
+
     res.json({ coupon: updated });
   } catch (err) {
     logger.error({ err }, "Admin update coupon error");
@@ -202,7 +269,6 @@ router.patch("/admin/coupons/:id", async (req: Request, res: Response): Promise<
   }
 });
 
-// DELETE /admin/coupons/:id — deactivate coupon
 router.delete("/admin/coupons/:id", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -211,6 +277,9 @@ router.delete("/admin/coupons/:id", async (req: Request, res: Response): Promise
   try {
     const [updated] = await db.update(couponsTable).set({ active: false, updatedAt: new Date() }).where(eq(couponsTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Cupom não encontrado" }); return; }
+
+    await auditLog({ eventType: "admin.coupon.deleted", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { id, code: updated.code }, req });
+
     res.json({ coupon: updated });
   } catch (err) {
     logger.error({ err }, "Admin delete coupon error");
@@ -218,7 +287,8 @@ router.delete("/admin/coupons/:id", async (req: Request, res: Response): Promise
   }
 });
 
-// GET /admin/settings — get all settings
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
 router.get("/admin/settings", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -232,7 +302,6 @@ router.get("/admin/settings", async (req: Request, res: Response): Promise<void>
   }
 });
 
-// PUT /admin/settings — upsert settings in bulk
 router.put("/admin/settings", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -248,6 +317,9 @@ router.put("/admin/settings", async (req: Request, res: Response): Promise<void>
         .onConflictDoUpdate({ target: settingsTable.key, set: { value: s.value, updatedAt: new Date() } });
     }
     const updated = await db.select().from(settingsTable).orderBy(settingsTable.category);
+
+    await auditLog({ eventType: "admin.settings.updated", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { keys: settings.map(s => s.key) }, req });
+
     res.json({ settings: updated });
   } catch (err) {
     logger.error({ err }, "Admin update settings error");
@@ -255,7 +327,8 @@ router.put("/admin/settings", async (req: Request, res: Response): Promise<void>
   }
 });
 
-// GET /admin/deliverables — get deliverable enable/disable config from settings
+// ─── Deliverables ─────────────────────────────────────────────────────────────
+
 router.get("/admin/deliverables", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -268,7 +341,6 @@ router.get("/admin/deliverables", async (req: Request, res: Response): Promise<v
   res.json({ deliverables: map });
 });
 
-// PUT /admin/deliverables — batch update deliverable enabled flags
 router.put("/admin/deliverables", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -286,6 +358,9 @@ router.put("/admin/deliverables", async (req: Request, res: Response): Promise<v
         .values({ key, value: String(enabled), label: key, category: "deliverable" })
         .onConflictDoUpdate({ target: settingsTable.key, set: { value: String(enabled), updatedAt: new Date() } });
     }
+
+    await auditLog({ eventType: "admin.deliverable.toggled", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { deliverables }, req });
+
     const settings = await db.select().from(settingsTable).where(eq(settingsTable.category, "deliverable"));
     const map: Record<string, boolean> = {};
     for (const s of settings) map[s.key] = s.value === "true";
@@ -296,7 +371,8 @@ router.put("/admin/deliverables", async (req: Request, res: Response): Promise<v
   }
 });
 
-// POST /api/admin/coupons/validate — validate a coupon code (requires login)
+// ─── Coupon Validate (user-facing) ────────────────────────────────────────────
+
 router.post("/admin/coupons/validate", async (req: Request, res: Response): Promise<void> => {
   const auth = getAuth(req);
   if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
@@ -319,6 +395,44 @@ router.post("/admin/coupons/validate", async (req: Request, res: Response): Prom
     discountValue: coupon.discountValue,
     description: coupon.description,
   });
+});
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+router.get("/admin/audit", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  try {
+    const page = parseInt(String(req.query.page ?? "1"), 10);
+    const limit = 50;
+    const offset = (page - 1) * limit;
+    const eventType = req.query.eventType ? String(req.query.eventType) : null;
+    const actor = req.query.actor ? String(req.query.actor) : null;
+    const days = parseInt(String(req.query.days ?? "30"), 10);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    let rows = await db
+      .select()
+      .from(auditLogsTable)
+      .where(gte(auditLogsTable.createdAt, since))
+      .orderBy(desc(auditLogsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    if (eventType) rows = rows.filter(r => r.eventType === eventType || r.eventType.startsWith(eventType));
+    if (actor) rows = rows.filter(r =>
+      (r.actorClerkId ?? "").includes(actor) ||
+      (r.actorName ?? "").toLowerCase().includes(actor.toLowerCase())
+    );
+
+    const [total] = await db.select({ count: count() }).from(auditLogsTable).where(gte(auditLogsTable.createdAt, since));
+
+    res.json({ logs: rows, total: total?.count ?? 0, page, pages: Math.ceil(Number(total?.count ?? 0) / limit) });
+  } catch (err) {
+    logger.error({ err }, "Admin audit error");
+    res.status(500).json({ error: "Erro interno" });
+  }
 });
 
 export default router;

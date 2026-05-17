@@ -6,3 +6,4 @@ export * from "./coupons";
 export * from "./settings";
 export * from "./notifications";
 export * from "./support_tickets";
+export * from "./audit_logs";

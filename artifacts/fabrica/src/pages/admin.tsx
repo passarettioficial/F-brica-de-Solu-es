@@ -9,15 +9,34 @@ import { useToast } from "@/hooks/use-toast";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-type Tab = "overview" | "users" | "coupons" | "plans" | "deliverables" | "theme" | "settings";
+type Tab = "overview" | "users" | "coupons" | "plans" | "deliverables" | "theme" | "settings" | "audit";
 
 interface Stats {
   users: number;
   projects: number;
+  trashedProjects: number;
   admins: number;
   superusers: number;
   activeCoupons: number;
+  paidUsers: number;
+  newUsers30d: number;
+  inactiveUsers30d: number;
+  inactiveUsers14d: number;
   planBreakdown: Array<{ plan: string; count: number }>;
+  signupsPerDay: Array<{ day: string; count: number }>;
+  aiPerDay: Array<{ day: string; count: number }>;
+}
+
+interface AuditLogEntry {
+  id: number;
+  eventType: string;
+  actorClerkId: string | null;
+  actorName: string | null;
+  targetClerkId: string | null;
+  targetName: string | null;
+  meta: string | null;
+  ip: string | null;
+  createdAt: string;
 }
 
 interface User {
@@ -153,6 +172,23 @@ function StatCard({ label, value, sub }: { label: string; value: number | string
   );
 }
 
+// ─── Mini Sparkline Chart ──────────────────────────────────────────────────────
+function Sparkline({ data, color = "var(--color-primary)" }: { data: Array<{ day: string; count: number }>; color?: string }) {
+  if (!data || data.length === 0) return <div className="text-xs text-muted-foreground">Sem dados</div>;
+  const max = Math.max(...data.map(d => d.count), 1);
+  const w = 280; const h = 48; const pts = data.length;
+  const points = data.map((d, i) => {
+    const x = (i / (pts - 1)) * w;
+    const y = h - (d.count / max) * h;
+    return `${x},${y}`;
+  }).join(" ");
+  return (
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ height: 48 }}>
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -165,32 +201,259 @@ function OverviewTab() {
   if (loading) return <div className="text-muted-foreground text-sm py-8">Carregando...</div>;
   if (!stats) return <div className="text-destructive text-sm py-8">Erro ao carregar estatísticas</div>;
 
+  const freeUsers = stats.users - stats.paidUsers;
+  const conversionRate = stats.users > 0 ? ((stats.paidUsers / stats.users) * 100).toFixed(1) : "0.0";
+
   return (
     <div className="space-y-6">
+      {/* Primary metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Usuários" value={stats.users} />
-        <StatCard label="Projetos" value={stats.projects} />
+        <StatCard label="Usuários totais" value={stats.users} sub={`+${stats.newUsers30d} últimos 30d`} />
+        <StatCard label="Projetos ativos" value={stats.projects} sub={`${stats.trashedProjects} na lixeira`} />
+        <StatCard label="Usuários pagos" value={stats.paidUsers} sub={`${conversionRate}% conversão`} />
         <StatCard label="Cupons ativos" value={stats.activeCoupons} />
-        <StatCard label="Superusers" value={stats.superusers} />
       </div>
 
+      {/* Health metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Inativos 14d" value={stats.inactiveUsers14d} sub="sem atividade" />
+        <StatCard label="Inativos 30d" value={stats.inactiveUsers30d} sub="risco de churn" />
+        <StatCard label="Usuários grátis" value={freeUsers} sub="free tier" />
+        <StatCard label="Superusers" value={stats.superusers} sub="acesso total" />
+      </div>
+
+      {/* Sparklines */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-card border border-card-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-medium text-foreground">Novos usuários (30d)</h3>
+            <span className="text-xs font-mono text-primary">+{stats.newUsers30d}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Cadastros por dia</p>
+          <Sparkline data={stats.signupsPerDay} />
+        </div>
+        <div className="bg-card border border-card-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-medium text-foreground">Uso de IA (30d)</h3>
+            <span className="text-xs font-mono text-accent">execuções</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Artefatos gerados por dia</p>
+          <Sparkline data={stats.aiPerDay} color="var(--color-accent, #FF8C42)" />
+        </div>
+      </div>
+
+      {/* Plan distribution */}
       <div className="bg-card border border-card-border rounded-xl p-5">
-        <h3 className="font-medium mb-3 text-sm">Distribuição por plano</h3>
-        <div className="space-y-2">
+        <h3 className="font-medium mb-4 text-sm">Distribuição por plano</h3>
+        <div className="space-y-3">
           {stats.planBreakdown.map(p => (
             <div key={p.plan} className="flex items-center gap-3">
-              <div className="w-24 text-sm text-muted-foreground">{PLAN_LABELS[p.plan] ?? p.plan}</div>
+              <div className="w-28 text-sm text-muted-foreground">{PLAN_LABELS[p.plan] ?? p.plan}</div>
               <div className="flex-1 bg-muted rounded-full h-2">
                 <div
-                  className="bg-primary h-2 rounded-full"
-                  style={{ width: `${Math.min(100, (p.count / stats.users) * 100)}%` }}
+                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, stats.users > 0 ? (p.count / stats.users) * 100 : 0)}%` }}
                 />
               </div>
-              <div className="text-sm font-medium w-8 text-right">{p.count}</div>
+              <div className="text-sm font-medium w-8 text-right text-foreground">{p.count}</div>
+              <div className="text-xs text-muted-foreground w-12 text-right font-mono">
+                {stats.users > 0 ? ((p.count / stats.users) * 100).toFixed(0) : 0}%
+              </div>
             </div>
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Audit Log Tab ─────────────────────────────────────────────────────────────
+const EVENT_LABELS: Record<string, { label: string; color: string }> = {
+  "admin.user.plan_changed":       { label: "Plano alterado",        color: "text-blue-500" },
+  "admin.user.admin_toggled":      { label: "Admin toggled",          color: "text-purple-500" },
+  "admin.user.superuser_toggled":  { label: "Superuser toggled",      color: "text-purple-700" },
+  "admin.coupon.created":          { label: "Cupom criado",           color: "text-green-500" },
+  "admin.coupon.updated":          { label: "Cupom atualizado",       color: "text-yellow-500" },
+  "admin.coupon.deleted":          { label: "Cupom desativado",       color: "text-orange-500" },
+  "admin.deliverable.toggled":     { label: "Entregável toggled",     color: "text-blue-400" },
+  "admin.settings.updated":        { label: "Settings atualizados",   color: "text-blue-400" },
+  "admin.plans.updated":           { label: "Planos atualizados",     color: "text-blue-500" },
+  "user.login":                    { label: "Login",                  color: "text-muted-foreground" },
+  "user.project.created":          { label: "Projeto criado",         color: "text-green-500" },
+  "user.project.deleted":          { label: "Projeto na lixeira",     color: "text-orange-500" },
+  "user.project.restored":         { label: "Projeto restaurado",     color: "text-green-400" },
+  "user.project.permanent_deleted":{ label: "Projeto apagado",        color: "text-red-500" },
+  "user.ai.used":                  { label: "IA executada",           color: "text-primary" },
+  "user.payment.subscribed":       { label: "Assinatura ativa",       color: "text-green-500" },
+  "user.payment.canceled":         { label: "Assinatura cancelada",   color: "text-red-500" },
+  "user.coupon.redeemed":          { label: "Cupom usado",            color: "text-yellow-500" },
+  "security.unauthorized":         { label: "Acesso não autorizado",  color: "text-red-600" },
+  "security.rate_limited":         { label: "Rate limit atingido",    color: "text-orange-600" },
+  "security.plan_limit_reached":   { label: "Limite do plano",        color: "text-orange-500" },
+};
+
+const EVENT_CATEGORIES = [
+  { value: "", label: "Todos os eventos" },
+  { value: "admin.", label: "Ações admin" },
+  { value: "user.", label: "Eventos de usuário" },
+  { value: "security.", label: "Segurança" },
+];
+
+function AuditTab() {
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [category, setCategory] = useState("");
+  const [days, setDays] = useState(30);
+  const [actorFilter, setActorFilter] = useState("");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), days: String(days) });
+    if (category) params.set("eventType", category);
+    if (actorFilter) params.set("actor", actorFilter);
+    api(`/admin/audit?${params}`)
+      .then(r => r.json())
+      .then(d => { setLogs(d.logs ?? []); setTotal(d.total ?? 0); setPages(d.pages ?? 1); })
+      .finally(() => setLoading(false));
+  }, [page, days, category, actorFilter]);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { setPage(1); }, [category, days, actorFilter]);
+
+  function fmt(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <select
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+          className="text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
+        >
+          {EVENT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+
+        <select
+          value={days}
+          onChange={e => setDays(Number(e.target.value))}
+          className="text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
+        >
+          <option value={7}>Últimos 7 dias</option>
+          <option value={30}>Últimos 30 dias</option>
+          <option value={90}>Últimos 90 dias</option>
+        </select>
+
+        <input
+          placeholder="Filtrar por ator..."
+          value={actorFilter}
+          onChange={e => setActorFilter(e.target.value)}
+          className="text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground w-48"
+        />
+
+        <button onClick={load} className="text-xs font-mono text-primary hover:underline">
+          Atualizar
+        </button>
+
+        <span className="ml-auto text-xs text-muted-foreground font-mono">{total} eventos</span>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="space-y-2">
+          {[1,2,3,4,5].map(i => <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />)}
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="text-center text-muted-foreground text-sm py-12">Nenhum evento encontrado</div>
+      ) : (
+        <div className="rounded-xl border border-card-border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Evento</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Ator</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Alvo</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">Quando</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">IP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {logs.map(log => {
+                const ev = EVENT_LABELS[log.eventType];
+                const isExpanded = expandedId === log.id;
+                let metaObj: Record<string, unknown> | null = null;
+                try { if (log.meta) metaObj = JSON.parse(log.meta); } catch {}
+                return (
+                  <>
+                    <tr
+                      key={log.id}
+                      className="bg-card hover:bg-muted/20 transition-colors cursor-pointer"
+                      onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                    >
+                      <td className="px-4 py-3">
+                        <span className={`font-medium text-xs ${ev?.color ?? "text-foreground"}`}>
+                          {ev?.label ?? log.eventType}
+                        </span>
+                        <div className="text-[10px] font-mono text-muted-foreground/60">{log.eventType}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-xs font-medium text-foreground">{log.actorName ?? "—"}</div>
+                        {log.actorClerkId && <div className="text-[10px] font-mono text-muted-foreground/60">{log.actorClerkId.slice(0, 14)}…</div>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-xs text-muted-foreground">{log.targetName ?? "—"}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-xs font-mono text-muted-foreground">{fmt(log.createdAt)}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-[10px] font-mono text-muted-foreground/60">{log.ip ?? "—"}</div>
+                      </td>
+                    </tr>
+                    {isExpanded && metaObj && (
+                      <tr key={`${log.id}-meta`} className="bg-muted/30">
+                        <td colSpan={5} className="px-4 py-3">
+                          <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap break-all">
+                            {JSON.stringify(metaObj, null, 2)}
+                          </pre>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="text-xs font-mono text-primary disabled:opacity-40 hover:underline"
+          >
+            ← Anterior
+          </button>
+          <span className="text-xs text-muted-foreground font-mono">Página {page} de {pages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(pages, p + 1))}
+            disabled={page === pages}
+            className="text-xs font-mono text-primary disabled:opacity-40 hover:underline"
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -1058,6 +1321,7 @@ export function AdminPage() {
     { id: "deliverables", label: "Entregáveis" },
     { id: "theme", label: "Tema" },
     { id: "settings", label: "Configurações" },
+    { id: "audit", label: "Audit Log" },
   ];
 
   return (
@@ -1090,6 +1354,7 @@ export function AdminPage() {
           {tab === "deliverables" && <DeliverablesTab />}
           {tab === "theme" && <ThemeTab />}
           {tab === "settings" && <SettingsTab />}
+          {tab === "audit" && <AuditTab />}
         </main>
       </div>
     </div>

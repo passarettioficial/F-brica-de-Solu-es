@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { ensureUser } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
+import { auditLog } from "../lib/audit";
 
 const router: IRouter = Router();
 
@@ -139,6 +140,7 @@ router.post("/projects", async (req, res): Promise<void> => {
   }));
   await db.insert(phasesTable).values(phaseValues);
 
+  await auditLog({ eventType: "user.project.created", actorClerkId: userId, meta: { projectId: project.id, name: project.name }, req });
   res.status(201).json(project);
 });
 
@@ -200,6 +202,7 @@ router.delete("/projects/:id", async (req, res): Promise<void> => {
     .returning();
 
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+  await auditLog({ eventType: "user.project.deleted", actorClerkId: userId, meta: { projectId: id, name: project.name }, req });
   res.json({ id: project.id, deletedAt: project.deletedAt });
 });
 
@@ -233,6 +236,7 @@ router.post("/projects/:id/restore", async (req, res): Promise<void> => {
     .returning();
 
   if (!project) { res.status(404).json({ error: "Project not found in trash" }); return; }
+  await auditLog({ eventType: "user.project.restored", actorClerkId: userId, meta: { projectId: id, name: project.name }, req });
   res.json(project);
 });
 
@@ -251,6 +255,7 @@ router.delete("/projects/:id/permanent", async (req, res): Promise<void> => {
     .returning();
 
   if (!project) { res.status(404).json({ error: "Project not found in trash" }); return; }
+  await auditLog({ eventType: "user.project.permanent_deleted", actorClerkId: userId, meta: { projectId: id, name: project.name }, req });
   res.sendStatus(204);
 });
 

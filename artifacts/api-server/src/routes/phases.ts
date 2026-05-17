@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { generatePhaseArtifacts } from "../lib/ai";
 import { checkAndIncrementAiUsage } from "../lib/auth";
+import { auditLog } from "../lib/audit";
 
 const router: IRouter = Router();
 
@@ -184,9 +185,11 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
   // Atomic AI usage check + increment
   const { allowed, limit } = await checkAndIncrementAiUsage(userId);
   if (!allowed) {
+    await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit, phaseNumber, projectId }, req });
     res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` });
     return;
   }
+  await auditLog({ eventType: "user.ai.used", actorClerkId: userId, meta: { projectId, phaseNumber, projectName: project.name }, req });
 
   // Fetch all previous phase artifacts for context
   const allPreviousPhases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));
