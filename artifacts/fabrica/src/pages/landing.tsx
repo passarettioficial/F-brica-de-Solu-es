@@ -23,7 +23,6 @@ const faqs = [
 
 const footerLinks = [
   { href: "/pricing", label: "Preços" },
-  { href: "/video-vendas", label: "Vídeo" },
   { href: "/analise-mercado", label: "Mercado" },
   { href: "/privacidade", label: "Privacidade" },
   { href: "/atendimento", label: "Atendimento" },
