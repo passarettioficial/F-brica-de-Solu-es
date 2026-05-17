@@ -22,6 +22,7 @@ import { AdvisorPage } from "@/pages/advisor";
 import { AdminPage } from "@/pages/admin";
 import { SupportPage } from "@/pages/support";
 import { PrivacyPage } from "@/pages/privacy";
+import { CompliancePage } from "@/pages/compliance";
 import { MarketAnalysisPage } from "@/pages/market-analysis";
 import { BrandbookPage } from "@/pages/brandbook";
 import { SalesVideoPage } from "@/pages/sales-video";
@@ -170,6 +171,7 @@ function Router() {
       <Route path="/brandbook" component={BrandbookPage} />
       <Route path="/video-vendas" component={SalesVideoPage} />
       <Route path="/privacidade" component={PrivacyPage} />
+      <Route path="/compliance" component={CompliancePage} />
       <Route path="/analise-mercado" component={MarketAnalysisPage} />
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
