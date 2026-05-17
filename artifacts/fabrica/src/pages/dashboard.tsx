@@ -52,16 +52,17 @@ function ProjectCard({ project, onContinue }: {
   onContinue?: () => void;
 }) {
   const phaseName = PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`;
-  const pct = Math.round((project.completedPhases / 6) * 100);
-  const isComplete = project.completedPhases === 6;
+  const pct = Math.round((project.completedPhases / 7) * 100);
+  const isComplete = project.completedPhases === 7;
 
   const nextActions: Record<number, string> = {
     1: "Gerar Lean Canvas e validar ideia",
     2: "Escrever PRD e definir personas",
-    3: "Documentar arquitetura e API",
-    4: "Criar milestones e sprint inicial",
-    5: "Executar plano de testes QA",
-    6: "Preparar runbook e go-to-market",
+    3: "Mapear dados pessoais e threat model",
+    4: "Documentar arquitetura e API",
+    5: "Criar milestones e sprint inicial",
+    6: "Executar plano de testes QA",
+    7: "Preparar runbook e go-to-market",
   };
 
   return (
@@ -105,7 +106,7 @@ function ProjectCard({ project, onContinue }: {
   );
 }
 
-function ProgressBar({ completed, total = 6 }: { completed: number; total?: number }) {
+function ProgressBar({ completed, total = 7 }: { completed: number; total?: number }) {
   const pct = Math.round((completed / total) * 100);
   return (
     <div className="w-full bg-muted rounded-full h-1 mt-3" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
@@ -116,7 +117,7 @@ function ProgressBar({ completed, total = 6 }: { completed: number; total?: numb
 
 function ResumeCard({ project }: { project: { projectId: number; name: string; currentPhase: number; completedPhases: number } }) {
   const phaseName = PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`;
-  const pct = Math.round((project.completedPhases / 6) * 100);
+  const pct = Math.round((project.completedPhases / 7) * 100);
   const motivations = ["Continue de onde parou — seu produto esta ganhando forma.", "Cada artefato concluido e um produto mais solido.", "Quase la! Falta pouco para concluir esta fase.", "Nao pare agora — voce esta no caminho certo."];
   const motivation = motivations[project.completedPhases % motivations.length];
   return (
@@ -140,7 +141,7 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
         <div className="mt-5">
           <div className="flex items-center justify-between text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
             <span>Fase {project.currentPhase} — {phaseName}</span>
-            <span>{project.completedPhases}/6</span>
+            <span>{project.completedPhases}/7</span>
           </div>
           <ProgressBar completed={project.completedPhases} />
         </div>
@@ -193,7 +194,7 @@ function EmptyState({ onNew, onTemplate }: { onNew: () => void; onTemplate: (t: 
 
       <h2 className="text-2xl font-serif text-foreground mb-2">Sua linha de montagem aguarda</h2>
       <p className="text-muted-foreground max-w-sm mb-8 text-sm leading-relaxed">
-        Da ideia ao lançamento em 6 fases — PRD, arquitetura, go-to-market e mais. Comece em 2 minutos.
+        Da ideia ao lançamento em 7 fases — PRD, segurança, arquitetura, go-to-market e mais. Comece em 2 minutos.
       </p>
 
       <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-3">Comece por um template</p>
@@ -292,14 +293,14 @@ export function Dashboard() {
   }
 
   const projects = dashboard?.projects ?? [];
-  const completedProjects = projects.filter(p => p.completedPhases === 6).length;
-  const activeProjects = projects.filter(p => p.completedPhases < 6).length;
+  const completedProjects = projects.filter(p => p.completedPhases === 7).length;
+  const activeProjects = projects.filter(p => p.completedPhases < 7).length;
   const aiUsagePct = dashboard ? Math.round((dashboard.dailyAiUsage / dashboard.dailyAiLimit) * 100) : 0;
-  const mostRecentActive = projects.filter(p => p.completedPhases < 6).sort((a, b) => (b.projectId ?? 0) - (a.projectId ?? 0))[0];
+  const mostRecentActive = projects.filter(p => p.completedPhases < 7).sort((a, b) => (b.projectId ?? 0) - (a.projectId ?? 0))[0];
   const totalCompletedPhases = projects.reduce((s, p) => s + p.completedPhases, 0);
   const phase1Completed = totalCompletedPhases >= 1;
   const phase3Completed = totalCompletedPhases >= 3;
-  const allPhasesCompleted = projects.some(p => p.completedPhases === 6);
+  const allPhasesCompleted = projects.some(p => p.completedPhases === 7);
   const showChecklist = !isLoading && totalCompletedPhases < 3;
   const hasSharedProject = projects.length > 0;
 

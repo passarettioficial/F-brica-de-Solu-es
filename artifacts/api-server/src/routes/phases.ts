@@ -94,7 +94,7 @@ router.post("/projects/:projectId/phases/:phaseNumber/complete", async (req, res
     .returning();
 
   // Unlock next phase if exists
-  if (phaseNumber < 6) {
+  if (phaseNumber < 7) {
     await db.update(phasesTable)
       .set({ status: "active", updatedAt: new Date() })
       .where(and(eq(phasesTable.projectId, projectId), eq(phasesTable.phaseNumber, phaseNumber + 1)));

@@ -374,11 +374,11 @@ function PhaseCompletionBanner({ phaseNumber, projectId }: { phaseNumber: number
         Fase {phaseNumber} concluida!
       </h3>
       <p className="text-sm text-muted-foreground mb-5">
-        {phaseNumber < 6
+        {phaseNumber < 7
           ? `Excelente trabalho! Agora voce pode avancar para a Fase ${phaseNumber + 1} — ${nextPhase?.name}.`
-          : "Incrivel! Voce concluiu todas as 6 fases. Seu produto esta pronto para o mercado."}
+          : "Incrivel! Voce concluiu todas as 7 fases. Seu produto esta pronto para o mercado."}
       </p>
-      {phaseNumber < 6 && nextPhase ? (
+      {phaseNumber < 7 && nextPhase ? (
         <Button
           onClick={() => setLocation(`/projects/${projectId}/phases/${phaseNumber + 1}`)}
           className="bg-primary hover:bg-primary/90 text-white"
@@ -462,7 +462,7 @@ export function PhasePage() {
           setJustCompleted(true);
           toast({
             title: `Fase ${phaseNumber} concluida!`,
-            description: phaseNumber < 6 ? `Avancando para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Todas as 6 fases concluidas. Produto pronto!",
+            description: phaseNumber < 7 ? `Avancando para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Todas as 7 fases concluidas. Produto pronto!",
           });
         },
         onError: () => {
@@ -802,7 +802,7 @@ export function PhasePage() {
                   className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
                   data-testid="button-complete-phase"
                 >
-                  {completePhase.isPending ? "Avancando..." : (phaseNumber < 6 ? `Concluir e avancar para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Concluir o projeto!")}
+                  {completePhase.isPending ? "Avancando..." : (phaseNumber < 7 ? `Concluir e avancar para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Concluir o projeto!")}
                 </Button>
               </div>
             )}
@@ -816,7 +816,7 @@ export function PhasePage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Fase {phaseNumber} concluida</p>
-                  {phaseNumber < 6 && (
+                  {phaseNumber < 7 && (
                     <Link href={`/projects/${projectId}/phases/${phaseNumber + 1}`} className="text-xs text-primary hover:underline">
                       Ir para Fase {phaseNumber + 1} — {PHASES[phaseNumber]?.name} →
                     </Link>

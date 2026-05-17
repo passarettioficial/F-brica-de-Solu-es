@@ -12,7 +12,7 @@ const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER ?? "5511999999999";
 
 const FAQ = [
   {
-    q: "Como funciona o processo de 6 fases?",
+    q: "Como funciona o processo de 7 fases?",
     a: "Cada projeto passa por seis fases sequenciais: Ideação, Definição, Especificação, Prototipação, Validação e Deploy. A IA guia você em cada etapa gerando artefatos específicos como PRDs, diagramas, planos de lançamento e muito mais.",
   },
   {

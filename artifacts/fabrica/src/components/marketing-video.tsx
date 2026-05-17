@@ -14,7 +14,7 @@ const SCENES = [
     key: "solution",
     duration: 5200,
     tag: "A solução",
-    headline: ["6 fases.", "45+ artefatos.", "Um processo."],
+    headline: ["7 fases.", "53+ artefatos.", "Um processo."],
     sub: "Da validação ao lançamento — em sequência.",
     accent: "#1A3FAB",
   },

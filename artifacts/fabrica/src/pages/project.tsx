@@ -132,7 +132,7 @@ export function ProjectPage() {
   const phases = (project as any).phases ?? [];
   const activePhase = phases.find((p: any) => p.status === "active");
   const completedPhases = phases.filter((p: any) => p.status === "completed").length;
-  const progressPct = Math.round((completedPhases / 6) * 100);
+  const progressPct = Math.round((completedPhases / 7) * 100);
   const encouragement = ENCOURAGEMENT[completedPhases] ?? "";
   const nextPhase = useMemo(() => phases.find((p: any) => p.status !== "completed"), [phases]);
   const recentArtifacts = useMemo(() => {
@@ -237,7 +237,7 @@ export function ProjectPage() {
         {/* Progress bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-            <span>{completedPhases} de 6 fases concluidas</span>
+            <span>{completedPhases} de 7 fases concluidas</span>
             <span className="font-semibold text-foreground">{progressPct}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100}>
@@ -278,7 +278,7 @@ export function ProjectPage() {
             </div>
           )}
 
-          {completedPhases === 6 && (
+          {completedPhases === 7 && (
             <div className="mt-6 pt-5 border-t border-border">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
@@ -288,7 +288,7 @@ export function ProjectPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">Projeto concluido com sucesso!</p>
-                  <p className="text-xs text-muted-foreground">Todas as 6 fases foram concluidas. Seu produto esta pronto para o mercado.</p>
+                  <p className="text-xs text-muted-foreground">Todas as 7 fases foram concluidas. Seu produto esta pronto para o mercado.</p>
                 </div>
               </div>
             </div>

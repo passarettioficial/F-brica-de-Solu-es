@@ -31,7 +31,7 @@ export function PrivacyPage() {
             <h2 className="font-serif text-xl mb-3">1. Quem somos</h2>
             <p className="text-muted-foreground leading-relaxed">
               A FoundersFlow é uma plataforma de inteligência artificial para founders e empreendedores,
-              que os ajuda a estruturar, validar e lançar produtos digitais através de um processo de 6 fases guiado por IA.
+              que os ajuda a estruturar, validar e lançar produtos digitais através de um processo de 7 fases guiado por IA.
               Atuamos como Controlador de Dados Pessoais conforme definido pela LGPD.
             </p>
           </section>

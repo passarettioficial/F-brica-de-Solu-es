@@ -10,7 +10,7 @@ const scenes = [
   },
   {
     k: "02",
-    title: "6 fases, 45+ artefatos",
+    title: "7 fases, 53+ artefatos",
     text: "Lean Canvas, PRD, arquitetura, roadmap, go-to-market e muito mais — em um fluxo guiado.",
   },
   {
@@ -28,7 +28,7 @@ const scenes = [
 const script = [
   "Todo bom produto começa com clareza.",
   "O FoundersFlow transforma briefing em direção.",
-  "Você avança por 6 fases, com artefatos que reduzem ambiguidade.",
+  "Você avança por 7 fases, com artefatos que reduzem ambiguidade.",
   "O resultado é um produto mais forte, mais rápido e pronto para vender.",
 ];
 
@@ -58,7 +58,7 @@ export function SalesVideoPage() {
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Brandbook aplicado</span>
-              <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">6 fases</span>
+              <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">7 fases</span>
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">45+ artefatos</span>
             </div>
             <div className="mt-8 space-y-3">

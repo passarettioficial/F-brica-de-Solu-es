@@ -6,7 +6,7 @@ const ACTION_PLAN = [
     title: "1. Proposta de valor",
     objective: "Transformar o produto em uma categoria própria: sistema de construção guiada, não gerador de documentos.",
     moves: [
-      "Definir promessa única e específica: da ideia ao plano executável em 6 fases com saída padronizada e auditável.",
+      "Definir promessa única e específica: da ideia ao plano executável em 7 fases com saída padronizada e auditável.",
       "Amarrar o JTBD dominante em 1 frase: 'quero sair do caos e saber exatamente o que construir agora'.",
       "Adicionar prova concreta de resultado: antes/depois, ROI estimado, tempo economizado e checklist de decisão.",
       "Especializar por nicho inicial (founders B2B tech) até virar a melhor opção para esse segmento.",

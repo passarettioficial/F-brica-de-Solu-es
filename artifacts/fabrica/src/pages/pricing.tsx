@@ -19,7 +19,7 @@ const PLANS = [
       "2 execuções de IA por dia",
       "1 projeto ativo",
       "Visualização dos artefatos na plataforma",
-      "Acesso às 6 fases",
+      "Acesso às 7 fases",
     ],
     limitations: [
       "Sem cópia de conteúdo",

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const highlights = [
-  "Da ideia ao lançamento em 6 fases",
+  "Da ideia ao lançamento em 7 fases",
   "45+ artefatos para produto, design e execução",
   "Brand system premium com azul #1A3FAB e laranja #FF8C42",
 ];
@@ -88,7 +88,7 @@ export function LandingPage() {
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <div className="text-xs font-mono uppercase tracking-[0.2em] text-primary">Preview</div>
-                    <div className="font-serif text-2xl text-foreground">Fluxo em 6 fases</div>
+                    <div className="font-serif text-2xl text-foreground">Fluxo em 7 fases</div>
                   </div>
                   <div className="rounded-2xl border border-primary/15 bg-primary/10 px-3 py-2 text-sm text-primary">Live</div>
                 </div>

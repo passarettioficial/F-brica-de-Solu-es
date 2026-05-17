@@ -4,7 +4,7 @@ import { MarketingVideo } from "@/components/marketing-video";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const STATS = [
-  { value: "6", label: "fases" },
+  { value: "7", label: "fases" },
   { value: "45+", label: "artefatos" },
   { value: "2min", label: "para comecar" },
   { value: "100%", label: "estruturado" },
@@ -46,7 +46,7 @@ const FEATURES = [
     icon: "◎",
     title: "Lance com estrategia",
     desc: "Runbook de deploy, plano Go-to-Market, Launch Checklist e Pitch para investidores. Da ideia ao mercado.",
-    tag: "Fases 4–6 — Execucao",
+    tag: "Fases 5–7 — Execucao",
   },
 ];
 
@@ -138,7 +138,7 @@ export function Home() {
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl font-sans leading-relaxed">
-              Da ideia ao lancamento em 6 fases estruturadas.
+              Da ideia ao lancamento em 7 fases estruturadas.
               A IA gera artefatos detalhados — PRD, personas, arquitetura, go-to-market —
               tudo baseado no seu briefing.
               </p>
@@ -306,7 +306,7 @@ export function Home() {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
               <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">VÍDEO DE APRESENTAÇÃO</p>
-              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-3">Da ideia ao produto em 6 fases.</h2>
+              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-3">Da ideia ao produto em 7 fases.</h2>
               <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
                 Veja como a plataforma transforma um briefing em artefatos prontos — PRD, arquitetura, go-to-market e mais.
               </p>

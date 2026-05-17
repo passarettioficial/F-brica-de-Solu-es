@@ -245,26 +245,29 @@
    ============================================================ */
 [data-phase="1"] { --phase-accent: #7724FD; }
 [data-phase="2"] { --phase-accent: #2D9CDB; }
-[data-phase="3"] { --phase-accent: #00C2A8; }
-[data-phase="4"] { --phase-accent: #F59E0B; }
-[data-phase="5"] { --phase-accent: #EC4899; }
-[data-phase="6"] { --phase-accent: #22D3A0; }
+[data-phase="3"] { --phase-accent: #EF4444; }
+[data-phase="4"] { --phase-accent: #00C2A8; }
+[data-phase="5"] { --phase-accent: #F59E0B; }
+[data-phase="6"] { --phase-accent: #EC4899; }
+[data-phase="7"] { --phase-accent: #22D3A0; }
 
 /* Light mode phase soft/glow/gradient/border */
 [data-phase="1"] { --phase-accent-soft: rgba(119,36,253,0.08); --phase-glow: rgba(119,36,253,0.10); --phase-gradient: linear-gradient(160deg, rgba(119,36,253,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(119,36,253,0.18); }
 [data-phase="2"] { --phase-accent-soft: rgba(45,156,219,0.08); --phase-glow: rgba(45,156,219,0.10); --phase-gradient: linear-gradient(160deg, rgba(45,156,219,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(45,156,219,0.18); }
-[data-phase="3"] { --phase-accent-soft: rgba(0,194,168,0.08); --phase-glow: rgba(0,194,168,0.10); --phase-gradient: linear-gradient(160deg, rgba(0,194,168,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(0,194,168,0.18); }
-[data-phase="4"] { --phase-accent-soft: rgba(245,158,11,0.08); --phase-glow: rgba(245,158,11,0.10); --phase-gradient: linear-gradient(160deg, rgba(245,158,11,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(245,158,11,0.18); }
-[data-phase="5"] { --phase-accent-soft: rgba(236,72,153,0.08); --phase-glow: rgba(236,72,153,0.10); --phase-gradient: linear-gradient(160deg, rgba(236,72,153,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(236,72,153,0.18); }
-[data-phase="6"] { --phase-accent-soft: rgba(34,211,160,0.08); --phase-glow: rgba(34,211,160,0.10); --phase-gradient: linear-gradient(160deg, rgba(34,211,160,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(34,211,160,0.18); }
+[data-phase="3"] { --phase-accent-soft: rgba(239,68,68,0.08); --phase-glow: rgba(239,68,68,0.10); --phase-gradient: linear-gradient(160deg, rgba(239,68,68,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(239,68,68,0.18); }
+[data-phase="4"] { --phase-accent-soft: rgba(0,194,168,0.08); --phase-glow: rgba(0,194,168,0.10); --phase-gradient: linear-gradient(160deg, rgba(0,194,168,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(0,194,168,0.18); }
+[data-phase="5"] { --phase-accent-soft: rgba(245,158,11,0.08); --phase-glow: rgba(245,158,11,0.10); --phase-gradient: linear-gradient(160deg, rgba(245,158,11,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(245,158,11,0.18); }
+[data-phase="6"] { --phase-accent-soft: rgba(236,72,153,0.08); --phase-glow: rgba(236,72,153,0.10); --phase-gradient: linear-gradient(160deg, rgba(236,72,153,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(236,72,153,0.18); }
+[data-phase="7"] { --phase-accent-soft: rgba(34,211,160,0.08); --phase-glow: rgba(34,211,160,0.10); --phase-gradient: linear-gradient(160deg, rgba(34,211,160,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(34,211,160,0.18); }
 
 /* Dark mode phase overrides (deep gradients and stronger glows) */
 .dark[data-phase="1"] { --phase-accent-soft: rgba(119,36,253,0.15); --phase-glow: rgba(119,36,253,0.28); --phase-gradient: linear-gradient(160deg, #2B0E6D 0%, #0D0B14 65%); --phase-border: rgba(119,36,253,0.35); }
 .dark[data-phase="2"] { --phase-accent-soft: rgba(45,156,219,0.15); --phase-glow: rgba(45,156,219,0.28); --phase-gradient: linear-gradient(160deg, #0A2540 0%, #0D0B14 65%); --phase-border: rgba(45,156,219,0.35); }
-.dark[data-phase="3"] { --phase-accent-soft: rgba(0,194,168,0.15); --phase-glow: rgba(0,194,168,0.28); --phase-gradient: linear-gradient(160deg, #003D35 0%, #0D0B14 65%); --phase-border: rgba(0,194,168,0.35); }
-.dark[data-phase="4"] { --phase-accent-soft: rgba(245,158,11,0.15); --phase-glow: rgba(245,158,11,0.28); --phase-gradient: linear-gradient(160deg, #2D1A00 0%, #0D0B14 65%); --phase-border: rgba(245,158,11,0.35); }
-.dark[data-phase="5"] { --phase-accent-soft: rgba(236,72,153,0.15); --phase-glow: rgba(236,72,153,0.28); --phase-gradient: linear-gradient(160deg, #3D0A25 0%, #0D0B14 65%); --phase-border: rgba(236,72,153,0.35); }
-.dark[data-phase="6"] { --phase-accent-soft: rgba(34,211,160,0.15); --phase-glow: rgba(34,211,160,0.28); --phase-gradient: linear-gradient(160deg, #003D20 0%, #0D0B14 65%); --phase-border: rgba(34,211,160,0.35); }
+.dark[data-phase="3"] { --phase-accent-soft: rgba(239,68,68,0.15); --phase-glow: rgba(239,68,68,0.28); --phase-gradient: linear-gradient(160deg, #3D0A0A 0%, #0D0B14 65%); --phase-border: rgba(239,68,68,0.35); }
+.dark[data-phase="4"] { --phase-accent-soft: rgba(0,194,168,0.15); --phase-glow: rgba(0,194,168,0.28); --phase-gradient: linear-gradient(160deg, #003D35 0%, #0D0B14 65%); --phase-border: rgba(0,194,168,0.35); }
+.dark[data-phase="5"] { --phase-accent-soft: rgba(245,158,11,0.15); --phase-glow: rgba(245,158,11,0.28); --phase-gradient: linear-gradient(160deg, #2D1A00 0%, #0D0B14 65%); --phase-border: rgba(245,158,11,0.35); }
+.dark[data-phase="6"] { --phase-accent-soft: rgba(236,72,153,0.15); --phase-glow: rgba(236,72,153,0.28); --phase-gradient: linear-gradient(160deg, #3D0A25 0%, #0D0B14 65%); --phase-border: rgba(236,72,153,0.35); }
+.dark[data-phase="7"] { --phase-accent-soft: rgba(34,211,160,0.15); --phase-glow: rgba(34,211,160,0.28); --phase-gradient: linear-gradient(160deg, #003D20 0%, #0D0B14 65%); --phase-border: rgba(34,211,160,0.35); }
 
 /* ============================================================
    BASE LAYER

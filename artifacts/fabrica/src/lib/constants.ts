@@ -42,6 +42,27 @@ export const PHASES = [
   },
   {
     number: 3,
+    name: "SEGURANÇA & LGPD",
+    motivation: "Mapeie riscos de segurança e requisitos legais antes de definir a arquitetura — decisões aqui condicionam o modelo de dados, APIs e infraestrutura",
+    tagline: "8 entregáveis de segurança e privacidade",
+    artifacts: [
+      { key: "DATA_MAP", label: "Data Map + RAT", icon: "database", description: "Inventário de dados pessoais e Registro de Atividades de Tratamento (LGPD Art. 37)" },
+      { key: "CLASSIFICACAO_DADOS", label: "Classificação de Dados", icon: "layers", description: "Públicos / internos / confidenciais / sensíveis (LGPD Art. 11)" },
+      { key: "PRIVACY_BY_DESIGN", label: "Privacy by Design", icon: "shield", description: "Checklist dos 7 princípios aplicado a cada feature do PRD" },
+      { key: "POLITICA_PRIVACIDADE", label: "Política de Privacidade + Consentimento", icon: "file-text", description: "Rascunho da política e fluxo de consentimento granular (LGPD Art. 8)" },
+      { key: "THREAT_MODEL", label: "Threat Model (STRIDE)", icon: "alert-triangle", description: "Ameaças mapeadas por feature crítica com matriz de risco" },
+      { key: "MATRIZ_RBAC", label: "Matriz RBAC", icon: "users", description: "Papéis × recursos × operações + fluxo de autenticação" },
+      { key: "OWASP_CHECKLIST", label: "Checklist OWASP Top 10", icon: "check-square", description: "Top 10 adaptado à stack com controles de mitigação" },
+      { key: "PLANO_INCIDENTES", label: "Plano de Resposta a Incidentes", icon: "bell", description: "Responsáveis, SLA ANPD 72h, política de logs e backup" },
+    ],
+    gates: [
+      "Todos os dados pessoais mapeados com base legal LGPD definida para cada um",
+      "Threat Model STRIDE documentado para as 3 features mais críticas do PRD",
+      "Matriz RBAC e modelo de autenticação definidos e aprovados",
+    ],
+  },
+  {
+    number: 4,
     name: "SPEC",
     motivation: "Projete a arquitetura técnica antes de escrever a primeira linha de código",
     tagline: "8 entregáveis técnicos",
@@ -62,7 +83,7 @@ export const PHASES = [
     ],
   },
   {
-    number: 4,
+    number: 5,
     name: "IMPLEMENTAÇÃO",
     motivation: "Quebre o produto em milestones navegáveis e construa com disciplina de engenharia",
     tagline: "7 entregáveis de engenharia",
@@ -82,7 +103,7 @@ export const PHASES = [
     ],
   },
   {
-    number: 5,
+    number: 6,
     name: "TESTE",
     motivation: "Valide que o produto funciona e que usuários reais conseguem usá-lo sem ajuda",
     tagline: "7 entregáveis de qualidade",
@@ -102,7 +123,7 @@ export const PHASES = [
     ],
   },
   {
-    number: 6,
+    number: 7,
     name: "DEPLOY",
     motivation: "Lance com intenção e estratégia — e chegue aos seus primeiros 10 clientes pagantes",
     tagline: "7 entregáveis de lançamento",

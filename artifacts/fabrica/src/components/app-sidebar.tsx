@@ -6,8 +6,8 @@ import { PHASES } from "@/lib/constants";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const PHASE_COLORS: Record<number, string> = {
-  1: "#7724FD", 2: "#2D9CDB", 3: "#00C2A8",
-  4: "#F59E0B", 5: "#EC4899", 6: "#22D3A0",
+  1: "#7724FD", 2: "#2D9CDB", 3: "#EF4444",
+  4: "#00C2A8", 5: "#F59E0B", 6: "#EC4899", 7: "#22D3A0",
 };
 
 interface PhaseStatus {

@@ -29,9 +29,9 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
 
-## Project: Fábrica de Soluções
+## Project: FoundersFlow
 
-AI-powered web app for founders. 6 sequential phases take a product from idea to validated deploy.
+AI-powered web app for founders. 7 sequential phases take a product from idea to validated deploy.
 
 ### Visual Design Language (brandbook sprint — aplicado)
 

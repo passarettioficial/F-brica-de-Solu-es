@@ -7,7 +7,7 @@ const STEPS = [
   {
     title: "Bem-vindo ao FoundersFlow!",
     description:
-      "Transformamos sua ideia em produto validado em 6 fases estruturadas — da ideação ao lançamento, com IA guiando cada etapa.",
+      "Transformamos sua ideia em produto validado em 7 fases estruturadas — da ideação ao lançamento, com IA guiando cada etapa.",
     icon: "🏭",
     tag: "Passo 1 de 3",
   },
