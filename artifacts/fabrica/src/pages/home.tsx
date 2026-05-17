@@ -304,9 +304,9 @@ export function Home() {
         <section className="py-24 px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">VÍDEO DE APRESENTAÇÃO</p>
-              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-3">Da ideia ao produto em 7 fases.</h2>
-              <p className="text-muted-foreground max-w-lg mx-auto text-sm leading-relaxed">
+              <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-4">VÍDEO DE APRESENTAÇÃO</p>
+              <h2 className="text-4xl md:text-5xl font-serif text-foreground mb-4">Da ideia ao produto em 7 fases.</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
                 Veja como a plataforma transforma um briefing em artefatos prontos — PRD, arquitetura, go-to-market e mais.
               </p>
             </div>
