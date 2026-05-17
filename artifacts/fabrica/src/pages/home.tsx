@@ -6,7 +6,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const STATS = [
   { value: "7", label: "fases" },
   { value: "45+", label: "artefatos" },
-  { value: "2min", label: "para comecar" },
   { value: "100%", label: "estruturado" },
 ];
 
@@ -194,10 +193,6 @@ export function Home() {
                       <div className="rounded-xl border border-border/60 bg-card p-4">
                         <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Artefatos</div>
                         <div className="text-2xl font-serif text-foreground mt-1">45+</div>
-                      </div>
-                      <div className="rounded-xl border border-border/60 bg-card p-4">
-                        <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tempo</div>
-                        <div className="text-2xl font-serif text-foreground mt-1">2 min</div>
                       </div>
                     </div>
                   </div>
