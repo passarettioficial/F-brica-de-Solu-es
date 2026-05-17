@@ -107,7 +107,6 @@ export function Home() {
           <img src={`${base}/logo.svg`} alt="FoundersFlow" className="w-8 h-8 rounded-xl ring-1 ring-border/70 bg-card" />
           <div className="leading-tight">
             <span className="font-serif text-base font-semibold text-foreground tracking-tight block">FoundersFlow</span>
-            <span className="text-[11px] text-muted-foreground font-mono uppercase tracking-[0.18em]">SaaS product system</span>
           </div>
         </div>
         <nav className="flex gap-1 items-center">

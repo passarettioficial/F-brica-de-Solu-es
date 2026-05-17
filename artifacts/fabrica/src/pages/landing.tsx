@@ -38,7 +38,6 @@ export function LandingPage() {
             <img src={`${base}/logo.svg`} alt="FoundersFlow" className="h-9 w-9 rounded-xl bg-card ring-1 ring-border/70" />
             <div>
               <div className="font-serif text-lg text-foreground">FoundersFlow</div>
-              <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">Workflow OS para founders</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
