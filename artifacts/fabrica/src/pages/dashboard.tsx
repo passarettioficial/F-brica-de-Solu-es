@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
@@ -267,10 +267,66 @@ export function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const { permissions } = usePlan();
 
+  const [showTrash, setShowTrash] = useState(false);
+  const [trash, setTrash] = useState<Array<{ id: number; name: string; deletedAt: string; daysRemaining: number }>>([]);
+  const [trashLoading, setTrashLoading] = useState(false);
+  const [trashActionId, setTrashActionId] = useState<number | null>(null);
+
   const { data: dashboard, isLoading } = useGetDashboard();
   const createProject = useCreateProject();
 
   const handleTourComplete = useCallback(() => { setTimeout(() => setShowNew(true), 400); }, []);
+
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  async function loadTrash() {
+    setTrashLoading(true);
+    try {
+      const res = await fetch(`${basePath}/api/projects/trash`, { credentials: "include" });
+      if (res.ok) setTrash(await res.json());
+    } finally {
+      setTrashLoading(false);
+    }
+  }
+
+  useEffect(() => { loadTrash(); }, []);
+
+  async function restoreProject(id: number) {
+    setTrashActionId(id);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${id}/restore`, { method: "POST", credentials: "include" });
+      if (res.ok) {
+        toast({ title: "Projeto restaurado!", description: "O projeto voltou para seus projetos ativos." });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+        await loadTrash();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: "Erro ao restaurar", description: data.error ?? "Tente novamente.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro de conexão.", variant: "destructive" });
+    } finally {
+      setTrashActionId(null);
+    }
+  }
+
+  async function permanentDelete(id: number, projectName: string) {
+    if (!window.confirm(`Apagar "${projectName}" permanentemente? Esta ação não pode ser desfeita.`)) return;
+    setTrashActionId(id);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${id}/permanent`, { method: "DELETE", credentials: "include" });
+      if (res.ok || res.status === 204) {
+        toast({ title: "Projeto excluído permanentemente." });
+        await loadTrash();
+      } else {
+        toast({ title: "Erro ao excluir.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Erro de conexão.", variant: "destructive" });
+    } finally {
+      setTrashActionId(null);
+    }
+  }
 
   function applyTemplate(template: typeof EXAMPLE_TEMPLATES[0]) {
     setName(template.name);
@@ -441,6 +497,64 @@ export function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* Trash section */}
+            {(trash.length > 0 || trashLoading) && (
+              <div>
+                <button
+                  onClick={() => setShowTrash(v => !v)}
+                  className="flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider mb-3"
+                >
+                  <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2L3 6" />
+                  </svg>
+                  Lixeira ({trash.length})
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`transition-transform ${showTrash ? "rotate-180" : ""}`}>
+                    <path d="M2 3.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+
+                {showTrash && (
+                  <div className="space-y-2">
+                    {trashLoading ? (
+                      <div className="h-10 bg-muted rounded-xl animate-pulse" />
+                    ) : (
+                      trash.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-card/60 px-4 py-3 gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {item.daysRemaining > 0
+                                ? `Apagado em ${item.daysRemaining} dia${item.daysRemaining !== 1 ? "s" : ""}`
+                                : "Apagado permanentemente em breve"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => restoreProject(item.id)}
+                              disabled={trashActionId === item.id}
+                              className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-primary/8"
+                            >
+                              {trashActionId === item.id ? "…" : "Restaurar"}
+                            </button>
+                            <button
+                              onClick={() => permanentDelete(item.id, item.name)}
+                              disabled={trashActionId === item.id}
+                              className="text-xs font-semibold text-destructive hover:text-destructive/80 transition-colors disabled:opacity-50 px-2 py-1 rounded-lg hover:bg-destructive/8"
+                            >
+                              Apagar
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <p className="text-[10px] text-muted-foreground font-mono px-1">
+                      Projetos na lixeira são apagados permanentemente após 30 dias.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <aside className="space-y-4 lg:pt-0">

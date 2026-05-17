@@ -191,9 +191,9 @@ export function ProjectPage() {
       if (res.ok || res.status === 204) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
         navigate("/dashboard");
-        toast({ title: "Projeto apagado." });
+        toast({ title: "Projeto movido para a lixeira.", description: "Você tem 30 dias para restaurá-lo." });
       } else {
-        toast({ title: "Erro ao apagar projeto.", variant: "destructive" });
+        toast({ title: "Erro ao mover para a lixeira.", variant: "destructive" });
       }
     } catch {
       toast({ title: "Erro de conexão.", variant: "destructive" });
@@ -463,13 +463,13 @@ export function ProjectPage() {
           {/* Danger zone */}
           <div className="mt-10 border border-destructive/20 rounded-2xl p-6">
             <h3 className="text-sm font-semibold text-destructive mb-1">Zona de risco</h3>
-            <p className="text-xs text-muted-foreground mb-4">Esta ação é irreversível. Todos os artefatos e dados do projeto serão excluídos permanentemente.</p>
+            <p className="text-xs text-muted-foreground mb-4">O projeto será movido para a lixeira. Você tem 30 dias para restaurá-lo antes da exclusão permanente.</p>
             <Button
               variant="outline"
               className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive"
               onClick={() => setConfirmDelete(true)}
             >
-              Apagar projeto
+              Mover para lixeira
             </Button>
           </div>
         </main>
@@ -481,12 +481,15 @@ export function ProjectPage() {
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
             <div className="w-10 h-10 rounded-full flex items-center justify-center mb-4" style={{ background: "var(--color-error-bg)" }}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--color-error)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 4v6M10 14h.01M3 10a7 7 0 1 0 14 0 7 7 0 0 0-14 0Z" />
+                <path d="M3 6h14M8 6V4h4v2M19 6l-1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2L3 6" />
               </svg>
             </div>
-            <h2 className="font-serif text-lg mb-1" style={{ color: "var(--text-primary)" }}>Apagar projeto?</h2>
-            <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
-              O projeto <strong style={{ color: "var(--text-primary)" }}>{project.name}</strong> e todos os seus artefatos serão excluídos permanentemente. Não é possível desfazer.
+            <h2 className="font-serif text-lg mb-1" style={{ color: "var(--text-primary)" }}>Mover para a lixeira?</h2>
+            <p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>
+              O projeto <strong style={{ color: "var(--text-primary)" }}>{project.name}</strong> será movido para a lixeira.
+            </p>
+            <p className="text-xs mb-6 px-3 py-2 rounded-lg" style={{ background: "var(--color-error-bg)", color: "var(--color-error)" }}>
+              Você tem <strong>30 dias</strong> para restaurá-lo. Após esse prazo, o projeto e todos os seus artefatos serão excluídos permanentemente.
             </p>
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>
@@ -497,7 +500,7 @@ export function ProjectPage() {
                 onClick={deleteProject}
                 disabled={deleting}
               >
-                {deleting ? "Apagando…" : "Sim, apagar"}
+                {deleting ? "Movendo…" : "Mover para lixeira"}
               </Button>
             </div>
           </div>

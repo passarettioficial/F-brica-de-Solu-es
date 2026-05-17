@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, isNull, isNotNull, lt } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import {
@@ -10,6 +10,8 @@ import { ensureUser } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 
 const router: IRouter = Router();
+
+const TRASH_RETENTION_DAYS = 30;
 
 // GET /projects/dashboard
 router.get("/projects/dashboard", async (req, res): Promise<void> => {
@@ -22,7 +24,9 @@ router.get("/projects/dashboard", async (req, res): Promise<void> => {
   const [userRecord] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
   const plan = userRecord ? getPlanConfig(userRecord.plan, userRecord.isSuperuser ?? false) : getPlanConfig("free");
 
-  const projects = await db.select().from(projectsTable).where(eq(projectsTable.clerkId, userId));
+  const projects = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
 
   const summaries = await Promise.all(projects.map(async (project) => {
     const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, project.id));
@@ -50,13 +54,45 @@ router.get("/projects/dashboard", async (req, res): Promise<void> => {
   });
 });
 
+// GET /projects/trash — list soft-deleted projects (auto-purge >30 days)
+router.get("/projects/trash", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const cutoff = new Date(Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+  // Auto-purge projects older than 30 days
+  await db.delete(projectsTable).where(
+    and(
+      eq(projectsTable.clerkId, userId),
+      isNotNull(projectsTable.deletedAt),
+      lt(projectsTable.deletedAt, cutoff),
+    )
+  );
+
+  const trashed = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.clerkId, userId), isNotNull(projectsTable.deletedAt))
+  );
+
+  const now = Date.now();
+  res.json(trashed.map(p => ({
+    id: p.id,
+    name: p.name,
+    deletedAt: p.deletedAt,
+    daysRemaining: Math.max(0, TRASH_RETENTION_DAYS - Math.floor((now - p.deletedAt!.getTime()) / (1000 * 60 * 60 * 24))),
+  })));
+});
+
 // GET /projects
 router.get("/projects", async (req, res): Promise<void> => {
   const auth = getAuth(req);
   const userId = auth?.userId;
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const projects = await db.select().from(projectsTable).where(eq(projectsTable.clerkId, userId));
+  const projects = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
   res.json(projects);
 });
 
@@ -69,12 +105,14 @@ router.post("/projects", async (req, res): Promise<void> => {
   const parsed = CreateProjectBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const userRecord = await ensureUser(userId);
+  await ensureUser(userId);
 
-  // Enforce plan project limit
+  // Enforce plan project limit (only count active, non-deleted projects)
   const [userFull] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
   const plan = getPlanConfig(userFull?.plan ?? "free", userFull?.isSuperuser ?? false);
-  const [{ count: projectCount }] = await db.select({ count: count() }).from(projectsTable).where(eq(projectsTable.clerkId, userId));
+  const [{ count: projectCount }] = await db.select({ count: count() }).from(projectsTable).where(
+    and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
   if (Number(projectCount) >= plan.maxProjects) {
     res.status(403).json({
       error: `Limite de ${plan.maxProjects} projeto(s) atingido para o plano ${plan.name}. Faça upgrade para criar mais projetos.`,
@@ -115,7 +153,7 @@ router.get("/projects/:id", async (req, res): Promise<void> => {
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
@@ -139,14 +177,14 @@ router.patch("/projects/:id", async (req, res): Promise<void> => {
 
   const [project] = await db.update(projectsTable)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId)))
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt)))
     .returning();
 
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
   res.json(project);
 });
 
-// DELETE /projects/:id
+// DELETE /projects/:id — soft delete (move to trash)
 router.delete("/projects/:id", async (req, res): Promise<void> => {
   const auth = getAuth(req);
   const userId = auth?.userId;
@@ -156,11 +194,63 @@ router.delete("/projects/:id", async (req, res): Promise<void> => {
   const id = parseInt(raw, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const [project] = await db.delete(projectsTable)
-    .where(and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId)))
+  const [project] = await db.update(projectsTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt)))
     .returning();
 
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+  res.json({ id: project.id, deletedAt: project.deletedAt });
+});
+
+// POST /projects/:id/restore — restore from trash (checks plan limit)
+router.post("/projects/:id/restore", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  // Check plan limit before restoring
+  const [userFull] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
+  const plan = getPlanConfig(userFull?.plan ?? "free", userFull?.isSuperuser ?? false);
+  const [{ count: activeCount }] = await db.select({ count: count() }).from(projectsTable).where(
+    and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
+  if (Number(activeCount) >= plan.maxProjects) {
+    res.status(403).json({
+      error: `Limite de ${plan.maxProjects} projeto(s) atingido para o plano ${plan.name}. Apague um projeto ativo ou faça upgrade antes de restaurar.`,
+      code: "PROJECT_LIMIT_REACHED",
+    });
+    return;
+  }
+
+  const [project] = await db.update(projectsTable)
+    .set({ deletedAt: null, updatedAt: new Date() })
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNotNull(projectsTable.deletedAt)))
+    .returning();
+
+  if (!project) { res.status(404).json({ error: "Project not found in trash" }); return; }
+  res.json(project);
+});
+
+// DELETE /projects/:id/permanent — hard delete (irreversible)
+router.delete("/projects/:id/permanent", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [project] = await db.delete(projectsTable)
+    .where(and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNotNull(projectsTable.deletedAt)))
+    .returning();
+
+  if (!project) { res.status(404).json({ error: "Project not found in trash" }); return; }
   res.sendStatus(204);
 });
 
@@ -175,7 +265,7 @@ router.get("/projects/:id/summary", async (req, res): Promise<void> => {
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
