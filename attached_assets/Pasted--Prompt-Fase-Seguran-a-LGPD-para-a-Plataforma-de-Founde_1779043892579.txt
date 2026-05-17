@@ -1,0 +1,304 @@
+# Prompt — Fase "Segurança & LGPD" para a Plataforma de Founders
+
+---
+
+## CONTEXTO DA PLATAFORMA
+
+Estou construindo uma plataforma que guia founders na construção de produtos, organizada em um pipeline de fases sequenciais. O pipeline atual é:
+
+1. **IDEIA** — Validação e potencial (8 artefatos)
+2. **PRD** — Definição de produto (7 artefatos)
+3. **SPEC** — Arquitetura técnica (8 artefatos)
+4. **IMPL.** — Plano de execução (7 artefatos)
+5. **TESTE** — QA e validação (7 artefatos)
+6. **DEPLOY** — Lançamento real (7 artefatos)
+
+**Quero inserir uma nova fase entre PRD (posição 2) e SPEC (posição 3):**
+
+---
+
+## FASE A CONSTRUIR: "SEGURANÇA & LGPD"
+
+### Objetivo da fase
+Antes de definir a arquitetura técnica (SPEC), o founder deve mapear todos os riscos de segurança e requisitos legais de proteção de dados que a solução vai gerar. Decisões tomadas aqui condicionam o modelo de dados, as APIs, as integrações e a infraestrutura do SPEC.
+
+### Posição no pipeline
+- Entrada: PRD aprovado (produto definido, features listadas, usuários identificados)
+- Saída: Documento de requisitos de segurança + conformidade LGPD, que serve como input obrigatório para o SPEC
+
+---
+
+## DIMENSÕES E CONTEÚDO DA FASE
+
+A fase deve cobrir **6 dimensões**, cada uma com seus itens de verificação, fontes normativas/técnicas e artefatos de saída:
+
+---
+
+### DIMENSÃO 1 — Mapeamento de Dados Pessoais
+
+**O que fazer:**
+- Inventariar todos os dados pessoais coletados (nome, e-mail, CPF, localização, comportamento, pagamento, device ID, cookies, etc.)
+- Para cada dado: definir finalidade, base legal LGPD aplicável, tempo de retenção, local de armazenamento, quem acessa e se sai para terceiros
+- Mapear o fluxo completo do dado: coleta → processamento → armazenamento → compartilhamento → descarte
+
+**Bases legais disponíveis (LGPD Art. 7º):**
+- Consentimento do titular
+- Cumprimento de obrigação legal ou regulatória
+- Execução de contrato
+- Exercício regular de direitos
+- Legítimo interesse do controlador
+
+**Fontes normativas:**
+- Lei nº 13.709/2018 (LGPD) — Art. 7º (bases legais), Art. 37º (registro de atividades), Art. 41º (encarregado)
+- Regulamento (UE) 2016/679 (GDPR) — Art. 30 (registro de tratamento) — referência comparativa
+- ANPD — Guia Orientativo: Bases Legais para Tratamento de Dados Pessoais (2021): https://www.gov.br/anpd/pt-br/documentos-e-publicacoes/guia-orientativo-tratamento-de-dados-pessoais-pelo-poder-publico.pdf
+- ANPD — Resolução CD/ANPD nº 2/2022 (RIPD — relatório de impacto): https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-2-de-27-de-janeiro-de-2022-375733887
+
+**Artefatos de saída:**
+- Data Map (mapa de dados pessoais)
+- Registro de Atividades de Tratamento (RAT) — obrigatório pelo Art. 37 LGPD
+- Classificação de dados: públicos / internos / confidenciais / sensíveis (Art. 11 LGPD)
+
+---
+
+### DIMENSÃO 2 — Privacidade por Design (Privacy by Design)
+
+**O que fazer:**
+- Aplicar os 7 princípios de Privacy by Design antes de escrever uma linha de código
+- Definir mecanismo de consentimento granular (por finalidade, revogável a qualquer momento)
+- Mapear os direitos dos titulares que precisam de implementação técnica
+- Definir política de minimização: remover do PRD qualquer dado sem base legal clara
+- Especificar gestão de cookies e rastreadores
+
+**Direitos dos titulares (LGPD Art. 18) — cada um exige feature:**
+- Acesso aos dados
+- Correção de dados incompletos ou desatualizados
+- Anonimização, bloqueio ou eliminação de dados desnecessários
+- Portabilidade dos dados
+- Eliminação dos dados tratados com consentimento
+- Informação sobre compartilhamento com terceiros
+- Revogação de consentimento
+
+**Fontes técnicas e normativas:**
+- Ann Cavoukian — Privacy by Design: The 7 Foundational Principles (IPC Ontario, 2009): https://www.ipc.on.ca/wp-content/uploads/Resources/7foundationalprinciples.pdf
+- NIST Privacy Framework v1.0 (2020): https://www.nist.gov/privacy-framework/privacy-framework
+- ANPD — Guia Orientativo: Cookies e Proteção de Dados Pessoais: https://www.gov.br/anpd/pt-br/documentos-e-publicacoes/guia-cookies-e-protecao-de-dados-pessoais.pdf
+- EDPB — Guidelines 05/2020 on Consent: https://edpb.europa.eu/sites/default/files/files/file1/edpb_guidelines_202005_consent_en.pdf
+- OWASP ASVS — Application Security Verification Standard v4.0, Seção 8 (Data Protection): https://owasp.org/www-project-application-security-verification-standard/
+
+**Artefatos de saída:**
+- Privacy by Design checklist (por feature do PRD)
+- Fluxo de consentimento (diagrama)
+- Rascunho da Política de Privacidade
+- Especificação do painel de privacidade do usuário
+- Especificação do banner de cookies (categorias: essenciais, funcionais, analíticos, publicitários)
+
+---
+
+### DIMENSÃO 3 — Modelagem de Ameaças (Threat Modeling)
+
+**O que fazer:**
+- Aplicar o framework STRIDE para cada feature crítica do PRD
+- Identificar a superfície de ataque: endpoints de API, autenticação, uploads, webhooks, integrações externas
+- Classificar os riscos por probabilidade e impacto (matriz de risco)
+- Varrer dependências de terceiros por vulnerabilidades conhecidas (especialmente crítico em código gerado por IA/vibe coding)
+- Definir controles de segurança por ameaça antes do SPEC
+
+**Framework STRIDE — categorias de ameaça:**
+- **S**poofing (falsificação de identidade)
+- **T**ampering (adulteração de dados)
+- **R**epudiation (negação de ação)
+- **I**nformation Disclosure (exposição de informação)
+- **D**enial of Service (negação de serviço)
+- **E**levation of Privilege (escalada de privilégios)
+
+**Fontes técnicas:**
+- Microsoft STRIDE Threat Model — original paper (Shostack, 2014): https://shostack.org/files/microsoft/The-threats-to-our-products.docx
+- Adam Shostack — "Threat Modeling: Designing for Security" (Wiley, 2014) — referência-padrão da área
+- OWASP Threat Modeling Process: https://owasp.org/www-community/Threat_Modeling_Process
+- OWASP Top 10 2021 (lista das 10 vulnerabilidades mais críticas): https://owasp.org/Top10/
+- OWASP Top 10 for LLM Applications (específico para apps com IA generativa): https://owasp.org/www-project-top-10-for-large-language-model-applications/
+- NIST SP 800-30 Rev. 1 — Guide for Conducting Risk Assessments: https://csrc.nist.gov/publications/detail/sp/800-30/rev-1/final
+- CVE/NVD (National Vulnerability Database) para consulta de CVEs: https://nvd.nist.gov/
+
+**Ferramentas de varredura de dependências:**
+- Snyk: https://snyk.io/
+- OWASP Dependency-Check: https://owasp.org/www-project-dependency-check/
+- npm audit (para projetos Node.js): `npm audit --audit-level=high`
+
+**Artefatos de saída:**
+- Threat Model por feature (STRIDE preenchido)
+- Matriz de risco (probabilidade × impacto)
+- Lista de controles de segurança requeridos para o SPEC
+- Relatório de dependências vulneráveis
+
+---
+
+### DIMENSÃO 4 — Autenticação e Autorização
+
+**O que fazer:**
+- Definir o modelo de identidade: quem são os atores, quais papéis existem, quais recursos cada papel acessa
+- Escolher protocolo de autenticação (OAuth 2.0 + OIDC é o padrão atual)
+- Definir política de sessão: expiração, revogação, rotação de refresh tokens
+- Especificar MFA: obrigatório para admins, opcional para usuários
+- Construir a matriz RBAC antes do SPEC — isso impacta diretamente o modelo de dados
+
+**Padrões e protocolos:**
+- **OAuth 2.0**: RFC 6749 — https://www.rfc-editor.org/rfc/rfc6749
+- **OpenID Connect (OIDC)**: https://openid.net/specs/openid-connect-core-1_0.html
+- **JWT (JSON Web Tokens)**: RFC 7519 — https://www.rfc-editor.org/rfc/rfc7519
+  - Atenção: JWT com `alg: none` é vulnerabilidade conhecida. Sempre validar assinatura.
+- **PKCE (para SPAs e apps móveis)**: RFC 7636 — https://www.rfc-editor.org/rfc/rfc7636
+
+**Fontes técnicas:**
+- OWASP Authentication Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+- OWASP Authorization Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+- OWASP Session Management Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html
+- OWASP JWT Security Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
+- NIST SP 800-63B — Digital Identity Guidelines (Authentication): https://pages.nist.gov/800-63-3/sp800-63b.html
+- NIST SP 800-63C — Federation and Assertions: https://pages.nist.gov/800-63-3/sp800-63c.html
+
+**Provedores recomendados para implementação (evitar construir do zero):**
+- Auth0, Clerk, Supabase Auth, AWS Cognito, Firebase Auth
+
+**Artefatos de saída:**
+- Matriz de permissões RBAC (papéis × recursos × operações)
+- Fluxo de autenticação (diagrama de sequência)
+- Política de sessão (expiração, MFA, revogação)
+- Decisão documentada: provedor de autenticação escolhido e justificativa
+
+---
+
+### DIMENSÃO 5 — Segurança em Código Gerado por IA (Vibe Coding)
+
+**O que fazer:**
+- Revisar todo código gerado por LLM com checklist de segurança antes do merge
+- Nunca hardcodar credenciais, API keys ou segredos no código
+- Validar e sanitizar todo input do usuário no backend (nunca confiar no frontend)
+- Auditar queries ao banco de dados: usar ORM com queries parametrizadas
+- Revisar logs: não logar dados pessoais (violação de LGPD + vazamento de informação)
+- Aplicar os princípios do OWASP Top 10 como checklist de revisão
+
+**Vulnerabilidades mais comuns em código gerado por IA:**
+- Injeção (SQL, NoSQL, comando) — OWASP A03:2021
+- Controle de acesso quebrado — OWASP A01:2021
+- Configuração incorreta de segurança — OWASP A05:2021
+- Componentes vulneráveis — OWASP A06:2021
+- Falha de identificação e autenticação — OWASP A07:2021
+- Falha de integridade de software — OWASP A08:2021 (especialmente relevante para código gerado)
+
+**Fontes técnicas:**
+- OWASP Top 10 2021: https://owasp.org/Top10/
+- OWASP Secure Coding Practices Quick Reference: https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/
+- OWASP Code Review Guide: https://owasp.org/www-project-code-review-guide/
+- CWE Top 25 Most Dangerous Software Weaknesses (MITRE): https://cwe.mitre.org/top25/archive/2023/2023_top25_list.html
+- OWASP Top 10 para LLM — AI-specific security: https://owasp.org/www-project-top-10-for-large-language-model-applications/
+- Google Secure AI Framework (SAIF): https://safety.google/cybersecurity-advancements/saif/
+- Secrets detection: GitLeaks (https://github.com/gitleaks/gitleaks), truffleHog
+
+**Ferramentas de SAST (análise estática):**
+- Semgrep (regras para Python, JS, TS, Go): https://semgrep.dev/
+- SonarQube Community: https://www.sonarqube.org/
+- Bandit (Python): https://bandit.readthedocs.io/
+
+**Artefatos de saída:**
+- Checklist OWASP Top 10 adaptado à stack do projeto
+- Política de gestão de segredos (como usar .env, secrets manager)
+- Regras de linting de segurança configuradas no repositório
+- Checklist de revisão de código gerado por IA
+
+---
+
+### DIMENSÃO 6 — Infraestrutura e Resposta a Incidentes
+
+**O que fazer:**
+- Definir onde os dados residem (jurisdição) — LGPD exige salvaguardas para transferência internacional
+- Especificar política de backup: frequência, criptografia, teste de restauração, retenção
+- Definir política de logs: o que registrar, formato, retenção, quem acessa (sem dados pessoais!)
+- Redigir plano de resposta a incidentes com responsáveis e SLA de notificação
+- LGPD Art. 48: notificação à ANPD em até 72h após ciência do incidente
+
+**Sobre transferência internacional de dados (LGPD Art. 33):**
+Permitida quando o país estrangeiro oferece proteção adequada, ou mediante:
+- Cláusulas contratuais padrão
+- Normas corporativas globais
+- Selos, certificados e códigos de conduta aprovados pela ANPD
+
+**Fontes normativas e técnicas:**
+- LGPD Art. 33 (transferência internacional): https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm
+- LGPD Art. 48 (comunicação de incidentes): https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm
+- ANPD — Resolução CD/ANPD nº 4/2023 (comunicação de incidentes): https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-4-de-24-de-fevereiro-de-2023-468106213
+- NIST SP 800-61 Rev. 2 — Computer Security Incident Handling Guide: https://csrc.nist.gov/publications/detail/sp/800-61/rev-2/final
+- NIST SP 800-53 Rev. 5 — Security and Privacy Controls: https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final
+- ISO/IEC 27001:2022 — Information Security Management (referência de mercado): https://www.iso.org/standard/27001
+- CIS Controls v8 (Center for Internet Security): https://www.cisecurity.org/controls/v8
+
+**Artefatos de saída:**
+- Decisão de jurisdição de dados documentada
+- Política de backup (RPO, RTO, frequência, criptografia)
+- Política de logs (o que registrar, retenção, acesso)
+- Plano de resposta a incidentes (responsáveis, escalada, SLA ANPD 72h)
+- Rascunho de comunicado de incidente para usuários
+
+---
+
+## INTERFACE DA FASE — REQUISITOS DE UI/UX
+
+### Estrutura visual
+A fase deve seguir o padrão visual das demais fases da plataforma com:
+
+1. **Header da fase** com número, nome, descrição curta e indicação de posição no pipeline
+2. **Progress tracker** — quantos dos 6 grupos foram completados
+3. **Seis cards expansíveis** (accordion), um por dimensão, com:
+   - Ícone e cor de identidade da dimensão
+   - Lista de itens de verificação (checkboxes interativos)
+   - Para cada item: título, descrição e links para as fontes normativas/técnicas
+   - Seção "Artefatos de saída" ao final do card, com status (pendente / em elaboração / aprovado)
+4. **Painel lateral ou rodapé** com critérios de saída (gates) — checkboxes que precisam estar todos marcados para liberar o avanço ao SPEC
+5. **Botão "Gerar resumo da fase"** que compila os itens marcados e artefatos produzidos em um documento estruturado
+
+### Comportamento esperado
+- Estado salvo por projeto (cada founder tem seu próprio preenchimento)
+- Possibilidade de adicionar notas por item
+- Indicação visual de itens críticos (bloqueantes para o SPEC) vs. recomendados
+- Export do documento de saída em PDF ou Markdown
+
+---
+
+## CRITÉRIOS DE SAÍDA DA FASE (GATES)
+
+A fase só deve liberar o avanço ao SPEC quando:
+
+1. ☐ Todos os dados pessoais mapeados com base legal LGPD definida para cada um
+2. ☐ Threat model com ao menos as 3 features mais críticas do PRD documentado (STRIDE)
+3. ☐ Modelo de autenticação e RBAC definidos
+4. ☐ Direitos dos titulares (LGPD Art. 18) mapeados com features correspondentes identificadas
+5. ☐ Decisão de jurisdição de dados documentada
+6. ☐ Plano de resposta a incidente com responsável nomeado e SLA de 72h definido
+
+---
+
+## NÚMERO DE ARTEFATOS SUGERIDO
+
+Para manter consistência com as demais fases (7–8 artefatos cada), a fase Segurança & LGPD deve entregar **8 artefatos**:
+
+1. Data Map + Registro de Atividades de Tratamento (RAT)
+2. Classificação de dados (públicos / internos / confidenciais / sensíveis)
+3. Privacy by Design checklist por feature do PRD
+4. Rascunho da Política de Privacidade + fluxo de consentimento
+5. Threat Model (STRIDE) das features críticas
+6. Matriz RBAC (papéis × recursos × operações)
+7. Checklist OWASP Top 10 adaptado à stack
+8. Plano de resposta a incidentes + política de logs
+
+---
+
+## INTEGRAÇÃO COM O RESTANTE DA PLATAFORMA
+
+- Os artefatos desta fase devem ser **referenciáveis no SPEC** (ex: "conforme Threat Model, o endpoint `/api/payments` requer autenticação + rate limiting")
+- O número da fase deve ser atualizado de 3 para 7 no total do pipeline
+- O SPEC deve ter uma seção automática de "requisitos de segurança herdados" que puxa o output desta fase
+
+---
+
+*Fontes primárias consolidadas neste prompt: LGPD (Lei 13.709/2018), ANPD Resoluções 2/2022 e 4/2023, OWASP Top 10 2021, OWASP ASVS v4.0, NIST SP 800-30/53/61/63, RFC 6749/7519/7636, GDPR Art. 30, Privacy by Design (Cavoukian), CIS Controls v8, ISO/IEC 27001:2022, CWE Top 25.*
