@@ -51,9 +51,16 @@ const FEATURES = [
   {
     step: "05",
     icon: "◎",
+    title: "Construa e valide com rigor",
+    desc: "Plano de milestones, sprint detalhado, plano de testes com 20 casos criticos e script de teste com usuarios reais.",
+    tag: "Fases 5–6 — Impl. & Teste",
+  },
+  {
+    step: "06",
+    icon: "◎",
     title: "Lance com estrategia",
     desc: "Runbook de deploy, plano Go-to-Market, Launch Checklist e Pitch para investidores. Da ideia ao mercado.",
-    tag: "Fases 5–7 — Execucao",
+    tag: "Fase 7 — Deploy",
   },
 ];
 
@@ -133,11 +140,6 @@ export function Home() {
 
           <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 text-primary text-xs font-mono font-semibold px-3 py-1.5 rounded-full mb-8 border border-primary/20 bg-primary/8 tracking-wider">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
-              PLATAFORMA DE PRODUTO COM IA — v2.0
-              </div>
-
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
               A linha de<br />
               montagem para<br />
