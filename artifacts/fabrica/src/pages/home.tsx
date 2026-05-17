@@ -407,7 +407,6 @@ export function Home() {
           </div>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link href="/pricing" className="hover:text-foreground transition-colors link-underline">Planos</Link>
-            <Link href="/analise-mercado" className="hover:text-foreground transition-colors link-underline">Análise de mercado</Link>
             <Link href="/privacidade" className="hover:text-foreground transition-colors link-underline">Privacidade e LGPD</Link>
             <Link href="/atendimento" className="hover:text-foreground transition-colors link-underline">Atendimento</Link>
           </div>
