@@ -1,3 +1,7 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#7724FD"/>
+  <polygon points="23,5 7,11 15,17" fill="white"/>
+  <polygon points="23,5 15,17 10,23" fill="rgba(255,255,255,0.82)"/>
+  <polygon points="15,17 10,23 15,19" fill="rgba(90,0,200,0.28)"/>
+  <path d="M10,23 C7,26 5,29 9,28 C12,27 12,24 10,26 C9,27 10,30 13,29" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.88"/>
 </svg>

@@ -89,7 +89,7 @@ export function SupportPage() {
     }
   }
 
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Preciso de ajuda com a Fábrica de Soluções.")}`;
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Preciso de ajuda com o FoundersFlow.")}`;
 
   return (
     <div className="app-shell">
@@ -295,7 +295,7 @@ export function SupportPage() {
             <div>
               <h3 className="font-medium text-foreground mb-1">Segurança e Privacidade (LGPD)</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                A Fábrica de Soluções está em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018).
+                O FoundersFlow está em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018).
                 Seus dados são criptografados em repouso e em trânsito. Você tem direito de acessar, corrigir e excluir
                 seus dados a qualquer momento.{" "}
                 <Link href="/privacidade" className="text-primary hover:underline">

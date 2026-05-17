@@ -728,7 +728,7 @@ function ThemeTab() {
     fontSerif: "Space Grotesk",
     fontSans: "Inter",
     borderRadius: "0.5",
-    appName: "Fábrica de Soluções",
+    appName: "FoundersFlow",
     appTagline: "Transforme ideias em produtos com IA",
   });
   const [saving, setSaving] = useState(false);
@@ -750,7 +750,7 @@ function ThemeTab() {
         fontSerif: get("theme_font_serif", "Space Grotesk"),
         fontSans: get("theme_font_sans", "Inter"),
         borderRadius: get("theme_border_radius", "0.5"),
-        appName: get("app_name", "Fábrica de Soluções"),
+        appName: get("app_name", "FoundersFlow"),
         appTagline: get("app_tagline", "Transforme ideias em produtos com IA"),
       });
     });

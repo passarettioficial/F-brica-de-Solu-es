@@ -59,7 +59,7 @@ export function AppSidebar({
           />
           {!collapsed && (
             <span className="font-serif font-bold text-sm truncate" style={{ color: "var(--text-primary)" }}>
-              Fábrica
+              FoundersFlow
             </span>
           )}
         </Link>

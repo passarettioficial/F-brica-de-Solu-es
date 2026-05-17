@@ -5,7 +5,7 @@ const STORAGE_KEY = "fabrica_onboarding_done";
 
 const STEPS = [
   {
-    title: "Bem-vindo à Fábrica!",
+    title: "Bem-vindo ao FoundersFlow!",
     description:
       "Transformamos sua ideia em produto validado em 6 fases estruturadas — da ideação ao lançamento, com IA guiando cada etapa.",
     icon: "🏭",

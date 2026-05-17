@@ -37,7 +37,7 @@ const SCENES = [
   {
     key: "cta",
     duration: 4800,
-    tag: "Fábrica de Soluções",
+    tag: "FoundersFlow",
     headline: ["Comece em", "2 minutos."],
     sub: "Sem cartão de crédito.",
     accent: "#1A3FAB",

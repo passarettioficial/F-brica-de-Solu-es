@@ -52,7 +52,7 @@ const FEATURES = [
 
 const TESTIMONIALS = [
   {
-    quote: "Antes eu passava semanas estruturando minha ideia. Com a Fabrica, tive meu PRD completo em menos de uma hora.",
+    quote: "Antes eu passava semanas estruturando minha ideia. Com o FoundersFlow, tive meu PRD completo em menos de uma hora.",
     name: "Founder de SaaS B2B",
     plan: "Plano Pro",
   },
@@ -104,9 +104,9 @@ export function Home() {
       {/* ── Header ── */}
       <header className="py-4 px-6 md:px-8 flex justify-between items-center border-b border-border/60 bg-background/75 sticky top-0 z-20 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <img src={`${base}/logo.svg`} alt="Fabrica" className="w-8 h-8 rounded-xl ring-1 ring-border/70 bg-card" />
+          <img src={`${base}/logo.svg`} alt="FoundersFlow" className="w-8 h-8 rounded-xl ring-1 ring-border/70 bg-card" />
           <div className="leading-tight">
-            <span className="font-serif text-base font-semibold text-foreground tracking-tight block">Fabrica de Solucoes</span>
+            <span className="font-serif text-base font-semibold text-foreground tracking-tight block">FoundersFlow</span>
             <span className="text-[11px] text-muted-foreground font-mono uppercase tracking-[0.18em]">SaaS product system</span>
           </div>
         </div>
@@ -402,7 +402,7 @@ export function Home() {
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <img src={`${base}/logo.svg`} alt="Logo" className="w-5 h-5 rounded" />
-            <span className="text-sm font-medium text-foreground">Fabrica de Solucoes</span>
+            <span className="text-sm font-medium text-foreground">FoundersFlow</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <Link href="/pricing" className="hover:text-foreground transition-colors link-underline">Planos</Link>
@@ -411,7 +411,7 @@ export function Home() {
             <Link href="/privacidade" className="hover:text-foreground transition-colors link-underline">Privacidade e LGPD</Link>
             <Link href="/atendimento" className="hover:text-foreground transition-colors link-underline">Atendimento</Link>
           </div>
-          <p className="text-xs font-mono text-muted-foreground/60">&copy; {new Date().getFullYear()} FABRICA DE SOLUCOES</p>
+          <p className="text-xs font-mono text-muted-foreground/60">&copy; {new Date().getFullYear()} FOUNDERSFLOW</p>
         </div>
       </footer>
 

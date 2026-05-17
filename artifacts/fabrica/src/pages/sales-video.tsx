@@ -6,7 +6,7 @@ const scenes = [
   {
     k: "01",
     title: "Pare de começar pelo código",
-    text: "Uma ideia sem estrutura vira retrabalho. A Fábrica organiza tudo antes da execução.",
+    text: "Uma ideia sem estrutura vira retrabalho. O FoundersFlow organiza tudo antes da execução.",
   },
   {
     k: "02",
@@ -27,7 +27,7 @@ const scenes = [
 
 const script = [
   "Todo bom produto começa com clareza.",
-  "A Fábrica de Soluções transforma briefing em direção.",
+  "O FoundersFlow transforma briefing em direção.",
   "Você avança por 6 fases, com artefatos que reduzem ambiguidade.",
   "O resultado é um produto mais forte, mais rápido e pronto para vender.",
 ];
@@ -38,10 +38,10 @@ export function SalesVideoPage() {
       <header className="border-b sticky top-0 z-10 backdrop-blur-xl" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={`${base}/logo.svg`} alt="Fábrica de Soluções" className="w-9 h-9 rounded-xl" style={{ background: "var(--surface-2)" }} />
+            <img src={`${base}/logo.svg`} alt="FoundersFlow" className="w-9 h-9 rounded-xl" style={{ background: "var(--surface-2)" }} />
             <div>
               <p className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "var(--brand-primary)" }}>Vídeo de vendas</p>
-              <h1 className="font-serif text-lg" style={{ color: "var(--text-primary)" }}>Fábrica de Soluções</h1>
+              <h1 className="font-serif text-lg" style={{ color: "var(--text-primary)" }}>FoundersFlow</h1>
             </div>
           </div>
           <Link href="/dashboard" className="text-sm transition-colors hover:text-white" style={{ color: "var(--text-tertiary)" }}>Voltar ao painel</Link>
