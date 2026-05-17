@@ -52,10 +52,9 @@ export function AppSidebar({
       <div className="flex items-center justify-between px-4 py-5 border-b" style={{ borderColor: "var(--border-subtle)" }}>
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           <img
-            src={`${basePath}/logo.svg`}
+            src={`${basePath}/logo.png`}
             alt="Logo"
-            className="w-7 h-7 rounded-xl flex-shrink-0"
-            style={{ background: "var(--phase-accent-soft)", border: "1px solid var(--phase-border)" }}
+            className="w-7 h-7 rounded-full flex-shrink-0"
           />
           {!collapsed && (
             <span className="font-serif font-bold text-sm truncate" style={{ color: "var(--text-primary)" }}>

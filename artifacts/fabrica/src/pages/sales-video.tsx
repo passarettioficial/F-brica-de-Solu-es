@@ -38,7 +38,7 @@ export function SalesVideoPage() {
       <header className="border-b sticky top-0 z-10 backdrop-blur-xl" style={{ borderColor: "var(--border-subtle)", background: "var(--surface-1)" }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={`${base}/logo.svg`} alt="FoundersFlow" className="w-9 h-9 rounded-xl" style={{ background: "var(--surface-2)" }} />
+            <img src={`${base}/logo.png`} alt="FoundersFlow" className="w-9 h-9 rounded-full" />
             <div>
               <p className="text-xs font-mono uppercase tracking-[0.2em]" style={{ color: "var(--brand-primary)" }}>Vídeo de vendas</p>
               <h1 className="font-serif text-lg" style={{ color: "var(--text-primary)" }}>FoundersFlow</h1>

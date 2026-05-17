@@ -35,7 +35,7 @@ export function LandingPage() {
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <img src={`${base}/logo.svg`} alt="FoundersFlow" className="h-9 w-9 rounded-xl bg-card ring-1 ring-border/70" />
+            <img src={`${base}/logo.png`} alt="FoundersFlow" className="h-9 w-9 rounded-full" />
             <div>
               <div className="font-serif text-lg text-foreground">FoundersFlow</div>
             </div>

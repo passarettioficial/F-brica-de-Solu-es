@@ -104,7 +104,7 @@ export function Home() {
       {/* ── Header ── */}
       <header className="py-4 px-6 md:px-8 flex justify-between items-center border-b border-border/60 bg-background/75 sticky top-0 z-20 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <img src={`${base}/logo.svg`} alt="FoundersFlow" className="w-8 h-8 rounded-xl ring-1 ring-border/70 bg-card" />
+          <img src={`${base}/logo.png`} alt="FoundersFlow" className="w-8 h-8 rounded-full" />
           <div className="leading-tight">
             <span className="font-serif text-base font-semibold text-foreground tracking-tight block">FoundersFlow</span>
           </div>
@@ -400,7 +400,7 @@ export function Home() {
       <footer className="py-8 px-8 border-t border-border/60">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <img src={`${base}/logo.svg`} alt="Logo" className="w-5 h-5 rounded" />
+            <img src={`${base}/logo.png`} alt="Logo" className="w-5 h-5 rounded-full" />
             <span className="text-sm font-medium text-foreground">FoundersFlow</span>
           </div>
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
