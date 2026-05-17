@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { phasesTable } from "./phases";
@@ -11,7 +11,10 @@ export const phaseArtifactsTable = pgTable("phase_artifacts", {
   contentJson: text("content_json"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => [
+  uniqueIndex("phase_artifacts_phase_key_unique").on(table.phaseId, table.artifactKey),
+  index("phase_artifacts_phase_id_idx").on(table.phaseId),
+]);
 
 export const insertPhaseArtifactSchema = createInsertSchema(phaseArtifactsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertPhaseArtifact = z.infer<typeof insertPhaseArtifactSchema>;

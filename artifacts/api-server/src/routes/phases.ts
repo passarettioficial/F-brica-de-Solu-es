@@ -87,13 +87,11 @@ router.post("/projects/:projectId/phases/:phaseNumber/complete", async (req, res
     return;
   }
 
-  // Mark current phase as completed
   const [updatedPhase] = await db.update(phasesTable)
     .set({ status: "completed", updatedAt: new Date() })
     .where(eq(phasesTable.id, phase.id))
     .returning();
 
-  // Unlock next phase if exists
   if (phaseNumber < 7) {
     await db.update(phasesTable)
       .set({ status: "active", updatedAt: new Date() })
@@ -183,16 +181,15 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
-  const canUseAI = await checkAndIncrementAiUsage(userId);
-  if (!canUseAI) {
-    res.status(400).json({ error: "Daily AI limit reached (50 executions per day)" });
+  // Atomic AI usage check + increment
+  const { allowed, limit } = await checkAndIncrementAiUsage(userId);
+  if (!allowed) {
+    res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` });
     return;
   }
 
-  // Get all artifacts from previous phases for context
-  const allPreviousPhases = await db.select().from(phasesTable).where(
-    and(eq(phasesTable.projectId, projectId))
-  );
+  // Fetch all previous phase artifacts for context
+  const allPreviousPhases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));
   const previousPhaseIds = allPreviousPhases
     .filter(p => p.phaseNumber < phaseNumber)
     .map(p => p.id);
@@ -209,6 +206,14 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  // SSE heartbeat — prevents load balancer timeouts on long generations
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(": heartbeat\n\n");
+    }
+  }, 15000);
+  res.on("close", () => clearInterval(heartbeat));
+
   try {
     const results = await generatePhaseArtifacts(
       phaseNumber,
@@ -220,26 +225,28 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
       }
     );
 
-    // Save artifacts to DB (upsert: delete existing and re-insert)
-    await db.delete(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
+    // Atomic upsert: delete + insert in a single transaction
+    await db.transaction(async (tx) => {
+      await tx.delete(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
+      if (results.length > 0) {
+        await tx.insert(phaseArtifactsTable).values(
+          results.map(r => ({
+            phaseId: phase.id,
+            artifactKey: r.artifactKey,
+            content: r.content,
+            contentJson: r.contentJson ?? null,
+          }))
+        );
+      }
+    });
 
-    if (results.length > 0) {
-      await db.insert(phaseArtifactsTable).values(
-        results.map(r => ({
-          phaseId: phase.id,
-          artifactKey: r.artifactKey,
-          content: r.content,
-          contentJson: r.contentJson ?? null,
-        }))
-      );
-    }
-
-    // Fetch fresh artifacts
     const saved = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
 
+    clearInterval(heartbeat);
     res.write(`data: ${JSON.stringify({ type: "done", artifacts: saved })}\n\n`);
     res.end();
   } catch (error) {
+    clearInterval(heartbeat);
     res.write(`data: ${JSON.stringify({ type: "error", message: "Erro ao gerar artefatos" })}\n\n`);
     res.end();
   }

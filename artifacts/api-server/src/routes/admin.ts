@@ -1,5 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, desc, count, sql } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
 import { db, usersTable, couponsTable, settingsTable, projectsTable } from "@workspace/db";
 import { requireAdmin } from "../lib/adminAuth";
 import { logger } from "../lib/logger";
@@ -295,8 +296,11 @@ router.put("/admin/deliverables", async (req: Request, res: Response): Promise<v
   }
 });
 
-// POST /api/admin/coupons/validate — validate a coupon code (public-ish, for checkout)
+// POST /api/admin/coupons/validate — validate a coupon code (requires login)
 router.post("/admin/coupons/validate", async (req: Request, res: Response): Promise<void> => {
+  const auth = getAuth(req);
+  if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
   const { code, planId } = req.body as { code: string; planId?: string };
   if (!code) { res.status(400).json({ error: "Código obrigatório" }); return; }
 

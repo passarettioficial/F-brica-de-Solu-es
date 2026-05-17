@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import {
@@ -7,6 +7,7 @@ import {
   UpdateProjectBody,
 } from "@workspace/api-zod";
 import { ensureUser } from "../lib/auth";
+import { getPlanConfig } from "../lib/stripe";
 
 const router: IRouter = Router();
 
@@ -18,8 +19,8 @@ router.get("/projects/dashboard", async (req, res): Promise<void> => {
 
   await ensureUser(userId);
 
-  const user = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId)).limit(1);
-  const userRecord = user[0];
+  const [userRecord] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
+  const plan = userRecord ? getPlanConfig(userRecord.plan, userRecord.isSuperuser ?? false) : getPlanConfig("free");
 
   const projects = await db.select().from(projectsTable).where(eq(projectsTable.clerkId, userId));
 
@@ -45,7 +46,7 @@ router.get("/projects/dashboard", async (req, res): Promise<void> => {
     projects: summaries,
     totalProjects: projects.length,
     dailyAiUsage: userRecord?.dailyAiUsage ?? 0,
-    dailyAiLimit: 50,
+    dailyAiLimit: plan.aiDailyLimit,
   });
 });
 
@@ -68,7 +69,19 @@ router.post("/projects", async (req, res): Promise<void> => {
   const parsed = CreateProjectBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  await ensureUser(userId);
+  const userRecord = await ensureUser(userId);
+
+  // Enforce plan project limit
+  const [userFull] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
+  const plan = getPlanConfig(userFull?.plan ?? "free", userFull?.isSuperuser ?? false);
+  const [{ count: projectCount }] = await db.select({ count: count() }).from(projectsTable).where(eq(projectsTable.clerkId, userId));
+  if (Number(projectCount) >= plan.maxProjects) {
+    res.status(403).json({
+      error: `Limite de ${plan.maxProjects} projeto(s) atingido para o plano ${plan.name}. Faça upgrade para criar mais projetos.`,
+      code: "PROJECT_LIMIT_REACHED",
+    });
+    return;
+  }
 
   const [project] = await db.insert(projectsTable).values({
     clerkId: userId,
@@ -77,8 +90,8 @@ router.post("/projects", async (req, res): Promise<void> => {
     currentPhase: 1,
   }).returning();
 
-  // Create all 6 phases for this project
-  const phaseValues = [1, 2, 3, 4, 5, 6].map(num => ({
+  // Create all 7 phases for this project
+  const phaseValues = [1, 2, 3, 4, 5, 6, 7].map(num => ({
     projectId: project.id,
     phaseNumber: num,
     status: (num === 1 ? "active" : "locked") as "active" | "locked" | "completed",

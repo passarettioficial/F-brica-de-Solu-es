@@ -503,7 +503,7 @@ export async function generatePhaseArtifacts(
   const prompt = PHASE_PROMPTS[phaseNumber];
 
   const previousContext = previousArtifacts.length > 0
-    ? `\n\nARTEFATOS DE FASES ANTERIORES (use como contexto e seja coerente com eles):\n${previousArtifacts.slice(0, 8).map(a => `[${a.artifactKey}]\n${a.content.slice(0, 800)}`).join("\n\n")}`
+    ? `\n\nARTEFATOS DE FASES ANTERIORES (use como contexto e seja coerente com eles):\n${previousArtifacts.map(a => `[${a.artifactKey}]\n${a.content.slice(0, 2500)}`).join("\n\n")}`
     : "";
 
   const systemPrompt = `${prompt}

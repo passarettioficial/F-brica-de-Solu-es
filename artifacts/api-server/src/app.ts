@@ -1,6 +1,7 @@
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import rateLimit from "express-rate-limit";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import {
@@ -54,6 +55,28 @@ app.use(
     ),
   })),
 );
+
+// Global rate limit — protects all /api routes from abuse
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 300,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Muitas requisições. Tente novamente em alguns minutos." },
+  skip: (req) => req.path.startsWith("/api/healthz"),
+});
+
+// Strict limit for AI execution — prevents burst abuse
+const aiExecuteLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 6,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Limite de execuções de IA por minuto atingido. Aguarde 1 minuto." },
+});
+
+app.use("/api", globalLimiter);
+app.post("/api/projects/:projectId/phases/:phaseNumber/execute", aiExecuteLimiter);
 
 app.use("/api", router);
 
