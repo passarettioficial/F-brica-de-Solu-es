@@ -88,7 +88,7 @@ export function AppSidebar({
             </div>
           )}
 
-          <div className="space-y-0.5">
+          <div className="flex items-center gap-0 px-3 py-2">
             {PHASES.map((phase, i) => {
               const phaseNum = i + 1;
               const status = phaseStatuses?.[i]?.status ?? "locked";
@@ -96,39 +96,38 @@ export function AppSidebar({
               const isActive = phaseNum === currentPhase;
               const isLocked = status === "locked" && !isActive;
               const color = PHASE_COLORS[phaseNum] ?? "#7724FD";
+              const isLast = i === PHASES.length - 1;
 
               return (
-                <Link
-                  key={phaseNum}
-                  href={isLocked ? "#" : `/projects/${projectId}/phases/${phaseNum}`}
-                  className="sidebar-nav-item"
-                  style={{
-                    opacity: isLocked ? 0.4 : 1,
-                    color: isActive ? color : isDone ? "var(--text-secondary)" : "var(--text-tertiary)",
-                    borderLeftColor: isActive ? color : "transparent",
-                    background: isActive ? `${color}18` : "transparent",
-                    pointerEvents: isLocked ? "none" : "auto",
-                    padding: collapsed ? "8px" : "8px 12px",
-                    justifyContent: collapsed ? "center" : "flex-start",
-                  }}
-                >
-                  <span
-                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                <div key={phaseNum} className="flex items-center flex-1 min-w-0">
+                  <Link
+                    href={isLocked ? "#" : `/projects/${projectId}/phases/${phaseNum}`}
+                    title={phase.name}
                     style={{
-                      background: isDone ? color : isActive ? `${color}28` : "var(--bg-surface-raised)",
-                      border: `1px solid ${isActive || isDone ? color : "var(--border-subtle)"}`,
-                      color: isDone ? "#fff" : isActive ? color : "var(--text-tertiary)",
-                      boxShadow: isActive ? `0 0 10px ${color}55` : "none",
+                      opacity: isLocked ? 0.35 : 1,
+                      pointerEvents: isLocked ? "none" : "auto",
+                      flexShrink: 0,
                     }}
                   >
-                    {isDone ? "✓" : phaseNum}
-                  </span>
-                  {!collapsed && (
-                    <span className="text-xs leading-snug truncate font-medium">
-                      {phase.name}
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
+                      style={{
+                        background: isDone ? color : isActive ? `${color}28` : "var(--bg-surface-raised)",
+                        border: `1.5px solid ${isActive || isDone ? color : "var(--border-subtle)"}`,
+                        color: isDone ? "#fff" : isActive ? color : "var(--text-tertiary)",
+                        boxShadow: isActive ? `0 0 8px ${color}66` : "none",
+                      }}
+                    >
+                      {isDone ? "✓" : phaseNum}
                     </span>
+                  </Link>
+                  {!isLast && (
+                    <div
+                      className="flex-1 h-px mx-0.5"
+                      style={{ background: isDone ? color : "var(--border-subtle)", opacity: isDone ? 0.5 : 1 }}
+                    />
                   )}
-                </Link>
+                </div>
               );
             })}
           </div>
