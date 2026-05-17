@@ -151,7 +151,7 @@ export function Home() {
               </p>
 
               {/* Stats row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-0 md:divide-x md:divide-border/60 mb-12 max-w-3xl lg:max-w-none bg-card/70 backdrop-blur-sm border border-border/60 rounded-2xl overflow-hidden">
+              <div className="grid grid-cols-3 gap-0 divide-x divide-border/60 mb-12 max-w-3xl lg:max-w-none bg-card/70 backdrop-blur-sm border border-border/60 rounded-2xl overflow-hidden">
               {STATS.map((stat, i) => (
                 <div key={i} className="text-center px-6 py-5">
                     <div className="stat-shimmer text-3xl font-bold font-serif">{stat.value}</div>
@@ -189,11 +189,9 @@ export function Home() {
                       </div>
                       <div className="text-lg font-serif text-foreground mt-1">Ideia e validacao</div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-border/60 bg-card p-4">
-                        <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Artefatos</div>
-                        <div className="text-2xl font-serif text-foreground mt-1">45+</div>
-                      </div>
+                    <div className="rounded-xl border border-border/60 bg-card p-4">
+                      <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Artefatos</div>
+                      <div className="text-2xl font-serif text-foreground mt-1">45+</div>
                     </div>
                   </div>
                 </div>
