@@ -11,25 +11,25 @@ const scenes = [
   {
     k: "02",
     title: "7 fases, 53+ artefatos",
-    text: "Lean Canvas, PRD, arquitetura, roadmap, go-to-market e muito mais — em um fluxo guiado.",
+    text: "Ideia, PRD, Segurança & LGPD, Spec, Implementação, Teste e Deploy — em um fluxo guiado.",
   },
   {
     k: "03",
-    title: "Visual limpo, processo sério",
-    text: "Branding consistente, leitura rápida e decisões mais claras para founders e times.",
+    title: "LGPD e segurança desde o início",
+    text: "Threat model, matriz RBAC e política de privacidade gerados antes de qualquer linha de código.",
   },
   {
     k: "04",
     title: "Pronto para vender",
-    text: "Crie, valide e lance com uma narrativa de produto mais convincente.",
+    text: "Crie, valide e lance com uma narrativa de produto mais convincente e compliance garantido.",
   },
 ];
 
 const script = [
   "Todo bom produto começa com clareza.",
-  "O FoundersFlow transforma briefing em direção.",
-  "Você avança por 7 fases, com artefatos que reduzem ambiguidade.",
-  "O resultado é um produto mais forte, mais rápido e pronto para vender.",
+  "O FoundersFlow transforma briefing em direção — em 7 fases estruturadas.",
+  "Segurança e LGPD são embutidos no processo, não adicionados no final.",
+  "O resultado é um produto mais forte, mais seguro e pronto para o mercado.",
 ];
 
 export function SalesVideoPage() {
@@ -59,7 +59,8 @@ export function SalesVideoPage() {
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">Brandbook aplicado</span>
               <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">7 fases</span>
-              <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">45+ artefatos</span>
+              <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">53+ artefatos</span>
+              <span className="text-xs px-3 py-1 rounded-full border border-border bg-secondary/50 text-foreground">LGPD incluso</span>
             </div>
             <div className="mt-8 space-y-3">
               {script.map((line, index) => (

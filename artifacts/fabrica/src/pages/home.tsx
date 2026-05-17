@@ -13,10 +13,11 @@ const STATS = [
 const PHASES = [
   { num: 1, name: "Ideia", icon: "◈", desc: "Validacao e potencial", artifacts: "8 artefatos" },
   { num: 2, name: "PRD", icon: "◈", desc: "Definicao de produto", artifacts: "7 artefatos" },
-  { num: 3, name: "Spec", icon: "◈", desc: "Arquitetura tecnica", artifacts: "8 artefatos" },
-  { num: 4, name: "Impl.", icon: "◈", desc: "Plano de execucao", artifacts: "7 artefatos" },
-  { num: 5, name: "Teste", icon: "◈", desc: "QA e validacao", artifacts: "7 artefatos" },
-  { num: 6, name: "Deploy", icon: "◈", desc: "Lancamento real", artifacts: "7 artefatos" },
+  { num: 3, name: "Segurança", icon: "◈", desc: "LGPD e privacidade", artifacts: "6 artefatos" },
+  { num: 4, name: "Spec", icon: "◈", desc: "Arquitetura tecnica", artifacts: "8 artefatos" },
+  { num: 5, name: "Impl.", icon: "◈", desc: "Plano de execucao", artifacts: "7 artefatos" },
+  { num: 6, name: "Teste", icon: "◈", desc: "QA e validacao", artifacts: "7 artefatos" },
+  { num: 7, name: "Deploy", icon: "◈", desc: "Lancamento real", artifacts: "7 artefatos" },
 ];
 
 const FEATURES = [
@@ -37,12 +38,19 @@ const FEATURES = [
   {
     step: "03",
     icon: "◎",
-    title: "Arquitetura documentada",
-    desc: "Modelo de dados, contratos de API, plano de seguranca e ADRs. Chegue ao dev com tudo documentado e sem ambiguidades.",
-    tag: "Fase 3 — Spec",
+    title: "Seguranca e LGPD embutidos",
+    desc: "Threat model, matriz RBAC, politica de privacidade e plano de conformidade LGPD — gerados antes de qualquer linha de codigo.",
+    tag: "Fase 3 — Segurança & LGPD",
   },
   {
     step: "04",
+    icon: "◎",
+    title: "Arquitetura documentada",
+    desc: "Modelo de dados, contratos de API, ADRs e plano de seguranca tecnica. Chegue ao dev com tudo documentado e sem ambiguidades.",
+    tag: "Fase 4 — Spec",
+  },
+  {
+    step: "05",
     icon: "◎",
     title: "Lance com estrategia",
     desc: "Runbook de deploy, plano Go-to-Market, Launch Checklist e Pitch para investidores. Da ideia ao mercado.",

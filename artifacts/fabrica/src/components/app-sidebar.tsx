@@ -89,7 +89,7 @@ export function AppSidebar({
           )}
 
           <div className="space-y-0.5">
-            {PHASES.slice(0, 6).map((phase, i) => {
+            {PHASES.map((phase, i) => {
               const phaseNum = i + 1;
               const status = phaseStatuses?.[i]?.status ?? "locked";
               const isDone = status === "completed";
