@@ -171,32 +171,6 @@ export function Home() {
               <p className="text-xs text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
             </div>
 
-            <div className="relative">
-              <div className="glass-card rounded-[2rem] p-4 md:p-5 shadow-xl">
-                <div className="rounded-[1.5rem] border border-border/70 bg-background/80 p-5">
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <p className="text-xs font-mono text-primary uppercase tracking-[0.2em]">Produto pronto</p>
-                      <h3 className="font-serif text-2xl text-foreground mt-1">SaaS com processo guiado</h3>
-                    </div>
-                    <div className="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center text-primary">◎</div>
-                  </div>
-                  <div className="grid gap-3">
-                    <div className="rounded-xl bg-secondary/70 border border-border/60 p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Fase atual</span>
-                        <span className="text-xs font-mono text-primary">01</span>
-                      </div>
-                      <div className="text-lg font-serif text-foreground mt-1">Ideia e validacao</div>
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-card p-4">
-                      <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Artefatos</div>
-                      <div className="text-2xl font-serif text-foreground mt-1">45+</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -265,9 +239,9 @@ export function Home() {
             </div>
 
             {/* Desktop pipeline */}
-            <div className="hidden md:grid grid-cols-6 gap-0 relative">
+            <div className="hidden md:grid grid-cols-7 gap-0 relative">
               {/* Connector line */}
-              <div className="absolute top-[22px] left-[8.33%] right-[8.33%] h-px bg-gradient-to-r from-primary/15 via-primary/35 to-primary/15" />
+              <div className="absolute top-[22px] left-[7.14%] right-[7.14%] h-px bg-gradient-to-r from-primary/15 via-primary/35 to-primary/15" />
 
               {PHASES.map((phase, i) => (
                 <div key={i} className="flex flex-col items-center relative group">
