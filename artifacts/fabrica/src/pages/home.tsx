@@ -100,11 +100,6 @@ const CTA_CARDS = [
   { title: "Entre no app", text: "Se já tem conta, continue construindo." },
 ];
 
-const FINAL_CHECKLIST = [
-  "Landing pública com CTA claro",
-  "App com onboarding e pricing",
-  "Brandbook e vídeo de vendas publicados",
-];
 
 export function Home() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -211,26 +206,6 @@ export function Home() {
           </div>
         </section>
 
-        <section className="px-6 pb-8">
-          <div className="max-w-6xl mx-auto rounded-[2rem] border border-border bg-card p-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <div className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">Go live</div>
-                <h2 className="text-2xl font-serif text-foreground">Checklist final de lançamento</h2>
-              </div>
-              <Link href="/landing" className="text-sm text-muted-foreground hover:text-foreground">
-                Revisar landing →
-              </Link>
-            </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {FINAL_CHECKLIST.map((item) => (
-                <div key={item} className="rounded-2xl border border-border/70 bg-background px-4 py-3 text-sm text-foreground">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* ── Pipeline Visual ── */}
         <section className="py-20 px-6 border-y border-border/50 bg-muted/20">
