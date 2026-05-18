@@ -26,6 +26,9 @@ import { CompliancePage } from "@/pages/compliance";
 import { MarketAnalysisPage } from "@/pages/market-analysis";
 import { BrandbookPage } from "@/pages/brandbook";
 import { SalesVideoPage } from "@/pages/sales-video";
+import { ClarezaImediataPage } from "@/pages/clareza-imediata";
+import { FluxoContinuoPage } from "@/pages/fluxo-continuo";
+import { ProntoParaVenderPage } from "@/pages/pronto-para-vender";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 
 const queryClient = new QueryClient();
@@ -173,6 +176,9 @@ function Router() {
       <Route path="/privacidade" component={PrivacyPage} />
       <Route path="/compliance" component={CompliancePage} />
       <Route path="/analise-mercado" component={MarketAnalysisPage} />
+      <Route path="/clareza-imediata" component={ClarezaImediataPage} />
+      <Route path="/fluxo-continuo" component={FluxoContinuoPage} />
+      <Route path="/pronto-para-vender" component={ProntoParaVenderPage} />
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>

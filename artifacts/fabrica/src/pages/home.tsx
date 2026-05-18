@@ -87,19 +87,22 @@ const VALUE_CARDS = [
     title: "Clareza imediata",
     text: "Transforme ideia solta em direção concreta em minutos.",
     detail: "Responda um briefing e a IA organiza tudo: mercado, público-alvo, hipóteses e riscos — sem dispersão e sem folha em branco.",
-    href: "/sign-up",
+    href: "/clareza-imediata",
+    cta: "Entender a metodologia →",
   },
   {
     title: "Fluxo contínuo",
     text: "Cada fase entrega o próximo passo sem travar o time.",
     detail: "Os artefatos de uma fase alimentam automaticamente a próxima. Você nunca fica sem saber o que fazer agora.",
-    href: "/sign-up",
+    href: "/fluxo-continuo",
+    cta: "Ver como funciona →",
   },
   {
     title: "Pronto para vender",
     text: "Artefatos compartilháveis que apoiam decisão e execução.",
     detail: "PRD, personas, arquitetura, go-to-market — tudo exportável e apresentável para investidores, parceiros e equipe.",
-    href: "/sign-up",
+    href: "/pronto-para-vender",
+    cta: "Ver os artefatos →",
   },
 ];
 
@@ -205,7 +208,7 @@ export function Home() {
                 <div className="text-sm font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
                 <p className="text-base font-medium text-foreground leading-snug">{card.text}</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">{card.detail}</p>
-                <div className="mt-auto pt-2 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200">Começar →</div>
+                <div className="mt-auto pt-2 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200">{card.cta}</div>
               </Link>
             ))}
           </div>
@@ -297,7 +300,7 @@ export function Home() {
 
             <div className="grid md:grid-cols-2 gap-5">
               {FEATURES.map((f, i) => (
-                <div key={i} className="glass-card rounded-2xl p-7 group cursor-default">
+                <div key={i} className="glass-card rounded-2xl p-7 group cursor-default hover:-translate-y-0.5 hover:border-primary/40 transition-all duration-200">
                   <div className="flex items-start justify-between mb-5">
                     <span className="text-xs font-mono text-primary/60 tracking-wider">{f.step}</span>
                     <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full border border-border/60">{f.tag}</span>
@@ -325,7 +328,7 @@ export function Home() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {TESTIMONIALS.map((t, i) => (
-                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm">
+                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200">
                   <div className="text-primary text-3xl font-serif mb-4 leading-none">"</div>
                   <p className="text-sm text-background/80 leading-relaxed mb-6 italic">{t.quote}</p>
                   <div className="flex items-center justify-between border-t border-background/10 pt-4">
