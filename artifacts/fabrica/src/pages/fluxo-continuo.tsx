@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +17,12 @@ const PHASES = [
 export function FluxoContinuoPage() {
   const b = base();
   return (
+    <>
+    <Helmet>
+      <title>Fluxo Contínuo — FoundersFlow</title>
+      <meta name="description" content="Cada fase entrega o contexto exato que a próxima precisa. As 7 fases da FoundersFlow eliminam os pontos de travamento no processo de produto — do briefing ao deploy sem retrabalho." />
+      <link rel="canonical" href="https://www.foundersflow.com.br/fluxo-continuo" />
+    </Helmet>
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,63,171,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(255,140,66,0.12),transparent_28%)]" />
@@ -140,5 +147,6 @@ export function FluxoContinuoPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }

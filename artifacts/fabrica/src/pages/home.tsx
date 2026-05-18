@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { MarketingVideo } from "@/components/marketing-video";
@@ -135,6 +136,12 @@ export function Home() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   return (
+    <>
+    <Helmet>
+      <title>FoundersFlow — Da ideia ao lançamento em 7 fases</title>
+      <meta name="description" content="Plataforma com IA para founders: valide sua ideia, defina estratégia e lance seu produto em 7 fases estruturadas. PRD, personas, arquitetura e go-to-market gerados automaticamente." />
+      <link rel="canonical" href="https://www.foundersflow.com.br/" />
+    </Helmet>
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,63,171,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(255,140,66,0.12),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.65),transparent_18%)]" />
@@ -385,5 +392,6 @@ export function Home() {
       </footer>
 
     </div>
+    </>
   );
 }

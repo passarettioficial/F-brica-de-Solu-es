@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +14,12 @@ const DELIVERABLES = [
 export function ProntoParaVenderPage() {
   const b = base();
   return (
+    <>
+    <Helmet>
+      <title>Pronto para Vender — FoundersFlow</title>
+      <meta name="description" content="PRD, personas, arquitetura, go-to-market e pitch para investidores gerados automaticamente. Artefatos exportáveis e apresentáveis prontos em cada fase do produto." />
+      <link rel="canonical" href="https://www.foundersflow.com.br/pronto-para-vender" />
+    </Helmet>
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,63,171,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(255,140,66,0.12),transparent_28%)]" />
@@ -134,5 +141,6 @@ export function ProntoParaVenderPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }

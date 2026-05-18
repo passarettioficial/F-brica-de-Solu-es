@@ -2,6 +2,7 @@ import { useEffect, useRef, ComponentType } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -250,9 +251,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <HelmetProvider>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </HelmetProvider>
   );
 }
 

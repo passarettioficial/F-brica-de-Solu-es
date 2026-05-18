@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +16,12 @@ const ARTIFACTS = [
 export function ClarezaImediataPage() {
   const b = base();
   return (
+    <>
+    <Helmet>
+      <title>Clareza Imediata — FoundersFlow</title>
+      <meta name="description" content="Transforme uma ideia solta em direção concreta em minutos. A FoundersFlow gera Lean Canvas, JTBD, análise competitiva e score de potencial automaticamente a partir do seu briefing." />
+      <link rel="canonical" href="https://www.foundersflow.com.br/clareza-imediata" />
+    </Helmet>
     <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 opacity-70">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,63,171,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(255,140,66,0.12),transparent_28%)]" />
@@ -134,5 +141,6 @@ export function ClarezaImediataPage() {
         </div>
       </footer>
     </div>
+    </>
   );
 }

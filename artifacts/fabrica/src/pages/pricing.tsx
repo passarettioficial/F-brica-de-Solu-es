@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
@@ -146,6 +147,12 @@ export function PricingPage() {
   const isCurrentPlan = (planId: string) => permissions.plan === planId;
 
   return (
+    <>
+    <Helmet>
+      <title>Planos e Preços — FoundersFlow</title>
+      <meta name="description" content="Compare os planos da FoundersFlow: grátis, Starter e Advanced. Escolha o plano ideal para validar sua ideia e lançar seu produto com IA." />
+      <link rel="canonical" href="https://www.foundersflow.com.br/pricing" />
+    </Helmet>
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-background/85 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -316,5 +323,6 @@ export function PricingPage() {
         </div>
       </main>
     </div>
+    </>
   );
 }
