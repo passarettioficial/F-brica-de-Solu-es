@@ -83,21 +83,48 @@ const TESTIMONIALS = [
 ];
 
 const VALUE_CARDS = [
-  { title: "Clareza imediata", text: "Transforme ideia solta em direção concreta em minutos." },
-  { title: "Fluxo contínuo", text: "Cada fase entrega o próximo passo sem travar o time." },
-  { title: "Pronto para vender", text: "Artefatos compartilháveis que apoiam decisão e execução." },
-];
-
-const FAQ_CARDS = [
-  { q: "Preciso começar no plano pago?", a: "Não. Você pode testar o fluxo e evoluir quando fizer sentido." },
-  { q: "O produto serve para equipe?", a: "Sim. O processo foi desenhado para colaboração e alinhamento." },
-  { q: "Tem saída para apresentação?", a: "Sim. Você chega em artefatos que ajudam a vender e executar." },
+  {
+    title: "Clareza imediata",
+    text: "Transforme ideia solta em direção concreta em minutos.",
+    detail: "Responda um briefing e a IA organiza tudo: mercado, público-alvo, hipóteses e riscos — sem dispersão e sem folha em branco.",
+    href: "/sign-up",
+  },
+  {
+    title: "Fluxo contínuo",
+    text: "Cada fase entrega o próximo passo sem travar o time.",
+    detail: "Os artefatos de uma fase alimentam automaticamente a próxima. Você nunca fica sem saber o que fazer agora.",
+    href: "/sign-up",
+  },
+  {
+    title: "Pronto para vender",
+    text: "Artefatos compartilháveis que apoiam decisão e execução.",
+    detail: "PRD, personas, arquitetura, go-to-market — tudo exportável e apresentável para investidores, parceiros e equipe.",
+    href: "/sign-up",
+  },
 ];
 
 const CTA_CARDS = [
-  { title: "Comece grátis", text: "Teste o fluxo e veja valor antes de decidir." },
-  { title: "Veja os planos", text: "Escolha entre grátis, Pro e Avançado." },
-  { title: "Entre no app", text: "Se já tem conta, continue construindo." },
+  {
+    title: "Comece grátis",
+    text: "Teste o fluxo e veja valor antes de decidir.",
+    detail: "Sem cartão de crédito. Crie seu primeiro projeto, rode as fases e gere artefatos reais — 2 gerações gratuitas por dia.",
+    href: "/sign-up",
+    cta: "Criar conta →",
+  },
+  {
+    title: "Veja os planos",
+    text: "Escolha entre grátis, Pro e Avançado.",
+    detail: "Do founder solo ao time de produto. Cada plano desbloqueia mais fases, artefatos e capacidade de geração de IA.",
+    href: "/pricing",
+    cta: "Ver preços →",
+  },
+  {
+    title: "Entre no app",
+    text: "Se já tem conta, continue construindo.",
+    detail: "Seus projetos ficam salvos. Retome de onde parou e continue evoluindo cada fase no seu ritmo.",
+    href: "/sign-in",
+    cta: "Acessar →",
+  },
 ];
 
 
@@ -152,7 +179,7 @@ export function Home() {
               {STATS.map((stat, i) => (
                 <div key={i} className="text-center px-6 py-5">
                     <div className="stat-shimmer text-3xl font-bold font-serif">{stat.value}</div>
-                    <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mt-0.5">{stat.label}</div>
+                    <div className="text-sm text-muted-foreground font-mono uppercase tracking-widest mt-0.5">{stat.label}</div>
                 </div>
               ))}
               </div>
@@ -165,7 +192,7 @@ export function Home() {
               </Link>
               <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver planos e preços</Link>
               </div>
-              <p className="text-xs text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
+              <p className="text-sm text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
             </div>
 
           </div>
@@ -174,34 +201,25 @@ export function Home() {
         <section className="px-6 pb-8">
           <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
             {VALUE_CARDS.map((card) => (
-              <div key={card.title} className="glass-card rounded-2xl p-5">
-                <div className="text-xs font-mono uppercase tracking-[0.18em] text-primary mb-2">{card.title}</div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
-              </div>
+              <Link key={card.title} href={card.href} className="glass-card rounded-2xl p-6 flex flex-col gap-3 group hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                <div className="text-sm font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
+                <p className="text-base font-medium text-foreground leading-snug">{card.text}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{card.detail}</p>
+                <div className="mt-auto pt-2 text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200">Começar →</div>
+              </Link>
             ))}
-          </div>
-        </section>
-
-        <section className="px-6 pb-16">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid gap-4 md:grid-cols-3">
-              {FAQ_CARDS.map((item) => (
-                <div key={item.q} className="glass-card rounded-2xl p-5">
-                  <div className="text-sm font-semibold text-foreground mb-2">{item.q}</div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
         <section className="px-6 pb-8">
           <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
             {CTA_CARDS.map((card) => (
-              <div key={card.title} className="glass-card rounded-2xl p-5">
-                <div className="mb-2 text-xs font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
-                <p className="text-sm text-muted-foreground">{card.text}</p>
-              </div>
+              <Link key={card.title} href={card.href} className="glass-card rounded-2xl p-6 flex flex-col gap-3 group hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                <div className="text-sm font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
+                <p className="text-base font-medium text-foreground leading-snug">{card.text}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{card.detail}</p>
+                <div className="mt-auto pt-2 text-sm font-medium text-primary group-hover:underline underline-offset-2 transition-all duration-200">{card.cta}</div>
+              </Link>
             ))}
           </div>
         </section>
@@ -211,7 +229,7 @@ export function Home() {
         <section className="py-20 px-6 border-y border-border/50 bg-muted/20">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-14">
-              <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">PIPELINE</p>
+              <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">PIPELINE</p>
               <h2 className="text-3xl md:text-4xl font-serif text-foreground">Do zero ao lancamento</h2>
             </div>
 
@@ -230,8 +248,8 @@ export function Home() {
                     {phase.num}
                   </div>
                   <div className="text-xs font-semibold text-foreground text-center uppercase tracking-wider mb-1">{phase.name}</div>
-                  <div className="text-[10px] text-muted-foreground text-center leading-tight mb-1">{phase.desc}</div>
-                  <div className="text-[10px] font-mono text-primary/60 text-center">{phase.artifacts}</div>
+                  <div className="text-xs text-muted-foreground text-center leading-tight mb-1">{phase.desc}</div>
+                  <div className="text-xs font-mono text-primary/60 text-center">{phase.artifacts}</div>
                 </div>
               ))}
             </div>
@@ -270,7 +288,7 @@ export function Home() {
         <section className="py-24 px-6">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
-              <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">CAPACIDADES</p>
+              <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">CAPACIDADES</p>
               <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Um processo com proposito em cada etapa.</h2>
               <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
                 Nao e so gerador de texto. E um processo rigoroso que forca voce a pensar em cada dimensao do produto.
@@ -302,7 +320,7 @@ export function Home() {
           }} />
           <div className="max-w-5xl mx-auto relative z-10">
             <div className="text-center mb-14">
-              <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-3">RESULTADOS REAIS</p>
+              <p className="text-sm font-mono text-primary uppercase tracking-[0.2em] mb-3">RESULTADOS REAIS</p>
               <h2 className="text-3xl md:text-4xl font-serif text-background">O que dizem os founders</h2>
             </div>
             <div className="grid md:grid-cols-3 gap-6">
@@ -312,7 +330,7 @@ export function Home() {
                   <p className="text-sm text-background/80 leading-relaxed mb-6 italic">{t.quote}</p>
                   <div className="flex items-center justify-between border-t border-background/10 pt-4">
                     <div className="text-sm font-medium text-background">{t.name}</div>
-                    <div className="text-xs font-mono text-primary/80">{t.plan}</div>
+                    <div className="text-sm font-mono text-primary/80">{t.plan}</div>
                   </div>
                 </div>
               ))}
@@ -324,7 +342,7 @@ export function Home() {
         <section className="py-28 px-6 text-center relative overflow-hidden">
           <div className="hero-glow" style={{ transform: "rotate(180deg)" }} />
           <div className="relative z-10 max-w-2xl mx-auto">
-            <p className="text-xs font-mono text-primary uppercase tracking-[0.2em] mb-6">PRONTO PARA COMECAR?</p>
+            <p className="text-sm font-mono text-primary uppercase tracking-[0.2em] mb-6">PRONTO PARA COMECAR?</p>
             <h2 className="text-4xl md:text-6xl font-serif text-foreground mb-6 leading-tight">
               Sua ideia merece<br />
               <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">um processo serio</span>.
@@ -337,7 +355,7 @@ export function Home() {
                 Iniciar gratuitamente →
               </Button>
             </Link>
-            <div className="mt-8 flex items-center justify-center gap-8 text-xs font-mono text-muted-foreground tracking-wider">
+            <div className="mt-8 flex items-center justify-center gap-8 text-sm font-mono text-muted-foreground tracking-wider">
               <span>✓ SEM CARTAO</span>
               <span>✓ 2 GERACOES/DIA</span>
               <span>✓ CANCELE SEMPRE</span>
@@ -354,12 +372,12 @@ export function Home() {
             <img src={`${base}/logo.png`} alt="Logo" className="w-5 h-5 rounded-full" />
             <span className="text-sm font-medium text-foreground">FoundersFlow</span>
           </div>
-          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <Link href="/pricing" className="hover:text-foreground transition-colors link-underline">Planos</Link>
             <Link href="/privacidade" className="hover:text-foreground transition-colors link-underline">Privacidade e LGPD</Link>
             <Link href="/atendimento" className="hover:text-foreground transition-colors link-underline">Atendimento</Link>
           </div>
-          <p className="text-xs font-mono text-muted-foreground/60">&copy; {new Date().getFullYear()} FOUNDERSFLOW</p>
+          <p className="text-sm font-mono text-muted-foreground/60">&copy; {new Date().getFullYear()} FOUNDERSFLOW</p>
         </div>
       </footer>
 
