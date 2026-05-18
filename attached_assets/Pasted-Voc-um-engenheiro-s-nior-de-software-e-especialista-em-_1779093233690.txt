@@ -1,0 +1,68 @@
+Você é um engenheiro sênior de software e especialista em qualidade de produto digital. Faça um diagnóstico completo do projeto atual (FoundersFlow — plataforma com IA para founders, da ideia ao lançamento em 7 fases).
+
+O diagnóstico deve cobrir as seguintes dimensões:
+
+---
+
+### 1. ARQUITETURA E ESTRUTURA DO CÓDIGO
+- Mapeie a estrutura de pastas e arquivos do projeto
+- Identifique o stack utilizado (frontend, backend, banco de dados, IA, autenticação)
+- Avalie se a organização segue boas práticas (separação de responsabilidades, modularidade, escalabilidade)
+- Aponte arquivos com responsabilidades misturadas ou acoplamento excessivo
+- Verifique se há padrões inconsistentes entre módulos
+
+---
+
+### 2. QUALIDADE DO CÓDIGO
+- Identifique funções ou componentes com mais de 100 linhas que deveriam ser refatorados
+- Liste variáveis, funções ou arquivos com nomes pouco descritivos
+- Detecte código duplicado ou lógica repetida que poderia ser abstraída
+- Verifique se há tratamento adequado de erros (try/catch, feedback ao usuário, logs)
+- Avalie a presença e qualidade de comentários e documentação inline
+
+---
+
+### 3. PERFORMANCE
+- Identifique chamadas à API de IA (ou outras APIs externas) que não usam streaming, cache ou debounce
+- Verifique se há queries ou operações de banco de dados que podem ser otimizadas
+- Detecte componentes que re-renderizam desnecessariamente (se React/frontend reativo)
+- Avalie o carregamento inicial: há assets pesados, fontes bloqueantes ou scripts sem lazy loading?
+
+---
+
+### 4. SEGURANÇA
+- Verifique se variáveis de ambiente sensíveis (chaves de API, secrets) estão expostas no frontend ou versionadas no repositório
+- Avalie se há validação de inputs do usuário no backend (não apenas no frontend)
+- Identifique rotas ou endpoints sem autenticação que deveriam ter
+- Verifique se há proteção contra injeção (SQL injection, prompt injection nas chamadas de IA)
+
+---
+
+### 5. EXPERIÊNCIA DO USUÁRIO E FLUXO
+- Revise o fluxo das 7 fases: há estados de loading, erro e sucesso implementados para cada etapa?
+- Verifique se o progresso do usuário é salvo adequadamente (persistência de estado entre sessões)
+- Identifique pontos onde o usuário pode ficar preso sem feedback claro
+- Avalie se o fluxo de onboarding está completo e sem dead ends
+
+---
+
+### 6. ESCALABILIDADE E MANUTENIBILIDADE
+- O projeto está preparado para múltiplos usuários simultâneos?
+- Há rate limiting nas chamadas de IA para evitar custos inesperados?
+- Existe algum sistema de filas ou background jobs para tarefas pesadas?
+- O código permite adicionar novas fases ou funcionalidades sem reescrever módulos existentes?
+
+---
+
+### 7. DÍVIDAS TÉCNICAS E PRIORIDADES
+Ao final, gere uma lista priorizada de melhorias no seguinte formato:
+
+| Prioridade | Área | Problema identificado | Impacto | Esforço estimado |
+|------------|------|-----------------------|---------|------------------|
+| 🔴 Alta    | ...  | ...                   | ...     | ...              |
+| 🟡 Média   | ...  | ...                   | ...     | ...              |
+| 🟢 Baixa   | ...  | ...                   | ...     | ...              |
+
+---
+
+Seja específico: cite nomes de arquivos, funções e linhas sempre que possível. Não gere sugestões genéricas — o diagnóstico deve ser cirúrgico e baseado no código real deste projeto.
