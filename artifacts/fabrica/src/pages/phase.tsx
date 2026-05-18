@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -32,13 +32,18 @@ const LEAN_CANVAS_BLOCKS = [
   { key: "vantagem_injusta", label: "Vantagem Injusta", hint: "Dificil de copiar ou comprar" },
 ];
 
-function LeanCanvas({ content }: { content: string }) {
-  let data: Record<string, string> = {};
+function parseJsonBlock<T = Record<string, unknown>>(content: string): T | null {
   try {
     const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) data = JSON.parse(jsonMatch[1]);
-    else { const t = content.trim(); if (t.startsWith("{")) data = JSON.parse(t); }
-  } catch { /* fallback */ }
+    if (jsonMatch) return JSON.parse(jsonMatch[1]) as T;
+    const t = content.trim();
+    if (t.startsWith("{")) return JSON.parse(t) as T;
+  } catch { /* fallback to raw */ }
+  return null;
+}
+
+function LeanCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<Record<string, string>>(content) ?? {};
 
   if (Object.keys(data).length === 0) {
     return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
@@ -58,11 +63,7 @@ function LeanCanvas({ content }: { content: string }) {
 }
 
 function ScorePotencial({ content }: { content: string }) {
-  let data: Record<string, any> = {};
-  try {
-    const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) data = JSON.parse(jsonMatch[1]);
-  } catch { /* fallback */ }
+  const data = parseJsonBlock<Record<string, any>>(content) ?? {};
 
   if (!data.desejabilidade) return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
 
@@ -164,7 +165,7 @@ function downloadMarkdown(artifactKey: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-function ArtifactCard({
+const ArtifactCard = memo(function ArtifactCard({
   artifact,
   phaseNumber,
   projectId,
@@ -319,7 +320,7 @@ function ArtifactCard({
       )}
     </div>
   );
-}
+});
 
 function GenerationLoadingState({ artifactCount, text }: { artifactCount: number; text: string }) {
   const lines = text.split("\n").filter(Boolean);

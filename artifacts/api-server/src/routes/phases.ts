@@ -17,6 +17,8 @@ function requireAuth(req: any) {
   return auth?.userId ?? null;
 }
 
+const executionLocks = new Set<string>();
+
 // GET /projects/:projectId/phases/:phaseNumber
 router.get("/projects/:projectId/phases/:phaseNumber", async (req, res): Promise<void> => {
   const userId = requireAuth(req);
@@ -24,6 +26,7 @@ router.get("/projects/:projectId/phases/:phaseNumber", async (req, res): Promise
 
   const projectId = parseInt(Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId, 10);
   const phaseNumber = parseInt(Array.isArray(req.params.phaseNumber) ? req.params.phaseNumber[0] : req.params.phaseNumber, 10);
+  if (isNaN(projectId) || isNaN(phaseNumber)) { res.status(400).json({ error: "Invalid id" }); return; }
 
   const [project] = await db.select().from(projectsTable).where(
     and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
@@ -182,9 +185,16 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
-  // Atomic AI usage check + increment
+  const lockKey = `${userId}:${projectId}:${phaseNumber}`;
+  if (executionLocks.has(lockKey)) {
+    res.status(429).json({ error: "Geração já em andamento para esta fase. Aguarde a conclusão." });
+    return;
+  }
+  executionLocks.add(lockKey);
+
   const { allowed, limit } = await checkAndIncrementAiUsage(userId);
   if (!allowed) {
+    executionLocks.delete(lockKey);
     await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit, phaseNumber, projectId }, req });
     res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` });
     return;
@@ -246,10 +256,13 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     const saved = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
 
     clearInterval(heartbeat);
+    executionLocks.delete(lockKey);
     res.write(`data: ${JSON.stringify({ type: "done", artifacts: saved })}\n\n`);
     res.end();
   } catch (error) {
     clearInterval(heartbeat);
+    executionLocks.delete(lockKey);
+    req.log.error({ err: error, userId, projectId, phaseNumber }, "AI generation failed");
     res.write(`data: ${JSON.stringify({ type: "error", message: "Erro ao gerar artefatos" })}\n\n`);
     res.end();
   }

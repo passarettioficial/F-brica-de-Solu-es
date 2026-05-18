@@ -492,6 +492,13 @@ Plano de suporte e SLA para o lançamento:
 - Como coletar e processar feedback dos primeiros usuários`,
 };
 
+function sanitizeInput(input: string, maxLength: number): string {
+  return input
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    .slice(0, maxLength)
+    .trim();
+}
+
 export async function generatePhaseArtifacts(
   phaseNumber: number,
   projectName: string,
@@ -499,6 +506,9 @@ export async function generatePhaseArtifacts(
   previousArtifacts: Array<{ artifactKey: string; content: string }>,
   onProgress: (text: string) => void
 ): Promise<PhaseAIResult[]> {
+  const safeName = sanitizeInput(projectName, 200);
+  const safeBriefing = sanitizeInput(briefing, 8000);
+
   const phaseName = PHASE_NAMES[phaseNumber - 1];
   const prompt = PHASE_PROMPTS[phaseNumber];
 
@@ -515,7 +525,7 @@ INSTRUÇÕES DE FORMATAÇÃO:
 - Para conteúdo JSON, use blocos \`\`\`json ... \`\`\`
 - Seja denso e valioso — cada artefato deve ser um entregável que o founder pode usar imediatamente`;
 
-  const userMessage = `PROJETO: ${projectName}\n\nBRIEFING:\n${briefing}${previousContext}\n\nGere todos os artefatos da Fase ${phaseNumber} — ${phaseName}. Seja específico, detalhado e acionável.`;
+  const userMessage = `PROJETO: ${safeName}\n\nBRIEFING:\n${safeBriefing}${previousContext}\n\nGere todos os artefatos da Fase ${phaseNumber} — ${phaseName}. Seja específico, detalhado e acionável.`;
 
   const stream = await openai.chat.completions.create({
     model: "gpt-4.1",

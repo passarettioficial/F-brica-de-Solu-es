@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, count, isNull, isNotNull, lt } from "drizzle-orm";
+import { eq, and, count, isNull, isNotNull, lt, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import {
@@ -29,23 +29,32 @@ router.get("/projects/dashboard", async (req, res): Promise<void> => {
     and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
 
-  const summaries = await Promise.all(projects.map(async (project) => {
-    const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, project.id));
+  const projectIds = projects.map(p => p.id);
+  const allPhases = projectIds.length > 0
+    ? await db.select().from(phasesTable).where(inArray(phasesTable.projectId, projectIds))
+    : [];
+
+  const phasesByProject = allPhases.reduce((acc, phase) => {
+    (acc[phase.projectId] ??= []).push(phase);
+    return acc;
+  }, {} as Record<number, typeof allPhases>);
+
+  const summaries = projects.map((project) => {
+    const phases = (phasesByProject[project.id] ?? []).sort((a, b) => a.phaseNumber - b.phaseNumber);
     const completedPhases = phases.filter(p => p.status === "completed").length;
     const activePhase = phases.find(p => p.status === "active");
     const allGatesChecked = activePhase
       ? (activePhase.gate1Checked && activePhase.gate2Checked && activePhase.gate3Checked)
       : false;
-
     return {
       projectId: project.id,
       name: project.name,
       currentPhase: project.currentPhase,
       completedPhases,
       allGatesChecked,
-      phaseStatuses: phases.sort((a, b) => a.phaseNumber - b.phaseNumber).map(p => p.status),
+      phaseStatuses: phases.map(p => p.status),
     };
-  }));
+  });
 
   res.json({
     projects: summaries,
