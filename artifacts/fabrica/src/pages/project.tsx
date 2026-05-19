@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -79,6 +79,413 @@ function PhasePipeline({ phases, currentPhase, projectId }: {
   );
 }
 
+// ─── CoherenceCard ──────────────────────────────────────────────────────────
+
+function CoherenceCard({ project, projectId, onRefresh }: { project: any; projectId: number; onRefresh: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const score = project.coherenceScore as number | null | undefined;
+  const data = project.coherenceData ? (() => { try { return JSON.parse(project.coherenceData); } catch { return null; } })() : null;
+  const updatedAt = project.coherenceUpdatedAt ? new Date(project.coherenceUpdatedAt) : null;
+  const phases: any[] = project.phases ?? [];
+  const hasEnoughArtifacts = phases.some((p: any) => p.status === "completed" || p.status === "active");
+
+  const scoreColor = score == null ? "text-muted-foreground" : score >= 75 ? "text-emerald-600 dark:text-emerald-400" : score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
+  const ringColor = score == null ? "#e5e7eb" : score >= 75 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
+  const circumference = 2 * Math.PI * 20;
+  const strokeDash = score != null ? (score / 100) * circumference : 0;
+
+  async function analyze() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${projectId}/coherence/analyze`, { method: "POST" });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || "Erro ao analisar"); }
+      onRefresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="bg-card border border-card-border rounded-xl p-5 mb-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0 w-14 h-14">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="20" fill="none" stroke="var(--muted)" strokeWidth="4" />
+              {score != null && (
+                <circle cx="28" cy="28" r="20" fill="none" stroke={ringColor} strokeWidth="4"
+                  strokeLinecap="round" strokeDasharray={`${strokeDash} ${circumference}`}
+                  transform="rotate(-90 28 28)" style={{ transition: "stroke-dasharray 0.5s ease" }} />
+              )}
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={`text-sm font-bold ${scoreColor}`}>{score != null ? score : "—"}</span>
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-serif text-base font-medium">Score de Coerência</h3>
+              {score != null && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  score >= 75 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" :
+                  score >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
+                  "bg-destructive/10 text-destructive"
+                }`}>
+                  {score >= 75 ? "Coeso" : score >= 50 ? "Conflitos detectados" : "Incoerente"}
+                </span>
+              )}
+            </div>
+            {data?.resumo ? (
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-md">{data.resumo}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-0.5">Analise a consistência entre todos os artefatos do projeto.</p>
+            )}
+            {updatedAt && (
+              <p className="text-xs text-muted-foreground mt-0.5 opacity-60">
+                Última análise: {updatedAt.toLocaleDateString("pt-BR")}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {error && <span className="text-xs text-destructive max-w-[200px] text-right">{error}</span>}
+          <Button size="sm" variant="outline" onClick={analyze} disabled={loading || !hasEnoughArtifacts}>
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Analisando…
+              </span>
+            ) : score != null ? "Reanalisar" : "Analisar coerência"}
+          </Button>
+        </div>
+      </div>
+
+      {data?.conflitos?.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-border space-y-2.5">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            {data.conflitos.length} {data.conflitos.length === 1 ? "conflito detectado" : "conflitos detectados"}
+          </p>
+          {(data.conflitos as any[]).slice(0, 3).map((c: any, i: number) => (
+            <div key={i} className="flex items-start gap-2.5">
+              <span className={`mt-1.5 flex-shrink-0 w-2 h-2 rounded-full ${
+                c.severidade === "alta" ? "bg-destructive" : c.severidade === "media" ? "bg-amber-500" : "bg-muted-foreground"
+              }`} />
+              <div className="min-w-0">
+                <p className="text-xs text-foreground leading-relaxed">{c.descricao}</p>
+                {c.artefatos_envolvidos?.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{(c.artefatos_envolvidos as string[]).join(" · ")}</p>
+                )}
+              </div>
+            </div>
+          ))}
+          {data.conflitos.length > 3 && (
+            <p className="text-xs text-muted-foreground pl-4.5">+{data.conflitos.length - 3} conflito(s) adicionais</p>
+          )}
+        </div>
+      )}
+
+      {data && data?.conflitos?.length === 0 && data?.alinhamentos?.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="text-xs text-emerald-600 dark:text-emerald-400">✓ Todos os artefatos estão alinhados entre si.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ValidationTab ───────────────────────────────────────────────────────────
+
+function ValidationTab({ projectId, phases }: { projectId: number; phases: any[] }) {
+  const phasesWithArtifacts = phases.filter((p: any) => p.status !== "locked");
+  const defaultPhase = phasesWithArtifacts.find((p: any) => p.status === "active") ?? phasesWithArtifacts[0];
+
+  const [selectedPhaseNumber, setSelectedPhaseNumber] = useState<number>(defaultPhase?.phaseNumber ?? 1);
+  const [validations, setValidations] = useState<any[]>([]);
+  const [currentValidation, setCurrentValidation] = useState<any | null>(null);
+  const [_loading, setLoading] = useState(false);
+
+  const [scriptContent, setScriptContent] = useState("");
+  const [scriptGenerating, setScriptGenerating] = useState(false);
+
+  const [notesText, setNotesText] = useState("");
+  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesSaved, setNotesSaved] = useState(false);
+
+  const [analysisContent, setAnalysisContent] = useState("");
+  const [analysisGenerating, setAnalysisGenerating] = useState(false);
+
+  useEffect(() => { loadValidations(); }, [projectId]);
+
+  useEffect(() => {
+    const v = validations.find((v: any) => v.phaseNumber === selectedPhaseNumber);
+    if (v) {
+      setCurrentValidation(v);
+      setScriptContent(v.interviewScript ?? "");
+      setNotesText(v.interviewNotes ?? "");
+      setAnalysisContent(v.aiAnalysis ?? "");
+    } else {
+      setCurrentValidation(null);
+      setScriptContent("");
+      setNotesText("");
+      setAnalysisContent("");
+    }
+  }, [selectedPhaseNumber, validations]);
+
+  async function loadValidations() {
+    setLoading(true);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${projectId}/validations`);
+      if (res.ok) setValidations(await res.json());
+    } finally { setLoading(false); }
+  }
+
+  async function getOrCreateValidation(): Promise<any | null> {
+    if (currentValidation) return currentValidation;
+    const res = await fetch(`${basePath}/api/projects/${projectId}/validations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phaseNumber: selectedPhaseNumber }),
+    });
+    if (!res.ok) return null;
+    const v = await res.json();
+    setValidations(prev => [...prev.filter((x: any) => x.phaseNumber !== selectedPhaseNumber), v]);
+    setCurrentValidation(v);
+    return v;
+  }
+
+  async function generateScript() {
+    const validation = await getOrCreateValidation();
+    if (!validation) return;
+    setScriptGenerating(true);
+    setScriptContent("");
+    const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/generate-script`, { method: "POST" });
+    if (!res.ok || !res.body) { setScriptGenerating(false); return; }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let accumulated = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const parsed = JSON.parse(line.slice(6));
+          if (parsed.type === "token") { accumulated += parsed.content; setScriptContent(accumulated); }
+          else if (parsed.type === "done") { setScriptGenerating(false); await loadValidations(); }
+          else if (parsed.type === "error") { setScriptGenerating(false); }
+        } catch { /* ignore */ }
+      }
+    }
+    setScriptGenerating(false);
+  }
+
+  async function saveNotes() {
+    const validation = await getOrCreateValidation();
+    if (!validation) return;
+    setNotesSaving(true);
+    try {
+      await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interviewNotes: notesText }),
+      });
+      setNotesSaved(true);
+      setTimeout(() => setNotesSaved(false), 2500);
+      await loadValidations();
+    } finally { setNotesSaving(false); }
+  }
+
+  async function analyzeNotes() {
+    const validation = currentValidation;
+    if (!validation) return;
+    setAnalysisGenerating(true);
+    setAnalysisContent("");
+    const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/analyze`, { method: "POST" });
+    if (!res.ok || !res.body) {
+      if (res.status === 400) {
+        const b = await res.json().catch(() => ({}));
+        alert(b.error || "Salve as notas antes de analisar.");
+      }
+      setAnalysisGenerating(false);
+      return;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let accumulated = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const parsed = JSON.parse(line.slice(6));
+          if (parsed.type === "token") { accumulated += parsed.content; setAnalysisContent(accumulated); }
+          else if (parsed.type === "done") { setAnalysisGenerating(false); await loadValidations(); }
+          else if (parsed.type === "error") { setAnalysisGenerating(false); }
+        } catch { /* ignore */ }
+      }
+    }
+    setAnalysisGenerating(false);
+  }
+
+  if (phasesWithArtifacts.length === 0) {
+    return (
+      <div className="bg-card border border-card-border rounded-xl p-10 text-center">
+        <p className="text-3xl mb-3">🔍</p>
+        <p className="font-medium text-foreground mb-1">Nenhuma fase acessível ainda</p>
+        <p className="text-sm text-muted-foreground">Complete ao menos uma fase para gerar roteiros de validação com o mercado.</p>
+      </div>
+    );
+  }
+
+  const Spinner = () => (
+    <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+
+  return (
+    <div className="space-y-5" role="tabpanel">
+      {/* Phase selector */}
+      <div className="bg-card border border-card-border rounded-xl p-5">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h3 className="font-serif text-base font-medium">Fase para validar</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Gere um roteiro de entrevistas baseado nos artefatos da fase selecionada.</p>
+          </div>
+          <select
+            value={selectedPhaseNumber}
+            onChange={(e) => setSelectedPhaseNumber(Number(e.target.value))}
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+          >
+            {phasesWithArtifacts.map((p: any) => (
+              <option key={p.phaseNumber} value={p.phaseNumber}>
+                Fase {p.phaseNumber} — {PHASES[p.phaseNumber - 1]?.name ?? `Fase ${p.phaseNumber}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Script generation */}
+      <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-serif text-base font-medium">Roteiro de Entrevistas</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">A IA gera perguntas e critérios de validação baseados nos artefatos da fase.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {scriptContent && !scriptGenerating && (
+              <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(scriptContent)}>
+                Copiar
+              </Button>
+            )}
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-white" onClick={generateScript} disabled={scriptGenerating}>
+              {scriptGenerating ? <span className="flex items-center gap-1.5"><Spinner />Gerando…</span> : scriptContent ? "Regenerar" : "Gerar roteiro"}
+            </Button>
+          </div>
+        </div>
+        {scriptContent ? (
+          <div className="bg-muted/40 rounded-lg p-4 max-h-[480px] overflow-y-auto">
+            <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+              {scriptContent}
+              {scriptGenerating && <span className="inline-block w-1.5 h-4 bg-primary animate-pulse ml-0.5 rounded-sm align-middle" />}
+            </pre>
+          </div>
+        ) : scriptGenerating ? (
+          <div className="bg-muted/40 rounded-lg p-4 min-h-[80px] flex items-center gap-3">
+            <svg className="animate-spin w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span className="text-sm text-muted-foreground">Gerando roteiro personalizado…</span>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Notes */}
+      <div className="bg-card border border-card-border rounded-xl p-5 space-y-3">
+        <div>
+          <h3 className="font-serif text-base font-medium">Notas das Entrevistas</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Cole aqui os resumos ou transcrições das entrevistas realizadas.</p>
+        </div>
+        <Textarea
+          value={notesText}
+          onChange={(e) => setNotesText(e.target.value)}
+          placeholder="Ex: Entrevistei 5 founders de SaaS B2B. 4 de 5 confirmaram que o problema é prioritário. 3 usam planilhas hoje. 1 mencionou dor com integrações bancárias — não citada nos artefatos…"
+          className="min-h-[180px] text-sm"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">{notesText.length} caracteres</span>
+          <div className="flex items-center gap-2">
+            {notesSaved && <span className="text-xs text-emerald-600 dark:text-emerald-400">Salvo ✓</span>}
+            <Button size="sm" variant="outline" onClick={saveNotes} disabled={notesSaving || !notesText.trim()}>
+              {notesSaving ? <span className="flex items-center gap-1.5"><Spinner />Salvando…</span> : "Salvar notas"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Analysis */}
+      <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h3 className="font-serif text-base font-medium">Análise com IA</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">A IA compara suas notas com as hipóteses dos artefatos e emite um veredicto.</p>
+          </div>
+          <Button
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-white"
+            onClick={analyzeNotes}
+            disabled={analysisGenerating || !notesText.trim()}
+          >
+            {analysisGenerating ? <span className="flex items-center gap-1.5"><Spinner />Analisando…</span> : analysisContent ? "Reanalisar" : "Analisar com IA"}
+          </Button>
+        </div>
+        {analysisContent ? (
+          <div className="bg-muted/40 rounded-lg p-4 max-h-[560px] overflow-y-auto">
+            <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+              {analysisContent}
+              {analysisGenerating && <span className="inline-block w-1.5 h-4 bg-primary animate-pulse ml-0.5 rounded-sm align-middle" />}
+            </pre>
+          </div>
+        ) : analysisGenerating ? (
+          <div className="bg-muted/40 rounded-lg p-4 min-h-[80px] flex items-center gap-3">
+            <svg className="animate-spin w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <span className="text-sm text-muted-foreground">Analisando notas e comparando com hipóteses…</span>
+          </div>
+        ) : (
+          <div className="bg-muted/20 rounded-lg p-6 text-center">
+            <p className="text-sm text-muted-foreground">Adicione as notas das entrevistas e clique em "Analisar com IA" para obter um veredicto detalhado.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ProjectPage ─────────────────────────────────────────────────────────────
+
 export function ProjectPage() {
   const params = useParams<{ id: string }>();
   const projectId = parseInt(params.id ?? "0", 10);
@@ -95,7 +502,7 @@ export function ProjectPage() {
   const [editingBriefing, setEditingBriefing] = useState(false);
   const [briefingDraft, setBriefingDraft] = useState("");
   const [collaboratorEmail, setCollaboratorEmail] = useState("");
-  const [activeTab, setActiveTab] = useState<"briefing" | "artifacts" | "collaboration">("briefing");
+  const [activeTab, setActiveTab] = useState<"briefing" | "artifacts" | "validacao" | "collaboration">("briefing");
 
   if (isLoading) {
     return (
@@ -295,22 +702,29 @@ export function ProjectPage() {
           )}
         </div>
 
+        {/* Coherence card — always visible above tabs */}
+        <CoherenceCard
+          project={project}
+          projectId={projectId}
+          onRefresh={() => queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) })}
+        />
+
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-border mb-6" role="tablist">
-          {(["briefing", "artifacts", "collaboration"] as const).map((tab) => (
+        <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto" role="tablist">
+          {(["briefing", "artifacts", "validacao", "collaboration"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               role="tab"
               aria-selected={activeTab === tab}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 activeTab === tab
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
               data-testid={`tab-${tab}`}
             >
-              {tab === "briefing" ? "Briefing" : tab === "artifacts" ? "Artefatos" : "Colaboração"}
+              {tab === "briefing" ? "Briefing" : tab === "artifacts" ? "Artefatos" : tab === "validacao" ? "Validação" : "Colaboração"}
             </button>
           ))}
         </div>
@@ -401,6 +815,10 @@ export function ProjectPage() {
               );
             })}
           </div>
+        )}
+
+        {activeTab === "validacao" && (
+          <ValidationTab projectId={projectId} phases={phases} />
         )}
 
         {activeTab === "collaboration" && (

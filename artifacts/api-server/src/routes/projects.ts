@@ -9,6 +9,7 @@ import {
 import { ensureUser } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 import { auditLog } from "../lib/audit";
+import { analyzeProjectCoherence } from "../lib/ai";
 
 const router: IRouter = Router();
 
@@ -299,6 +300,51 @@ router.get("/projects/:id/summary", async (req, res): Promise<void> => {
     allGatesChecked,
     phaseStatuses: sorted.map(p => p.status),
   });
+});
+
+// POST /projects/:id/coherence/analyze
+router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
+  const lines: string[] = [];
+  for (const phase of phases.sort((a, b) => a.phaseNumber - b.phaseNumber)) {
+    const artifacts = await db.select().from(phaseArtifactsTable)
+      .where(eq(phaseArtifactsTable.phaseId, phase.id));
+    const filled = artifacts.filter(a => a.content?.trim());
+    if (filled.length > 0) {
+      lines.push(`=== FASE ${phase.phaseNumber} ===`);
+      for (const a of filled) {
+        lines.push(`[${a.artifactKey}]\n${a.content.slice(0, 1500)}`);
+      }
+    }
+  }
+  const artifactContext = lines.join("\n\n");
+
+  if (!artifactContext.trim()) {
+    res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;
+  }
+
+  try {
+    const result = await analyzeProjectCoherence(project.name, project.briefing, artifactContext);
+    await db.update(projectsTable)
+      .set({ coherenceScore: result.score, coherenceData: JSON.stringify(result), coherenceUpdatedAt: new Date(), updatedAt: new Date() })
+      .where(eq(projectsTable.id, id));
+    res.json(result);
+  } catch {
+    res.status(500).json({ error: "Erro ao analisar coerência. Tente novamente." });
+  }
 });
 
 export default router;

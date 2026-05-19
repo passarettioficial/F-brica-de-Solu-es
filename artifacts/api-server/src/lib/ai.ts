@@ -601,3 +601,214 @@ function parseArtifacts(fullResponse: string, phaseNumber: number): PhaseAIResul
 
   return results;
 }
+
+// ─── Market Validation: Interview Script Generation (SSE) ───────────────────
+
+const INTERVIEW_SCRIPT_PROMPT = (phaseNumber: number, projectName: string, artifactContext: string) => `
+Você é um especialista em pesquisa de usuário e descoberta de produto. Com base nos artefatos da Fase ${phaseNumber} do projeto "${projectName}", gere um roteiro estruturado de entrevistas de descoberta em português brasileiro.
+
+ARTEFATOS DA FASE:
+${artifactContext}
+
+Gere o roteiro completo assim:
+
+## Objetivo das Entrevistas
+[1-2 frases claras sobre o que esta rodada vai validar]
+
+## Hipóteses que Estamos Testando
+1. [hipótese 1]
+2. [hipótese 2]
+3. [hipótese 3]
+
+## Perfil do Entrevistado Ideal
+[Descrição detalhada de quem entrevistar, como recrutá-los, quantos]
+
+## Roteiro (45-60 min)
+
+### Aquecimento (5 min)
+[2-3 perguntas abertas sobre o contexto do entrevistado]
+
+### Descoberta de Problema (15 min)
+[4-5 perguntas abertas sem mencionar sua solução — foco no problema deles]
+
+### Exploração de Comportamento (15 min)
+[4 perguntas sobre como resolvem hoje, frequência, custo emocional]
+
+### Aprofundamento (10 min)
+[3 perguntas follow-up para ir mais fundo nos pontos críticos]
+
+### Encerramento (5 min)
+[Pergunta de recomendação + abertura para dúvidas]
+
+## O Que Observar
+Para cada seção acima, liste: sinal de validação vs. sinal de invalidação (o que as respostas ideais se parecem).
+
+## Template de Registro
+Forneça um template markdown que o founder preencherá após cada entrevista (entrevistado, data, respostas por pergunta, insights, veredicto).
+
+## Critério de Avanço
+[N entrevistas mínimas, o que você precisa ouvir para avançar com confiança para a próxima fase]
+`.trim();
+
+export async function generateInterviewScript(
+  phaseNumber: number,
+  projectName: string,
+  artifactContext: string,
+  onToken: (token: string) => void,
+): Promise<string> {
+  const stream = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    max_completion_tokens: 4000,
+    messages: [
+      { role: "system", content: INTERVIEW_SCRIPT_PROMPT(phaseNumber, projectName, artifactContext) },
+    ],
+    stream: true,
+  });
+
+  let fullText = "";
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content;
+    if (content) {
+      fullText += content;
+      onToken(content);
+    }
+  }
+  return fullText;
+}
+
+// ─── Market Validation: Notes Analysis (SSE) ────────────────────────────────
+
+const ANALYSIS_PROMPT = (projectName: string, artifactContext: string, notes: string) => `
+Você é um estrategista de produto sênior. O founder concluiu entrevistas de descoberta. Analise os achados vs. as hipóteses originais do projeto.
+
+PROJETO: ${projectName}
+
+ARTEFATOS E HIPÓTESES ORIGINAIS:
+${artifactContext}
+
+NOTAS DAS ENTREVISTAS DO FOUNDER:
+${notes}
+
+Gere uma análise completa em português brasileiro:
+
+## Score de Validação: [0-100]/100
+[1 frase explicando o score — seja honesto, não inflacione]
+
+## Hipóteses Confirmadas ✓
+[Lista de hipóteses que as entrevistas confirmaram, com evidências diretas das notas]
+
+## Hipóteses Refutadas ✗
+[Lista de hipóteses refutadas, com evidências e o que isso implica para o produto]
+
+## Insights Inesperados
+[Descobertas que não estavam nos artefatos originais mas emergiram das entrevistas]
+
+## Veredicto
+**RECOMENDAÇÃO: AVANÇAR | PIVOTAR | MAIS ENTREVISTAS**
+
+[Justificativa em 2-3 parágrafos — seja direto e acionável]
+
+## Ajustes Sugeridos nos Artefatos
+[Lista específica: "Atualize [ARTEFATO] para refletir que [descoberta]"]
+
+## Próximos Passos Concretos
+1. [ação específica com prazo]
+2. [ação específica com prazo]
+3. [ação específica com prazo]
+`.trim();
+
+export async function analyzeInterviewNotes(
+  projectName: string,
+  artifactContext: string,
+  notes: string,
+  onToken: (token: string) => void,
+): Promise<string> {
+  const stream = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    max_completion_tokens: 3000,
+    messages: [
+      { role: "system", content: ANALYSIS_PROMPT(projectName, artifactContext, notes) },
+    ],
+    stream: true,
+  });
+
+  let fullText = "";
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content;
+    if (content) {
+      fullText += content;
+      onToken(content);
+    }
+  }
+  return fullText;
+}
+
+// ─── Coherence Analysis (JSON, non-streaming) ────────────────────────────────
+
+const COHERENCE_PROMPT = (projectName: string, briefing: string, artifactContext: string) => `
+Você é um advisor sênior de produto. Analise todos os artefatos gerados para este projeto e avalie a coerência interna — ou seja, se os documentos são consistentes entre si ou se há contradições, lacunas ou conflitos entre eles.
+
+PROJETO: ${projectName}
+BRIEFING: ${briefing}
+
+TODOS OS ARTEFATOS GERADOS:
+${artifactContext}
+
+Retorne APENAS JSON válido (sem texto antes ou depois):
+
+{
+  "score": <número de 0 a 100>,
+  "resumo": "<1-2 frases sobre o estado de coerência do projeto>",
+  "conflitos": [
+    {
+      "severidade": "alta|media|baixa",
+      "descricao": "<descrição clara e específica do conflito encontrado>",
+      "artefatos_envolvidos": ["ARTEFATO_A", "ARTEFATO_B"],
+      "sugestao": "<o que fazer concretamente para resolver>"
+    }
+  ],
+  "alinhamentos": [
+    {
+      "descricao": "<o que está bem alinhado e coeso>",
+      "artefatos_envolvidos": ["ARTEFATO_A", "ARTEFATO_B"]
+    }
+  ],
+  "recomendacao_geral": "<recomendação de 1-2 frases para o founder>"
+}
+`.trim();
+
+export interface CoherenceResult {
+  score: number;
+  resumo: string;
+  conflitos: Array<{
+    severidade: "alta" | "media" | "baixa";
+    descricao: string;
+    artefatos_envolvidos: string[];
+    sugestao: string;
+  }>;
+  alinhamentos: Array<{
+    descricao: string;
+    artefatos_envolvidos: string[];
+  }>;
+  recomendacao_geral: string;
+}
+
+export async function analyzeProjectCoherence(
+  projectName: string,
+  briefing: string,
+  artifactContext: string,
+): Promise<CoherenceResult> {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    max_completion_tokens: 3000,
+    messages: [
+      { role: "system", content: COHERENCE_PROMPT(projectName, briefing, artifactContext) },
+    ],
+    stream: false,
+  });
+
+  const raw = completion.choices[0]?.message?.content ?? "{}";
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Coherence analysis returned invalid JSON");
+  return JSON.parse(jsonMatch[0]) as CoherenceResult;
+}
