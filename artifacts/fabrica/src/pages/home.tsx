@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MarketingVideo } from "@/components/marketing-video";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -132,6 +133,62 @@ const CTA_CARDS = [
 ];
 
 
+const PRD_SECTIONS = [
+  {
+    heading: "Visão do Produto",
+    content: `QuantumSaaS é uma plataforma de análise preditiva para gestores de e-commerce de médio porte que desejam antecipar tendências de demanda e otimizar estoques. A plataforma conecta-se às principais ferramentas do mercado (VTEX, Shopify, WooCommerce) e entrega previsões de demanda com horizonte de 90 dias, identificação automática de produtos em risco de ruptura e sugestões de reposição baseadas em sazonalidade e histórico.\n\nProblema central: gestores tomam decisões de compra com base em feeling ou planilhas manuais, gerando excesso em alguns SKUs e ruptura em outros — impactando receita e satisfação do cliente. Solução: motor de ML treinado com dados históricos do cliente + variáveis externas (feriados, eventos, tendências de busca) + interface de decisão clara e acionável.`,
+  },
+  {
+    heading: "Personas",
+    content: `1. Marina — Gestora de E-commerce (Usuária Principal)\nIdade: 34 anos. Gerente de Operações de E-commerce em varejista de moda com ticket médio R$180 e 15 mil SKUs ativos. Passa 3h/semana em reuniões de S&OP sem dados confiáveis; perde vendas por ruptura nas datas-chave. Objetivo: visibilidade de demanda 60–90 dias à frente sem precisar de analista de dados. Critério de sucesso: reduzir ruptura de estoque em 30% no primeiro trimestre.\n\n2. Rafael — CTO / Head de TI (Comprador Econômico)\nIdade: 29 anos. CTO de startup de e-commerce D2C de cosméticos, 2.000 pedidos/dia. Não quer manter pipeline de dados internamente. Objetivo: integração rápida (< 1 dia), API REST documentada, zero overhead de infraestrutura. Critério de sucesso: go-live em menos de 48h, SLA 99,9% de uptime.\n\n3. Carla — Analista de Marketing (Usuária Secundária)\nIdade: 27 anos. Analista de Mídia Paga em agência que gerencia 8 clientes de e-commerce. Campanha de remarketing desperdiça budget em produtos sem estoque. Objetivo: sincronizar campanhas de mídia com previsão de disponibilidade. Critério de sucesso: reduzir CPA em 15% ao evitar anunciar SKUs em risco de ruptura.`,
+  },
+  {
+    heading: "User Stories (15)",
+    content: `1. Como Marina, quero ver um dashboard com os top 20 SKUs em risco de ruptura nos próximos 30 dias, para priorizar pedidos de reposição.\n2. Como Marina, quero receber alertas por e-mail quando um SKU atingir menos de 15 dias de cobertura de estoque, para agir antes da ruptura.\n3. Como Rafael, quero uma API REST com autenticação OAuth 2.0 e documentação OpenAPI 3.0 completa, para integrar com nosso ERP em menos de 8 horas.\n4. Como Rafael, quero um webhook configurável que dispare quando a previsão de um SKU mudar mais de 20%, para acionar automações no sistema interno.\n5. Como Carla, quero exportar a lista de SKUs com estoque previsto > 30 dias para pausar campanhas associadas via Meta Ads API.\n6. Como Marina, quero comparar a previsão do modelo com as vendas reais da semana anterior, para calibrar minha confiança nas projeções.\n7. Como Rafael, quero que todos os dados sejam armazenados em servidores no Brasil (LGPD Art. 33), com certificação SOC 2 Type II.\n8. Como Marina, quero filtrar previsões por categoria, fornecedor e canal de vendas, para análises mais granulares.\n9. Como Carla, quero receber um relatório semanal automático em PDF com os SKUs críticos de cada cliente, para apresentações de resultado.\n10. Como Rafael, quero um painel de monitoramento de saúde da integração com alertas de falha de sincronização.\n11. Como Marina, quero simular cenários de demanda (ex: promoção de 20% em outubro) para dimensionar estoque antes da campanha.\n12. Como Marina, quero importar histórico de vendas dos últimos 36 meses via CSV, para o modelo ter dados suficientes desde o primeiro uso.\n13. Como Rafael, quero gerenciar permissões por perfil (admin, viewer, integração) para controlar o acesso entre equipes.\n14. Como Carla, quero uma extensão de Chrome que mostre a cobertura de estoque prevista enquanto navego no painel do Meta Ads.\n15. Como Marina, quero que o modelo re-treine automaticamente toda semana com os dados mais recentes, sem intervenção manual.`,
+  },
+  {
+    heading: "Estratégia de Pricing",
+    content: `Free — R$0/mês: até 500 SKUs, 1 integração. Público: validação e testes.\nStarter — R$249/mês: até 5.000 SKUs, 3 integrações. Público: e-commerces em crescimento.\nGrowth — R$749/mês: até 30.000 SKUs, integrações ilimitadas. Público: operações consolidadas.\nEnterprise — sob consulta: SKUs ilimitados, SLA dedicado. Público: grandes varejistas.\n\nCobrança mensal com desconto de 20% no plano anual. Expansão via upsell de integrações premium (ERP SAP, Oracle) e módulo de simulação de cenários.`,
+  },
+  {
+    heading: "Roadmap Q1–Q4 2025",
+    content: `Q1 — MVP: Integração com Shopify e WooCommerce, dashboard de risco de ruptura (top 20 SKUs), alertas por e-mail, previsão com horizonte de 30 dias.\n\nQ2 — Expansão de Integrações: Integração com VTEX e Bling, webhook configurável, API REST com documentação OpenAPI 3.0, extensão Chrome em beta fechado.\n\nQ3 — Inteligência: Simulador de cenários (promoções, sazonalidade), re-treinamento automático semanal, relatório em PDF automático, módulo de comparação previsão vs. realizado.\n\nQ4 — Enterprise: Integrações ERP (SAP, Oracle em beta), painel multi-cliente para agências, certificação SOC 2 Type II, SLA dedicado e suporte Premium.`,
+  },
+];
+
+function PrdDialog({ trigger }: { trigger: React.ReactNode }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent
+        className="max-w-2xl max-h-[80vh] overflow-y-auto"
+        aria-labelledby="prd-dialog-title"
+      >
+        <DialogHeader>
+          <DialogTitle id="prd-dialog-title" className="font-serif text-xl text-foreground">
+            Exemplo de PRD — QuantumSaaS
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerado pela FoundersFlow a partir de um briefing de 3 parágrafos. Editável e exportável em Markdown.
+          </p>
+        </DialogHeader>
+        <div className="mt-4 space-y-6">
+          {PRD_SECTIONS.map((section) => (
+            <div key={section.heading}>
+              <h3 className="font-serif text-base font-semibold text-foreground mb-2 pb-1 border-b border-border/60">
+                {section.heading}
+              </h3>
+              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                {section.content}
+              </div>
+            </div>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function Home() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -178,7 +235,7 @@ export function Home() {
           <div className="hero-glow" />
           <div className="hero-grid" />
 
-          <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
+          <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
               A linha de<br />
@@ -215,9 +272,67 @@ export function Home() {
                   Iniciar minha construção →
                 </Button>
               </Link>
-              <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver planos e preços</Link>
+              <PrdDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    className="text-sm text-muted-foreground border border-border/60 hover:bg-muted/60 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
+                  >
+                    Ver exemplo de PRD →
+                  </Button>
+                }
+              />
               </div>
               <p className="text-sm text-muted-foreground/70 mt-4 font-mono">SEM CARTÃO DE CRÉDITO · 2 GERAÇÕES GRATUITAS/DIA</p>
+            </div>
+
+            {/* ── Hero Mockup (right column, desktop) ── */}
+            <div className="hidden lg:block relative animate-hero-mockup">
+              {/* Glow behind */}
+              <div className="absolute inset-0 -m-8 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
+              {/* Browser frame card */}
+              <div className="relative rotate-[-1.5deg] rounded-2xl border border-border/50 bg-card/80 backdrop-blur-md shadow-2xl shadow-primary/10 overflow-hidden">
+                {/* Browser chrome */}
+                <div className="bg-muted/60 border-b border-border/50 px-4 py-3 flex items-center gap-3">
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <div className="w-3 h-3 rounded-full bg-red-400/70" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
+                    <div className="w-3 h-3 rounded-full bg-green-400/70" />
+                  </div>
+                  <div className="flex-1 bg-background/50 rounded-md px-3 py-1 text-[11px] font-mono text-muted-foreground/50 truncate">
+                    app.foundersflow.com.br/p/quantum-saas/prd
+                  </div>
+                </div>
+                {/* Document content */}
+                <div className="p-5 space-y-4 relative max-h-[360px] overflow-hidden">
+                  <div>
+                    <div className="text-[10px] font-mono text-primary/60 uppercase tracking-widest mb-1">PRD — Fase 2</div>
+                    <h3 className="font-serif text-lg text-foreground leading-tight">QuantumSaaS</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Gerado em 12s · 4.200 palavras · Exportável</p>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Visão do Produto", preview: "Plataforma de análise preditiva para gestores de e-commerce que desejam antecipar demanda e otimizar estoques..." },
+                      { label: "Personas (3)", preview: "Marina — Gestora de E-commerce  ·  Rafael — CTO  ·  Carla — Analista de Marketing" },
+                      { label: "User Stories (15)", preview: "Como Marina, quero ver os top 20 SKUs em risco de ruptura nos próximos 30 dias, para priorizar pedidos..." },
+                      { label: "Estratégia de Pricing", preview: "Free · Starter R$249/mês · Growth R$749/mês · Enterprise sob consulta" },
+                      { label: "Roadmap Q1–Q4", preview: "Q1: MVP com Shopify e WooCommerce  ·  Q2: VTEX e API REST  ·  Q3: Simulador  ·  Q4: Enterprise" },
+                    ].map((item) => (
+                      <div key={item.label} className="border-l-2 border-primary/20 pl-3">
+                        <div className="text-[11px] font-semibold font-mono text-primary/70 uppercase tracking-wider mb-0.5">{item.label}</div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.preview}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Gradient fade suggesting more content */}
+                  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-card/95 to-transparent pointer-events-none" />
+                </div>
+                {/* Footer hint */}
+                <div className="px-5 py-3 border-t border-border/40 bg-muted/30 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-muted-foreground/60">45 artefatos gerados</span>
+                  <span className="text-[11px] font-mono text-primary/60">↓ Exportar Markdown</span>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -374,14 +489,26 @@ export function Home() {
             <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
               Comece hoje. Crie seu primeiro projeto em menos de 2 minutos.
             </p>
-            <Link href="/sign-up">
-              <Button
-                aria-label="Iniciar gratuitamente"
-                className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-semibold py-4 px-12 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-xl hover:shadow-2xl hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none"
-              >
-                Iniciar gratuitamente →
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
+              <Link href="/sign-up">
+                <Button
+                  aria-label="Iniciar gratuitamente"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-semibold py-4 px-12 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-xl hover:shadow-2xl hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none"
+                >
+                  Iniciar gratuitamente →
+                </Button>
+              </Link>
+              <PrdDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    className="text-sm text-muted-foreground border border-border/60 hover:bg-muted/60 hover:text-foreground transition-all duration-300 py-4 px-6 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
+                  >
+                    Ver exemplo de PRD →
+                  </Button>
+                }
+              />
+            </div>
             <div className="mt-8 flex items-center justify-center gap-8 text-sm font-mono text-muted-foreground tracking-wider">
               <span>✓ SEM CARTÃO</span>
               <span>✓ 2 GERAÇÕES/DIA</span>
