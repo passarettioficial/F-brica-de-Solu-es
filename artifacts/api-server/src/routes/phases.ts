@@ -17,7 +17,6 @@ function requireAuth(req: any) {
   return auth?.userId ?? null;
 }
 
-const executionLocks = new Set<string>();
 
 // GET /projects/:projectId/phases/:phaseNumber
 router.get("/projects/:projectId/phases/:phaseNumber", async (req, res): Promise<void> => {
@@ -213,16 +212,18 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
-  const lockKey = `${userId}:${projectId}:${phaseNumber}`;
-  if (executionLocks.has(lockKey)) {
+  // DB-level lock — safe across multiple server instances
+  if (phase.isGenerating) {
     res.status(429).json({ error: "Geração já em andamento para esta fase. Aguarde a conclusão." });
     return;
   }
-  executionLocks.add(lockKey);
+  await db.update(phasesTable)
+    .set({ isGenerating: true })
+    .where(eq(phasesTable.id, phase.id));
 
   const { allowed, limit } = await checkAndIncrementAiUsage(userId);
   if (!allowed) {
-    executionLocks.delete(lockKey);
+    await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
     await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit, phaseNumber, projectId }, req });
     res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` });
     return;
@@ -284,12 +285,12 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     const saved = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
 
     clearInterval(heartbeat);
-    executionLocks.delete(lockKey);
+    await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
     res.write(`data: ${JSON.stringify({ type: "done", artifacts: saved })}\n\n`);
     res.end();
   } catch (error) {
     clearInterval(heartbeat);
-    executionLocks.delete(lockKey);
+    await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
     req.log.error({ err: error, userId, projectId, phaseNumber }, "AI generation failed");
     res.write(`data: ${JSON.stringify({ type: "error", message: "Erro ao gerar artefatos" })}\n\n`);
     res.end();

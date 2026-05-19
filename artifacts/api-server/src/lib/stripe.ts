@@ -28,7 +28,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     id: "free",
     name: "Gratuito",
     lookupKey: "",
-    aiDailyLimit: 2,
+    aiDailyLimit: 5,
     canCopy: false,
     canDownload: false,
     canPrint: false,

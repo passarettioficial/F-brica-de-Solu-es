@@ -11,6 +11,7 @@ export const phasesTable = pgTable("phases", {
   gate1Checked: boolean("gate1_checked").notNull().default(false),
   gate2Checked: boolean("gate2_checked").notNull().default(false),
   gate3Checked: boolean("gate3_checked").notNull().default(false),
+  isGenerating: boolean("is_generating").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (table) => [
