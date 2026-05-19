@@ -162,6 +162,34 @@ router.patch("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey", 
   res.json(artifact);
 });
 
+// PATCH /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/download
+router.patch("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/download", async (req, res): Promise<void> => {
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const projectId = parseInt(Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId, 10);
+  const phaseNumber = parseInt(Array.isArray(req.params.phaseNumber) ? req.params.phaseNumber[0] : req.params.phaseNumber, 10);
+  const artifactKey = Array.isArray(req.params.artifactKey) ? req.params.artifactKey[0] : req.params.artifactKey;
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const [phase] = await db.select().from(phasesTable).where(
+    and(eq(phasesTable.projectId, projectId), eq(phasesTable.phaseNumber, phaseNumber))
+  );
+  if (!phase) { res.status(404).json({ error: "Phase not found" }); return; }
+
+  const [artifact] = await db.update(phaseArtifactsTable)
+    .set({ downloadedAt: new Date() })
+    .where(and(eq(phaseArtifactsTable.phaseId, phase.id), eq(phaseArtifactsTable.artifactKey, artifactKey)))
+    .returning();
+
+  if (!artifact) { res.status(404).json({ error: "Artifact not found" }); return; }
+  res.json(artifact);
+});
+
 // POST /projects/:projectId/phases/:phaseNumber/execute (SSE)
 router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res): Promise<void> => {
   const userId = requireAuth(req);

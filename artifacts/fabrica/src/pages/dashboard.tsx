@@ -342,7 +342,7 @@ export function Dashboard() {
         queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
         setShowNew(false); setName(""); setBriefing(""); setSelectedTemplate(null);
         toast({ title: "Projeto criado!", description: `"${project.name}" esta pronto. Comecemos a Fase 1.` });
-        setLocation(`/projects/${project.id}`);
+        setTimeout(() => setLocation(`/projects/${project.id}`), 80);
       },
       onError: () => { toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" }); },
     });

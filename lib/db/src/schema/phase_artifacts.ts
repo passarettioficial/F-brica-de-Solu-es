@@ -9,6 +9,7 @@ export const phaseArtifactsTable = pgTable("phase_artifacts", {
   artifactKey: text("artifact_key").notNull(),
   content: text("content").notNull().default(""),
   contentJson: text("content_json"),
+  downloadedAt: timestamp("downloaded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (table) => [

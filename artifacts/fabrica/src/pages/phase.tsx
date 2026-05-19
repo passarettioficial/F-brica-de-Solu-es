@@ -155,7 +155,7 @@ const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = 
   SLA_SUPORTE: { label: "SLA & Plano de Suporte", description: "Canais, SLA, playbooks e FAQ inicial" },
 };
 
-function downloadMarkdown(artifactKey: string, content: string) {
+function downloadMarkdown(artifactKey: string, content: string, projectId: number, phaseNumber: number) {
   const blob = new Blob([content], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -163,6 +163,12 @@ function downloadMarkdown(artifactKey: string, content: string) {
   a.download = `${artifactKey.toLowerCase()}.md`;
   a.click();
   URL.revokeObjectURL(url);
+  // Mark as downloaded server-side (fire and forget)
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  fetch(`${basePath}/api/projects/${projectId}/phases/${phaseNumber}/artifacts/${artifactKey}/download`, {
+    method: "PATCH",
+    credentials: "include",
+  }).catch(() => {/* silent — download already happened */});
 }
 
 const ArtifactCard = memo(function ArtifactCard({
@@ -173,7 +179,7 @@ const ArtifactCard = memo(function ArtifactCard({
   canDownload,
   onUpdate,
 }: {
-  artifact: { id: number; artifactKey: string; content: string; contentJson: string | null };
+  artifact: { id: number; artifactKey: string; content: string; contentJson: string | null; downloadedAt?: string | null };
   phaseNumber: number;
   projectId: number;
   canCopy: boolean;
@@ -183,6 +189,7 @@ const ArtifactCard = memo(function ArtifactCard({
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(artifact.content);
+  const [downloaded, setDownloaded] = useState(!!artifact.downloadedAt);
   const { toast } = useToast();
   const updateArtifact = useUpdateArtifact();
 
@@ -225,6 +232,17 @@ const ArtifactCard = memo(function ArtifactCard({
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
           {isEmpty && <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Nao gerado</span>}
+          {downloaded && !isEmpty && (
+            <span
+              title="Artefato já baixado"
+              className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500/15 text-green-600 dark:text-green-400"
+              aria-label="Artefato baixado"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          )}
           <svg className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -299,11 +317,21 @@ const ArtifactCard = memo(function ArtifactCard({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs"
-                      onClick={() => downloadMarkdown(artifact.artifactKey, artifact.content)}
+                      className={`text-xs gap-1 ${downloaded ? "border-green-500/40 text-green-600 dark:text-green-400" : ""}`}
+                      onClick={() => {
+                        downloadMarkdown(artifact.artifactKey, artifact.content, projectId, phaseNumber);
+                        setDownloaded(true);
+                      }}
                       aria-label={`Baixar ${meta?.label ?? artifact.artifactKey} em Markdown`}
                     >
-                      ↓ .md
+                      {downloaded ? (
+                        <>
+                          <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Baixado
+                        </>
+                      ) : "↓ .md"}
                     </Button>
                   ) : (
                     <Link href="/pricing">
