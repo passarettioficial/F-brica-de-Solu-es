@@ -236,8 +236,8 @@ export function Home() {
 
 
         {/* ── Pipeline Visual ── */}
-        <section className="py-20 px-6 border-y border-border/50 bg-muted/20">
-          <div className="max-w-6xl mx-auto">
+        <section className="py-20 px-4 border-y border-border/50 bg-muted/20">
+          <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">PIPELINE</p>
               <h2 className="text-3xl md:text-4xl font-serif text-foreground">Do zero ao lancamento</h2>
@@ -246,20 +246,20 @@ export function Home() {
             {/* Desktop pipeline */}
             <div className="hidden md:grid grid-cols-7 gap-0 relative">
               {/* Connector line */}
-              <div className="absolute top-[24px] left-[7.14%] right-[7.14%] h-px bg-gradient-to-r from-primary/15 via-primary/35 to-primary/15" />
+              <div className="absolute top-[26px] left-[7.14%] right-[7.14%] h-px bg-gradient-to-r from-primary/15 via-primary/35 to-primary/15" />
 
               {PHASES.map((phase, i) => (
                 <div key={i} className="flex flex-col items-center relative group">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-bold font-mono z-10 mb-3 transition-all duration-300 border-2 ${
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold font-mono z-10 mb-3 transition-all duration-300 border-2 ${
                     i === 0
                       ? "bg-primary border-primary text-primary-foreground phase-node-active"
                       : "bg-card border-border text-muted-foreground group-hover:border-primary/40 group-hover:text-primary"
                   }`}>
                     {phase.num}
                   </div>
-                  <div className="text-[13px] font-semibold text-foreground text-center uppercase tracking-wider mb-1 whitespace-nowrap">{phase.name}</div>
-                  <div className="text-[12px] text-muted-foreground text-center leading-tight mb-1 whitespace-nowrap">{phase.desc}</div>
-                  <div className="text-[12px] font-mono text-primary/60 text-center whitespace-nowrap">{phase.artifacts}</div>
+                  <div className="text-sm font-semibold text-foreground text-center uppercase tracking-wider mb-1 whitespace-nowrap">{phase.name}</div>
+                  <div className="text-[13px] text-muted-foreground text-center leading-tight mb-1 whitespace-nowrap">{phase.desc}</div>
+                  <div className="text-[13px] font-mono text-primary/60 text-center whitespace-nowrap">{phase.artifacts}</div>
                 </div>
               ))}
             </div>
