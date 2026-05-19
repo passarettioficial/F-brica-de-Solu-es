@@ -178,6 +178,7 @@ const ArtifactCard = memo(function ArtifactCard({
   canCopy,
   canDownload,
   onUpdate,
+  initialExpanded,
 }: {
   artifact: { id: number; artifactKey: string; content: string; contentJson: string | null; downloadedAt?: string | null };
   phaseNumber: number;
@@ -185,8 +186,9 @@ const ArtifactCard = memo(function ArtifactCard({
   canCopy: boolean;
   canDownload: boolean;
   onUpdate: () => void;
+  initialExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(initialExpanded ?? false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(artifact.content);
   const [downloaded, setDownloaded] = useState(!!artifact.downloadedAt);
@@ -449,6 +451,8 @@ export function PhasePage() {
   const [generatingText, setGeneratingText] = useState("");
   const [generationError, setGenerationError] = useState("");
   const [justCompleted, setJustCompleted] = useState(false);
+  const [aiJustDone, setAiJustDone] = useState(false);
+  const [aiWordCount, setAiWordCount] = useState(0);
 
   const phaseDef = PHASES[phaseNumber - 1];
   const artifacts: any[] = (phase as any)?.artifacts ?? [];
@@ -522,6 +526,7 @@ export function PhasePage() {
       const decoder = new TextDecoder();
       if (!reader) { setGenerationError("Streaming nao suportado"); setGenerating(false); return; }
       let buffer = "";
+      let accText = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -532,8 +537,14 @@ export function PhasePage() {
           if (line.startsWith("data: ")) {
             try {
               const event = JSON.parse(line.slice(6)) as { type: string; content?: string };
-              if (event.type === "progress") setGeneratingText((prev) => prev + (event.content ?? ""));
-              else if (event.type === "done") {
+              if (event.type === "progress") {
+                const chunk = event.content ?? "";
+                accText += chunk;
+                setGeneratingText((prev) => prev + chunk);
+              } else if (event.type === "done") {
+                const words = accText.trim().split(/\s+/).filter(Boolean).length;
+                setAiWordCount(words);
+                setAiJustDone(true);
                 queryClient.invalidateQueries({ queryKey: getGetPhaseQueryKey(projectId, phaseNumber) });
                 setGenerating(false);
                 toast({ title: "Artefatos gerados com sucesso!", description: `${phaseDef?.artifacts?.length ?? 0} artefatos prontos para revisao.` });
@@ -755,6 +766,24 @@ export function PhasePage() {
           )}
         </div>
 
+        {/* Wow moment banner after AI generation */}
+        {aiJustDone && aiWordCount > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl px-6 py-4 flex items-center gap-4">
+            <div className="text-2xl flex-shrink-0">✦</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                {generatedCount} artefatos gerados — <span className="text-primary">{aiWordCount.toLocaleString("pt-BR")} palavras</span> de estratégia específica para o seu negócio
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Revise, edite e marque os critérios de saída para avançar para a próxima fase.</p>
+            </div>
+            <button onClick={() => setAiJustDone(false)} className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0" aria-label="Fechar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Artifacts */}
         {artifacts.length > 0 && (
           <div className="space-y-3">
@@ -775,7 +804,7 @@ export function PhasePage() {
                 </div>
               </div>
             )}
-            {artifacts.map((artifact) => (
+            {artifacts.map((artifact, index) => (
               <ArtifactCard
                 key={artifact.id}
                 artifact={artifact}
@@ -784,6 +813,7 @@ export function PhasePage() {
                 canCopy={permissions.canCopy}
                 canDownload={permissions.canDownload}
                 onUpdate={invalidatePhase}
+                initialExpanded={aiJustDone && index < 2 && !!artifact.content?.trim()}
               />
             ))}
           </div>

@@ -86,7 +86,7 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
   const [error, setError] = useState<string | null>(null);
 
   const score = project.coherenceScore as number | null | undefined;
-  const data = project.coherenceData ? (() => { try { return JSON.parse(project.coherenceData); } catch { return null; } })() : null;
+  const data = (project.coherenceData ?? null) as any;
   const updatedAt = project.coherenceUpdatedAt ? new Date(project.coherenceUpdatedAt) : null;
   const phases: any[] = project.phases ?? [];
   const hasEnoughArtifacts = phases.some((p: any) => p.status === "completed" || p.status === "active");
@@ -196,6 +196,138 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
         <div className="mt-4 pt-4 border-t border-border">
           <p className="text-xs text-emerald-600 dark:text-emerald-400">✓ Todos os artefatos estão alinhados entre si.</p>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MarketPotentialCard ──────────────────────────────────────────────────────
+
+function MarketPotentialCard({ project, projectId, onRefresh }: { project: any; projectId: number; onRefresh: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const score = project.marketPotentialScore as number | null | undefined;
+  const data = (project.marketPotentialData ?? null) as any;
+  const updatedAt = project.marketPotentialUpdatedAt ? new Date(project.marketPotentialUpdatedAt) : null;
+  const phases: any[] = project.phases ?? [];
+  const hasEnoughArtifacts = phases.some((p: any) => p.status === "completed" || p.status === "active");
+
+  const scoreColor = score == null ? "text-muted-foreground" : score >= 75 ? "text-blue-600 dark:text-blue-400" : score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
+  const ringColor = score == null ? "#e5e7eb" : score >= 75 ? "#2563eb" : score >= 50 ? "#f59e0b" : "#ef4444";
+  const circumference = 2 * Math.PI * 20;
+  const strokeDash = score != null ? (score / 100) * circumference : 0;
+
+  async function analyze() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${projectId}/potential/analyze`, { method: "POST" });
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || "Erro ao analisar"); }
+      onRefresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const DIMENSION_LABELS: Record<string, string> = {
+    tamanho_mercado: "Mercado",
+    urgencia_problema: "Urgência",
+    modelo_receita: "Receita",
+    diferencial_competitivo: "Diferencial",
+    viabilidade_execucao: "Execução",
+  };
+
+  return (
+    <div className="bg-card border border-card-border rounded-xl p-5 mb-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-shrink-0 w-14 h-14">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="20" fill="none" stroke="var(--muted)" strokeWidth="4" />
+              {score != null && (
+                <circle cx="28" cy="28" r="20" fill="none" stroke={ringColor} strokeWidth="4"
+                  strokeLinecap="round" strokeDasharray={`${strokeDash} ${circumference}`}
+                  transform="rotate(-90 28 28)" style={{ transition: "stroke-dasharray 0.5s ease" }} />
+              )}
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className={`text-sm font-bold ${scoreColor}`}>{score != null ? score : "—"}</span>
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-serif text-base font-medium">Potencial de Mercado</h3>
+              {score != null && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  score >= 75 ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300" :
+                  score >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
+                  "bg-destructive/10 text-destructive"
+                }`}>
+                  {score >= 75 ? "Alto potencial" : score >= 50 ? "Potencial moderado" : "Potencial baixo"}
+                </span>
+              )}
+            </div>
+            {score == null ? (
+              <p className="text-xs text-muted-foreground mt-1 max-w-[260px]">Avalie o potencial de mercado — TAM, urgência, modelo de receita e vantagem competitiva.</p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">
+                {updatedAt ? `Analisado em ${updatedAt.toLocaleDateString("pt-BR")}` : "Analisado"}
+                {data?.nivel_inovacao && <span className="ml-2 text-primary">· {data.nivel_inovacao.split(" — ")[0]}</span>}
+              </p>
+            )}
+          </div>
+        </div>
+        <button
+          onClick={analyze}
+          disabled={loading || !hasEnoughArtifacts}
+          className="text-xs text-primary hover:text-primary/80 transition-colors font-medium disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          {loading ? "Analisando..." : score != null ? "Reanalisar" : "Analisar Potencial"}
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-destructive mt-3">{error}</p>}
+      {!hasEnoughArtifacts && score == null && (
+        <p className="text-xs text-muted-foreground/70 mt-3 italic">Execute a IA em pelo menos uma fase para habilitar esta análise.</p>
+      )}
+
+      {data?.dimensoes && (
+        <div className="mt-4 space-y-2">
+          {Object.entries(data.dimensoes as Record<string, number>).map(([key, val]) => (
+            <div key={key} className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground w-24 shrink-0">{DIMENSION_LABELS[key] ?? key}</span>
+              <div className="flex-1 bg-muted rounded-full h-1.5">
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-700 ${val >= 75 ? "bg-blue-500" : val >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                  style={{ width: `${val}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-foreground w-7 text-right">{val}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {data?.resumo && (
+        <p className="text-xs text-muted-foreground mt-4 leading-relaxed border-t border-border pt-3">{data.resumo}</p>
+      )}
+
+      {data?.alertas && data.alertas.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {data.alertas.map((alert: string, i: number) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="flex-shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <p className="text-xs text-muted-foreground">{alert}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {data?.acelerador && (
+        <p className="text-xs text-primary mt-3 font-medium">→ {data.acelerador}</p>
       )}
     </div>
   );
@@ -676,9 +808,29 @@ export function ProjectPage() {
         {/* Project title + progress */}
         <div className="mb-8">
           <h1 className="text-3xl font-serif text-foreground mb-1">{project.name}</h1>
-          <p className="text-sm text-muted-foreground mb-4">
-            Fase atual: {PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`}
-          </p>
+          <div className="flex items-center flex-wrap gap-3 mb-4">
+            <p className="text-sm text-muted-foreground">
+              Fase atual: {PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`}
+            </p>
+            {(project as any).coherenceScore != null && (
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                (project as any).coherenceScore >= 75 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" :
+                (project as any).coherenceScore >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
+                "bg-destructive/10 text-destructive"
+              }`}>
+                Coerência {(project as any).coherenceScore}/100
+              </span>
+            )}
+            {(project as any).marketPotentialScore != null && (
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                (project as any).marketPotentialScore >= 75 ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300" :
+                (project as any).marketPotentialScore >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
+                "bg-destructive/10 text-destructive"
+              }`}>
+                Potencial {(project as any).marketPotentialScore}/100
+              </span>
+            )}
+          </div>
           {encouragement && (
             <div className="inline-flex items-center gap-2 bg-primary/5 border border-primary/15 rounded-full px-3 py-1.5 text-xs text-primary font-medium">
               ✨ {encouragement}
@@ -747,12 +899,23 @@ export function ProjectPage() {
           )}
         </div>
 
-        {/* Coherence card — always visible above tabs */}
-        <CoherenceCard
-          project={project}
-          projectId={projectId}
-          onRefresh={() => queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) })}
-        />
+        {/* Score cards — always visible above tabs */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-0">
+          <div>
+            <CoherenceCard
+              project={project}
+              projectId={projectId}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) })}
+            />
+          </div>
+          <div>
+            <MarketPotentialCard
+              project={project}
+              projectId={projectId}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) })}
+            />
+          </div>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto" role="tablist">

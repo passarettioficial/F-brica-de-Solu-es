@@ -4,6 +4,7 @@ import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { getPlanConfig } from "../lib/stripe";
+import { sanitizeBriefing } from "../lib/ai";
 
 const router: IRouter = Router();
 
@@ -67,12 +68,14 @@ router.post("/projects/:projectId/advisor", async (req, res): Promise<void> => {
 
   const artifactContext = allArtifacts.join("\n\n");
 
+  const safeBriefing = sanitizeBriefing(project.briefing);
+
   const systemPrompt = `Você é o AI Advisor da Fábrica de Soluções — um consultor de produto altamente experiente, especializado em startups e produtos digitais. Você tem acesso completo a todos os artefatos gerados para o projeto "${project.name}".
 
 Seu papel é responder perguntas do founder sobre seu produto com profundidade e especificidade, sempre baseando suas respostas nos dados reais do projeto. Seja direto, crítico quando necessário, e sempre acionável.
 
 PROJETO: ${project.name}
-BRIEFING: ${project.briefing}
+BRIEFING: ${safeBriefing}
 
 ARTEFATOS GERADOS:
 ${artifactContext || "(Nenhum artefato gerado ainda — execute a IA nas fases primeiro)"}

@@ -9,7 +9,8 @@ import {
 import { ensureUser, checkAndIncrementAiUsage } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 import { auditLog } from "../lib/audit";
-import { analyzeProjectCoherence } from "../lib/ai";
+import { analyzeProjectCoherence, analyzeMarketPotential } from "../lib/ai";
+import { logEvent } from "../lib/events";
 
 const router: IRouter = Router();
 
@@ -151,6 +152,7 @@ router.post("/projects", async (req, res): Promise<void> => {
   await db.insert(phasesTable).values(phaseValues);
 
   await auditLog({ eventType: "user.project.created", actorClerkId: userId, meta: { projectId: project.id, name: project.name }, req });
+  void logEvent(userId, "project_created", { projectId: project.id });
   res.status(201).json(project);
 });
 
@@ -302,6 +304,55 @@ router.get("/projects/:id/summary", async (req, res): Promise<void> => {
   });
 });
 
+// GET /benchmarks — platform aggregate metrics for cross-project comparison
+router.get("/benchmarks", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  // Platform-wide stats
+  const allProjects = await db.select({
+    coherenceScore: projectsTable.coherenceScore,
+    marketPotentialScore: projectsTable.marketPotentialScore,
+    currentPhase: projectsTable.currentPhase,
+  }).from(projectsTable).where(isNull(projectsTable.deletedAt));
+
+  const withCoherence = allProjects.filter(p => p.coherenceScore != null);
+  const withPotential = allProjects.filter(p => p.marketPotentialScore != null);
+
+  const avgCoherence = withCoherence.length > 0
+    ? Math.round(withCoherence.reduce((s, p) => s + (p.coherenceScore ?? 0), 0) / withCoherence.length)
+    : null;
+  const avgPotential = withPotential.length > 0
+    ? Math.round(withPotential.reduce((s, p) => s + (p.marketPotentialScore ?? 0), 0) / withPotential.length)
+    : null;
+  const avgPhase = allProjects.length > 0
+    ? Math.round((allProjects.reduce((s, p) => s + (p.currentPhase ?? 1), 0) / allProjects.length) * 10) / 10
+    : null;
+  const completedCount = allProjects.filter(p => (p.currentPhase ?? 1) >= 7).length;
+
+  // User's own stats
+  const userProjects = await db.select().from(projectsTable)
+    .where(and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt)));
+  const userAvgCoherence = userProjects.filter(p => p.coherenceScore != null).length > 0
+    ? Math.round(userProjects.filter(p => p.coherenceScore != null).reduce((s, p) => s + (p.coherenceScore ?? 0), 0) / userProjects.filter(p => p.coherenceScore != null).length)
+    : null;
+
+  res.json({
+    platform: {
+      totalProjects: allProjects.length,
+      avgCoherenceScore: avgCoherence,
+      avgMarketPotentialScore: avgPotential,
+      avgCurrentPhase: avgPhase,
+      completedProjects: completedCount,
+    },
+    user: {
+      totalProjects: userProjects.length,
+      avgCoherenceScore: userAvgCoherence,
+    },
+  });
+});
+
 // POST /projects/:id/coherence/analyze
 router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> => {
   const auth = getAuth(req);
@@ -344,11 +395,63 @@ router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> =
   try {
     const result = await analyzeProjectCoherence(project.name, project.briefing, artifactContext);
     await db.update(projectsTable)
-      .set({ coherenceScore: result.score, coherenceData: JSON.stringify(result), coherenceUpdatedAt: new Date(), updatedAt: new Date() })
+      .set({ coherenceScore: result.score, coherenceData: result, coherenceUpdatedAt: new Date(), updatedAt: new Date() })
       .where(eq(projectsTable.id, id));
+    void logEvent(userId, "coherence_analyzed", { projectId: id, score: result.score });
     res.json(result);
   } catch {
     res.status(500).json({ error: "Erro ao analisar coerência. Tente novamente." });
+  }
+});
+
+// POST /projects/:id/potential/analyze
+router.post("/projects/:id/potential/analyze", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
+  const lines: string[] = [];
+  for (const phase of phases.sort((a, b) => a.phaseNumber - b.phaseNumber)) {
+    const artifacts = await db.select().from(phaseArtifactsTable)
+      .where(eq(phaseArtifactsTable.phaseId, phase.id));
+    const filled = artifacts.filter(a => a.content?.trim());
+    if (filled.length > 0) {
+      lines.push(`=== FASE ${phase.phaseNumber} ===`);
+      for (const a of filled) {
+        lines.push(`[${a.artifactKey}]\n${a.content.slice(0, 1200)}`);
+      }
+    }
+  }
+  const artifactContext = lines.join("\n\n");
+
+  if (!artifactContext.trim()) {
+    res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;
+  }
+
+  const { allowed, limit } = await checkAndIncrementAiUsage(userId);
+  if (!allowed) {
+    res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido.` }); return;
+  }
+
+  try {
+    const result = await analyzeMarketPotential(project.name, project.briefing, artifactContext);
+    await db.update(projectsTable)
+      .set({ marketPotentialScore: result.score, marketPotentialData: result, marketPotentialUpdatedAt: new Date(), updatedAt: new Date() })
+      .where(eq(projectsTable.id, id));
+    void logEvent(userId, "market_potential_analyzed", { projectId: id, score: result.score });
+    res.json(result);
+  } catch {
+    res.status(500).json({ error: "Erro ao analisar potencial de mercado. Tente novamente." });
   }
 });
 

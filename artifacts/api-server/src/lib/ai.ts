@@ -499,21 +499,46 @@ function sanitizeInput(input: string, maxLength: number): string {
     .trim();
 }
 
+const INJECTION_PATTERNS: RegExp[] = [
+  /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/gi,
+  /esquece?\s+(o\s+que\s+foi\s+dito|as\s+instru[çc][oõ]es)/gi,
+  /you\s+are\s+now\s+/gi,
+  /act\s+as\s+(?!if)/gi,
+  /pretend\s+(you\s+are|to\s+be)/gi,
+  /disregard\s+(all\s+)?(previous|prior)/gi,
+  /new\s+instructions?\s*:/gi,
+  /<\/?s(?:ystem|cript)[^>]*>/gi,
+  /\[SYSTEM\]|\[INST\]|\[\/INST\]/gi,
+];
+
+export function sanitizeBriefing(briefing: string): string {
+  let safe = briefing;
+  for (const pattern of INJECTION_PATTERNS) {
+    safe = safe.replace(pattern, "[conteúdo removido]");
+  }
+  return sanitizeInput(safe, 2000);
+}
+
 export async function generatePhaseArtifacts(
   phaseNumber: number,
   projectName: string,
   briefing: string,
   previousArtifacts: Array<{ artifactKey: string; content: string }>,
-  onProgress: (text: string) => void
+  onProgress: (text: string) => void,
+  founderProfile?: Record<string, string>
 ): Promise<PhaseAIResult[]> {
   const safeName = sanitizeInput(projectName, 200);
-  const safeBriefing = sanitizeInput(briefing, 8000);
+  const safeBriefing = sanitizeBriefing(briefing);
 
   const phaseName = PHASE_NAMES[phaseNumber - 1];
   const prompt = PHASE_PROMPTS[phaseNumber];
 
   const previousContext = previousArtifacts.length > 0
     ? `\n\nARTEFATOS DE FASES ANTERIORES (use como contexto e seja coerente com eles):\n${previousArtifacts.map(a => `[${a.artifactKey}]\n${a.content.slice(0, 2500)}`).join("\n\n")}`
+    : "";
+
+  const profileContext = founderProfile && Object.keys(founderProfile).length > 0
+    ? `\n\nCONTEXTO DO FOUNDER: Estágio do projeto: ${founderProfile.estagio ?? "não informado"} | Setor: ${founderProfile.setor ?? "não informado"} | Equipe: ${founderProfile.equipe ?? "não informado"}. Leve esse contexto em conta ao gerar os artefatos — ajuste profundidade, tom e foco de acordo.`
     : "";
 
   const systemPrompt = `${prompt}
@@ -525,7 +550,7 @@ INSTRUÇÕES DE FORMATAÇÃO:
 - Para conteúdo JSON, use blocos \`\`\`json ... \`\`\`
 - Seja denso e valioso — cada artefato deve ser um entregável que o founder pode usar imediatamente`;
 
-  const userMessage = `PROJETO: ${safeName}\n\nBRIEFING:\n${safeBriefing}${previousContext}\n\nGere todos os artefatos da Fase ${phaseNumber} — ${phaseName}. Seja específico, detalhado e acionável.`;
+  const userMessage = `PROJETO: ${safeName}\n\nBRIEFING:\n${safeBriefing}${profileContext}${previousContext}\n\nGere todos os artefatos da Fase ${phaseNumber} — ${phaseName}. Seja específico, detalhado e acionável.`;
 
   const stream = await openai.chat.completions.create({
     model: "gpt-4.1",
@@ -793,16 +818,85 @@ export interface CoherenceResult {
   recomendacao_geral: string;
 }
 
+// ─── Market Potential Score (JSON, non-streaming) ─────────────────────────────
+
+const MARKET_POTENTIAL_PROMPT = (projectName: string, briefing: string, artifactContext: string) => `
+Você é um investidor sênior de venture capital com experiência em startups B2B e B2C no Brasil.
+Analise este projeto de startup e avalie seu potencial de mercado de forma objetiva e honesta.
+
+PROJETO: ${projectName}
+BRIEFING: ${briefing}
+
+ARTEFATOS DISPONÍVEIS:
+${artifactContext}
+
+Avalie nas dimensões abaixo e retorne APENAS JSON válido (sem texto antes ou depois):
+
+{
+  "score": <número de 0 a 100 — média ponderada das dimensões>,
+  "dimensoes": {
+    "tamanho_mercado": <0–100>,
+    "urgencia_problema": <0–100>,
+    "modelo_receita": <0–100>,
+    "diferencial_competitivo": <0–100>,
+    "viabilidade_execucao": <0–100>
+  },
+  "tam_estimado": "<estimativa de TAM para o Brasil com base nos dados do briefing — seja específico com números>",
+  "nivel_inovacao": "<Incremental|Disruptivo|Plataforma> — <1 frase explicando>",
+  "resumo": "<2-3 frases honestas sobre o potencial do projeto — pontos fortes e riscos principais>",
+  "alertas": ["<risco crítico 1>", "<risco crítico 2>"],
+  "acelerador": "<1 ação concreta que mais aumentaria o potencial de sucesso do projeto>"
+}
+`.trim();
+
+export interface MarketPotentialResult {
+  score: number;
+  dimensoes: {
+    tamanho_mercado: number;
+    urgencia_problema: number;
+    modelo_receita: number;
+    diferencial_competitivo: number;
+    viabilidade_execucao: number;
+  };
+  tam_estimado: string;
+  nivel_inovacao: string;
+  resumo: string;
+  alertas: string[];
+  acelerador: string;
+}
+
+export async function analyzeMarketPotential(
+  projectName: string,
+  briefing: string,
+  artifactContext: string,
+): Promise<MarketPotentialResult> {
+  const safeBriefing = sanitizeBriefing(briefing);
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1",
+    max_completion_tokens: 2000,
+    messages: [
+      { role: "system", content: MARKET_POTENTIAL_PROMPT(projectName, safeBriefing, artifactContext) },
+    ],
+    stream: false,
+  });
+
+  const raw = completion.choices[0]?.message?.content ?? "{}";
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Market potential analysis returned invalid JSON");
+  return JSON.parse(jsonMatch[0]) as MarketPotentialResult;
+}
+
 export async function analyzeProjectCoherence(
   projectName: string,
   briefing: string,
   artifactContext: string,
 ): Promise<CoherenceResult> {
+  const safeBriefing = sanitizeBriefing(briefing);
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1",
     max_completion_tokens: 3000,
     messages: [
-      { role: "system", content: COHERENCE_PROMPT(projectName, briefing, artifactContext) },
+      { role: "system", content: COHERENCE_PROMPT(projectName, safeBriefing, artifactContext) },
     ],
     stream: false,
   });

@@ -1,12 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, projectsTable, phasesTable, phaseArtifactsTable } from "@workspace/db";
+import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import {
   UpdatePhaseGatesBody,
   UpdateArtifactBody,
 } from "@workspace/api-zod";
 import { generatePhaseArtifacts } from "../lib/ai";
+import { logEvent } from "../lib/events";
 import { checkAndIncrementAiUsage } from "../lib/auth";
 import { auditLog } from "../lib/audit";
 
@@ -105,6 +106,8 @@ router.post("/projects/:projectId/phases/:phaseNumber/complete", async (req, res
       .where(eq(projectsTable.id, projectId));
   }
 
+  void logEvent(userId, "phase_completed", { projectId, phaseId: phase.id });
+  if (phaseNumber === 7) void logEvent(userId, "project_completed", { projectId });
   res.json(updatedPhase);
 });
 
@@ -212,14 +215,16 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
-  // DB-level lock — safe across multiple server instances
-  if (phase.isGenerating) {
-    res.status(429).json({ error: "Geração já em andamento para esta fase. Aguarde a conclusão." });
+  // Atomic DB-level lock — race-free across multiple server instances
+  // UPDATE...WHERE is_generating=false is a single atomic operation in PostgreSQL
+  const lockResult = await db.update(phasesTable)
+    .set({ isGenerating: true })
+    .where(and(eq(phasesTable.id, phase.id), eq(phasesTable.isGenerating, false)))
+    .returning({ id: phasesTable.id });
+  if (lockResult.length === 0) {
+    res.status(409).json({ error: "Geração já em andamento para esta fase. Aguarde a conclusão." });
     return;
   }
-  await db.update(phasesTable)
-    .set({ isGenerating: true })
-    .where(eq(phasesTable.id, phase.id));
 
   const { allowed, limit } = await checkAndIncrementAiUsage(userId);
   if (!allowed) {
@@ -230,6 +235,11 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
   }
   await auditLog({ eventType: "user.ai.used", actorClerkId: userId, meta: { projectId, phaseNumber, projectName: project.name }, req });
 
+  // Fetch founder profile for personalized AI context
+  const [userRecord] = await db.select({ founderProfile: usersTable.founderProfile })
+    .from(usersTable).where(eq(usersTable.clerkId, userId));
+  const founderProfile = (userRecord?.founderProfile ?? null) as Record<string, string> | null;
+
   // Fetch all previous phase artifacts for context
   const allPreviousPhases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));
   const previousPhaseIds = allPreviousPhases
@@ -238,10 +248,8 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
 
   let previousArtifacts: Array<{ artifactKey: string; content: string }> = [];
   if (previousPhaseIds.length > 0) {
-    const allArtifacts = await Promise.all(
-      previousPhaseIds.map(pid => db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, pid)))
-    );
-    previousArtifacts = allArtifacts.flat().map(a => ({ artifactKey: a.artifactKey, content: a.content }));
+    const rawPrev = await db.select().from(phaseArtifactsTable).where(inArray(phaseArtifactsTable.phaseId, previousPhaseIds));
+    previousArtifacts = rawPrev.map(a => ({ artifactKey: a.artifactKey, content: a.content }));
   }
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -264,7 +272,8 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
       previousArtifacts,
       (text) => {
         res.write(`data: ${JSON.stringify({ type: "progress", content: text })}\n\n`);
-      }
+      },
+      founderProfile ?? undefined
     );
 
     // Atomic upsert: delete + insert in a single transaction
@@ -286,6 +295,7 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
 
     clearInterval(heartbeat);
     await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
+    void logEvent(userId, "ai_generated", { projectId, phaseId: phase.id, artifactCount: saved.length });
     res.write(`data: ${JSON.stringify({ type: "done", artifacts: saved })}\n\n`);
     res.end();
   } catch (error) {

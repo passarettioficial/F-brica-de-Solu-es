@@ -1,0 +1,267 @@
+Você é o engenheiro e product designer principal da FoundersFlow. 
+Com base no diagnóstico técnico e de produto realizado (v1 e v2), 
+execute um plano de trabalho estruturado em 4 sprints para elevar 
+a plataforma de um MVP funcional a um produto de excelência.
+
+O contexto completo do diagnóstico está disponível no histórico 
+desta sessão. Não repita o diagnóstico — execute as soluções.
+
+A infraestrutura de email está resolvida via Google Workspace (G-Suite). 
+Use nodemailer com SMTP do Gmail para todos os emails transacionais.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 1 — FUNDAÇÃO (Segurança e Estabilidade)
+Prioridade: resolver o que pode quebrar em produção sob carga
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.1 — Corrigir race condition no isGenerating (TOCTOU)
+Substituir o check + set em duas operações separadas por um 
+UPDATE atômico condicional:
+
+  UPDATE phases 
+  SET is_generating = true 
+  WHERE id = $1 AND is_generating = false 
+  RETURNING id
+
+Se retornar 0 linhas, retornar 409 com mensagem clara ao cliente.
+Aplicar em phases.ts onde atualmente há duas operações separadas.
+
+1.2 — Sanitização contra prompt injection
+Criar uma função sanitizeBriefing() em ai.ts que, antes de 
+qualquer interpolação no system-prompt:
+- Remove padrões de injection ("Ignore as instruções", 
+  "Esquece o que foi dito", "You are now", "Act as")
+- Trunca o briefing em 2000 caracteres
+- Escapa quebras de linha que possam quebrar a estrutura do prompt
+Aplicar em todas as interpolações de ${project.briefing} nos PHASE_PROMPTS.
+
+1.3 — Resolver N+1 restante em phases.ts:240
+Substituir o Promise.all(previousPhaseIds.map(pid => db.select()...)) 
+por uma única query com inArray, igual ao padrão já aplicado 
+no advisor.ts. Agrupar resultados por phaseId com Map.
+
+1.4 — Migrar coherenceData para JSONB
+Alterar o schema de projects.ts: coherenceData de text para jsonb.
+Criar e rodar a migration. Remover a serialização/deserialização 
+manual no frontend — o Drizzle passa o objeto diretamente.
+
+Entregável do Sprint 1: plataforma race-free, sem injection 
+vulnerability, com queries otimizadas e schema correto.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 2 — RETENÇÃO (Ciclo de vida do founder)
+Prioridade: trazer o founder de volta e criar progressão com significado
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1 — Email transacional com nodemailer + Gmail SMTP
+Criar lib/email/src/mailer.ts com cliente nodemailer configurado 
+via variáveis de ambiente (GMAIL_USER, GMAIL_APP_PASSWORD).
+Criar função sendEmail(to, subject, html) reutilizável.
+Todos os templates em HTML responsivo simples, com identidade 
+visual da FoundersFlow (cor primária, logo em texto, footer com 
+opt-out).
+
+2.2 — Email de reengajamento pós-Fase 1
+Trigger: founder completa a Fase 1 mas não inicia a Fase 2 
+em 24 horas.
+Implementação: ao concluir a Fase 1 (POST /phases/:id/complete), 
+agendar um job com setTimeout de 86400000ms que verifica se 
+phase_2.status === 'pending'. Se sim, disparar email:
+
+  Assunto: "Sua Fase 2 está esperando, [nome]"
+  Corpo: resumo em 3 bullets do que foi gerado na Fase 1 
+  + CTA direto para o projeto + frase sobre o que a Fase 2 
+  vai desbloquear.
+
+2.3 — Email de conclusão de projeto
+Trigger: founder completa as 7 fases.
+Conteúdo: lista dos artefatos gerados, score de coerência final, 
+CTA para criar o próximo projeto ou compartilhar.
+
+2.4 — Coleta de perfil no onboarding
+Adicionar step 2 ao onboarding tour atual (após criar conta, 
+antes do dashboard):
+- 3 perguntas com seleção visual (não formulário):
+  "Em que estágio está sua ideia?" → Ideia / Protótipo / MVP / Tração
+  "Qual é o seu setor principal?" → SaaS / Marketplace / App / 
+   Fintech / Healthtech / Outro
+  "Você está construindo sozinho ou em time?" → Solo / Co-founder / 
+   Time pequeno (até 5)
+- Salvar em userProfile (nova tabela ou campo JSON no users).
+- Injetar no início de cada PHASE_PROMPT: 
+  "Contexto do founder: estágio [X], setor [Y], estrutura [Z]. 
+  Adapte todos os outputs a esse perfil."
+
+2.5 — Event tracking básico
+Instrumentar os eventos críticos da jornada com um tracker 
+simples (pode ser uma tabela events no próprio Postgres):
+  project_created, phase_started, phase_completed, 
+  ai_generated, gate_checked, coherence_analyzed, 
+  validation_generated, project_completed
+Cada evento: userId, projectId, phaseId, eventType, timestamp.
+Isso é o mínimo para saber onde ocorre o churn real — 
+sem isso, as próximas decisões de produto serão cegas.
+
+Entregável do Sprint 2: founder que some após a Fase 1 recebe 
+um pull de volta; onboarding coleta contexto que personaliza 
+toda a experiência; dados de churn começam a ser coletados.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 3 — PERCEPÇÃO DE VALOR (O produto precisa impressionar)
+Prioridade: o valor gerado pela IA precisa ser sentido imediatamente
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3.1 — Redesenho do wow moment da Fase 1
+Problema atual: 7–8 artefatos ricos exibidos em acordeão comprimido.
+Solução: ao concluir o streaming da Fase 1, expandir 
+automaticamente os 2 primeiros artefatos (os mais estratégicos: 
+Lean Canvas e JTBD). Os demais permanecem comprimidos com 
+preview de 2 linhas visível. Adicionar banner de conclusão:
+  "✦ 8 artefatos gerados — [X] palavras de estratégia 
+   específica para o seu negócio"
+O número de palavras geradas deve ser calculado e exibido — 
+isso ancora o valor percebido de forma concreta.
+
+3.2 — Preview do produto na landing page (antes do cadastro)
+O PrdDialog existe mas está escondido. Criar uma seção 
+"Veja o que a IA gera" na home.tsx com:
+- Tabs: Lean Canvas / PRD / Go-to-Market / Score de Coerência
+- Conteúdo: exemplos reais (ou realistas) de output para um 
+  negócio fictício bem conhecido (ex: "um app de gestão 
+  financeira para MEIs")
+- Botão ao final: "Gerar para o meu negócio →"
+O founder precisa ver o output antes de criar conta. 
+Essa é a maior alavanca de conversão que a landing tem.
+
+3.3 — Redesenho do headline da landing page
+Substituir "A linha de montagem para founders" por um headline 
+que comunica transformação, não método. 
+Critério: deve responder "O que eu conquisto?" não "O que a 
+ferramenta faz?".
+Criar 3 variações e apresentar para escolha:
+  Variação A: foco no tempo ("Do briefing ao lançamento 
+  em 7 etapas — com IA que conhece o seu negócio")
+  Variação B: foco na dor ("Pare de travar entre a ideia 
+  e a execução")
+  Variação C: foco no output ("PRD, personas, arquitetura 
+  e go-to-market — gerados para o SEU negócio, não para 
+  qualquer um")
+Implementar a variação escolhida com subheadline de apoio 
+e CTA único e urgente.
+
+3.4 — Indicador de progresso motivador entre fases
+Substituir o pipeline de fases atual por uma visualização 
+que comunica momentum:
+- Barra de progresso global (ex: "Fase 3 de 7 — 43% concluído")
+- Score de coerência visível no header do projeto (não só 
+  na aba de coerência)
+- Ao concluir uma fase, exibir uma animação de celebração 
+  simples (confetti leve ou badge de fase conquistada)
+O founder precisa sentir que está progredindo, não apenas 
+preenchendo etapas.
+
+Entregável do Sprint 3: um founder que chega pela primeira 
+vez na landing entende o valor em 5 segundos; um founder 
+que completa a Fase 1 sente que gerou algo extraordinário.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 4 — MOAT (O que nenhum concorrente consegue copiar)
+Prioridade: construir o diferencial que se aprofunda com o tempo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4.1 — Fatiamento de phase.tsx e project.tsx (god components)
+phase.tsx (920 linhas) → fatiado em:
+  PhaseHeader.tsx — título, status, botão de execução
+  ArtifactGrid.tsx — grid/acordeão de artefatos com memoização
+  ArtifactEditor.tsx — edição inline de artefato individual
+  GateChecklist.tsx — gates com estado de conclusão
+  PhaseProgress.tsx — progresso e transição para próxima fase
+
+project.tsx (945 linhas) → fatiado em:
+  ProjectHeader.tsx — nome, briefing, autosave
+  PhaseNavigator.tsx — pipeline lateral/superior de fases
+  ValidationTab.tsx — tab de validação com mercado
+  CoherencePanel.tsx — score e análise de coerência
+  CollaborationTab.tsx — tab de colaboração
+
+Cada componente com responsabilidade única, props tipadas, 
+sem lógica de negócio misturada com renderização.
+
+4.2 — Benchmark anônimo cross-projeto (embrião do flywheel)
+Ao finalizar qualquer projeto, calcular e persistir métricas 
+anônimas agregadas:
+  - Score de coerência médio por setor
+  - Fase onde ocorreu mais abandono (via events do Sprint 2.5)
+  - Tempo médio por fase por estágio do founder
+Criar endpoint GET /benchmarks?sector=saas&stage=mvp que 
+retorna médias anônimas.
+Exibir no dashboard do founder: 
+  "Founders de SaaS no estágio MVP têm score médio de 
+  coerência de 7,2. O seu está em 8,1 ↑"
+Esse dado é genuinamente proprietário — nenhum concorrente 
+tem acesso a ele porque ele só existe dentro da FoundersFlow.
+
+4.3 — Desacoplamento da OpenAI (adapter pattern)
+Criar interface AIProvider em ai.ts:
+  interface AIProvider {
+    generatePhase(prompt, context): Promise<Stream>
+    analyzeCoherence(artifacts): Promise<CoherenceResult>
+    generateValidation(phase, artifacts): Promise<ValidationResult>
+  }
+Implementar OpenAIProvider como a implementação concreta atual.
+Injetar via dependency injection nas rotas.
+Resultado: trocar para Anthropic, Gemini ou um modelo 
+fine-tunado próprio no futuro será uma questão de criar 
+uma nova implementação da interface — sem tocar nas rotas.
+
+4.4 — Score de Potencial como métrica central
+Hoje o Score de Coerência avalia consistência interna dos 
+artefatos. Criar Score de Potencial de Mercado que avalia:
+  - Tamanho estimado do mercado (TAM/SAM/SOM) com base 
+    no setor e briefing
+  - Nível de inovação (incremental vs. disruptivo)
+  - Clareza do modelo de receita
+  - Força do diferencial competitivo descrito
+Exibir os dois scores lado a lado: 
+  Coerência Interna [8,1] · Potencial de Mercado [6,4]
+  "Sua estratégia é consistente, mas o diferencial 
+  competitivo precisa de mais clareza"
+Isso transforma a FoundersFlow de "ferramenta de planejamento" 
+para "bússola de viabilidade" — algo que VCs e aceleradoras 
+poderiam usar para avaliar startups no pipeline.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITÉRIOS DE CONCLUSÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+O plano de trabalho está concluído quando:
+
+Sprint 1: Nenhuma operação de lock é executada em duas 
+queries separadas; briefings são sanitizados antes da 
+interpolação; coherenceData é JSONB no banco.
+
+Sprint 2: Um projeto criado e não avançado após 24h dispara 
+email de reengajamento; novos founders respondem 3 perguntas 
+de perfil no onboarding; eventos críticos da jornada são 
+registrados no banco.
+
+Sprint 3: Um visitante novo consegue ver exemplos reais de 
+output da IA sem criar conta; ao completar a Fase 1, os 2 
+primeiros artefatos são exibidos expandidos com contagem 
+de palavras; o headline da landing comunica transformação.
+
+Sprint 4: phase.tsx e project.tsx têm menos de 200 linhas 
+cada após o fatiamento; o dashboard exibe benchmark anônimo 
+do setor do founder; trocar de provedor de IA exige apenas 
+criar uma nova classe que implementa AIProvider.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ORDEM DE EXECUÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Execute os sprints em sequência. Dentro de cada sprint, 
+execute os itens na ordem numerada. Após cada item, 
+confirme o que foi feito e o que mudou antes de avançar.
+
+Não agrupe mudanças de sprints diferentes em um único 
+commit. Cada sprint deve ser deployável de forma independente.

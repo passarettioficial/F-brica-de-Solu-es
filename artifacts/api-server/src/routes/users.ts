@@ -75,4 +75,22 @@ router.patch("/users/me/settings", async (req, res): Promise<void> => {
   });
 });
 
+router.patch("/users/me/profile", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const { founderProfile } = req.body as { founderProfile?: unknown };
+  if (!founderProfile || typeof founderProfile !== "object") {
+    res.status(400).json({ error: "founderProfile must be an object" }); return;
+  }
+
+  await ensureUser(userId);
+  await db.update(usersTable)
+    .set({ founderProfile: founderProfile as Record<string, unknown>, updatedAt: new Date() })
+    .where(eq(usersTable.clerkId, userId));
+
+  res.json({ ok: true });
+});
+
 export default router;

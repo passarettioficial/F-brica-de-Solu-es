@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -195,8 +196,110 @@ function PrdDialog({ trigger }: { trigger: React.ReactNode }) {
   );
 }
 
+const PREVIEW_TABS = [
+  { id: "lean-canvas", label: "Lean Canvas" },
+  { id: "prd", label: "PRD & Personas" },
+  { id: "gtm", label: "Go-to-Market" },
+  { id: "coerencia", label: "Score de Coerência" },
+];
+
+const PREVIEW_CONTENT: Record<string, React.ReactNode> = {
+  "lean-canvas": (
+    <div className="space-y-0">
+      <p className="text-xs font-mono text-primary mb-4 uppercase tracking-wider">Lean Canvas — Fintrack (gestão financeira para MEIs)</p>
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "Problema", text: "MEIs perdem R$3–8k/ano por falta de controle financeiro. 68% pagam DAS com atraso por esquecimento. Contador cobra R$300/mês para tarefas automatizáveis." },
+          { label: "Solução", text: "App que sincroniza todas as contas via Open Finance, calcula DAS automaticamente e gera relatório de IR com 1 clique." },
+          { label: "Proposta de Valor", text: "O único app financeiro feito 100% para MEI — que conecta seu banco, calcula seus impostos e nunca deixa você perder prazo.", highlight: true },
+          { label: "Segmentos", text: "MEIs de serviços digitais (dev, design, redação), 25–42 anos, faturamento R$40k–120k/ano, já usam apps de banco digital." },
+          { label: "Canais", text: "SEO \"MEI imposto\", parcerias com contadores, YouTube sobre gestão MEI, ads no Instagram Stories." },
+          { label: "Receita", text: "Freemium: grátis até 2 contas. Pro: R$29/mês. LTV médio estimado: R$290/ano. Meta CAC: abaixo de R$85." },
+          { label: "Custos", text: "AWS + Open Finance APIs: R$1.2k/mês. Time inicial: 2 devs + 1 designer: R$18k/mês." },
+          { label: "Métricas-chave", text: "% usuários com ≥1 conta conectada, churn mensal, NPS, DAS pago em dia pelos usuários." },
+          { label: "Vantagem Injusta", text: "Parceria com Banco Inter e Nubank para onboarding integrado — sem tela de login, conta já conectada ao abrir o app." },
+        ].map((b) => (
+          <div key={b.label} className={`rounded-lg p-3 text-left ${b.highlight ? "border-primary/40 bg-primary/5 border" : "border border-border bg-background"}`}>
+            <div className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">{b.label}</div>
+            <div className="text-[11px] text-foreground leading-snug">{b.text}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ),
+  "prd": (
+    <div className="space-y-5">
+      <p className="text-xs font-mono text-primary uppercase tracking-wider">Personas — geradas pela IA para Fintrack</p>
+      {[
+        { name: "Marcos, 31", role: "Dev freelancer MEI", pain: "Perde horas no Carnê Leão todo mês. Já levou multa de 20% por atraso no DAS.", need: "Automação total — não quer pensar em imposto, quer só trabalhar.", quote: "\"Eu sei programar sistemas financeiros mas não consigo controlar meu próprio dinheiro.\"" },
+        { name: "Amanda, 38", role: "Designer UX MEI", pain: "Tem 3 contas bancárias e não sabe qual está sobrando dinheiro. Nunca sabe se pode aceitar um projeto novo.", need: "Visibilidade em tempo real do fluxo de caixa consolidado.", quote: "\"Meu contador só me fala o que aconteceu. Eu quero saber o que vai acontecer.\"" },
+      ].map((p) => (
+        <div key={p.name} className="border border-border rounded-xl p-4 bg-background">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-sm font-bold text-primary">{p.name[0]}</div>
+            <div><div className="text-sm font-medium text-foreground">{p.name}</div><div className="text-xs text-muted-foreground">{p.role}</div></div>
+          </div>
+          <div className="space-y-2 text-xs text-foreground">
+            <p><span className="text-muted-foreground font-medium">Dor: </span>{p.pain}</p>
+            <p><span className="text-muted-foreground font-medium">Necessidade: </span>{p.need}</p>
+            <p className="italic text-muted-foreground">{p.quote}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
+  "gtm": (
+    <div className="space-y-4">
+      <p className="text-xs font-mono text-primary uppercase tracking-wider">Go-to-Market — Fintrack — 90 dias</p>
+      {[
+        { phase: "Dias 1–30 — Validação fechada", items: ["50 MEIs recrutados via grupos de dev e design no WhatsApp", "Entrevistas de descoberta com roteiro de 45 min (JTBD)", "Meta: 30% dos entrevistados dizem \"quando lança?\" espontaneamente", "Critério de avanço: ≥3 MEIs pagam R$29/mês antes do MVP pronto"] },
+        { phase: "Dias 31–60 — Beta privado", items: ["MVP com Open Finance Fase 2, cálculo DAS automático, dashboard", "200 usuários beta via lista de espera (landing page + YouTube)", "NPS alvo ≥ 50. Churn < 5% no segundo mês", "Parceria com 3 contadores para co-marketing"] },
+        { phase: "Dias 61–90 — Lançamento público", items: ["Product Hunt + comunidades (IndieHackers BR, Comunidade MEI)", "R$5k em Google Ads direcionado a buscas \"MEI imposto\"", "Meta: 500 usuários ativos, 80 pagantes, MRR de R$2.3k"] },
+      ].map((p) => (
+        <div key={p.phase} className="border border-border rounded-xl p-4 bg-background">
+          <div className="text-xs font-semibold text-foreground mb-2">{p.phase}</div>
+          <ul className="space-y-1">
+            {p.items.map((item, i) => (
+              <li key={i} className="text-xs text-muted-foreground flex gap-2"><span className="text-primary mt-0.5">·</span>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  ),
+  "coerencia": (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="text-center">
+          <div className="text-5xl font-bold font-serif text-emerald-600">87</div>
+          <div className="text-xs text-muted-foreground mt-1">Score de Coerência</div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Coeso</span>
+            <span className="text-xs text-muted-foreground">Artefatos bem alinhados entre si</span>
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">O projeto apresenta excelente coerência entre proposta de valor, segmentos e canais. O diferencial de Open Finance está consistentemente refletido no PRD e no GTM.</p>
+        </div>
+      </div>
+      <div className="border-t border-border pt-4 space-y-3">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">1 conflito detectado</p>
+        <div className="flex items-start gap-2.5">
+          <span className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-amber-500" />
+          <div>
+            <p className="text-xs text-foreground">O modelo freemium define limite de 2 contas bancárias, mas a persona Marcos usa 4 contas. O limite pode bloquear a conversão do usuário principal.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">HIPOTESE_PRICING · PERSONAS</p>
+          </div>
+        </div>
+        <p className="text-xs text-primary mt-3">→ Sugestão: testar limite de 3 contas no freemium ou mudar critério para volume de transações.</p>
+      </div>
+    </div>
+  ),
+};
+
 export function Home() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const [activePreviewTab, setActivePreviewTab] = useState("lean-canvas");
 
   return (
     <>
@@ -244,15 +347,15 @@ export function Home() {
           <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
-              A linha de<br />
-              montagem para<br />
-              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders</span>.
+              Pare de travar<br />
+              entre a ideia<br />
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">e a execução</span>.
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-3 max-w-2xl font-sans leading-relaxed">
-              Da ideia ao lançamento em 7 fases estruturadas.
-              A IA gera artefatos detalhados — PRD, personas, arquitetura, go-to-market —
-              tudo baseado no seu briefing.
+              PRD, personas, arquitetura, go-to-market e validação com o mercado —
+              gerados para o <strong className="text-foreground font-semibold">seu negócio</strong>, não para qualquer um.
+              Em 7 fases estruturadas, com IA que acumula contexto entre cada entrega.
               </p>
 
               <p className="text-sm text-muted-foreground/70 italic max-w-[540px] mb-10 leading-relaxed mx-auto lg:mx-0">
@@ -413,6 +516,56 @@ export function Home() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Product Preview ── */}
+        <section className="py-24 px-6 bg-card/30">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">EXEMPLO REAL DE OUTPUT</p>
+              <h2 className="text-4xl md:text-5xl font-serif text-foreground mb-4">Veja o que a IA gera.</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
+                Briefing: <em className="text-foreground/80">"App de gestão financeira para MEIs — controle de caixa, cálculo de DAS e Open Finance."</em>
+              </p>
+            </div>
+            <div className="flex gap-2 flex-wrap justify-center mb-5">
+              {PREVIEW_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActivePreviewTab(tab.id)}
+                  className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${
+                    activePreviewTab === tab.id
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="bg-card border border-card-border rounded-2xl overflow-hidden shadow-sm">
+              <div className="flex items-center gap-3 px-5 py-3 border-b border-border/50 bg-muted/20">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400/50" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400/50" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-400/50" />
+                </div>
+                <span className="text-xs font-mono text-muted-foreground">FoundersFlow — Fase 1 — {PREVIEW_TABS.find(t => t.id === activePreviewTab)?.label}</span>
+                <span className="ml-auto text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-full">gerado por IA</span>
+              </div>
+              <div className="p-6 max-h-[420px] overflow-y-auto">
+                {PREVIEW_CONTENT[activePreviewTab]}
+              </div>
+            </div>
+            <div className="text-center mt-8">
+              <Link href={`${base}/sign-up`}>
+                <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">
+                  Gerar para o meu negócio →
+                </Button>
+              </Link>
+              <p className="text-xs text-muted-foreground mt-3">Grátis para começar · 5 execuções de IA por dia no plano gratuito</p>
             </div>
           </div>
         </section>

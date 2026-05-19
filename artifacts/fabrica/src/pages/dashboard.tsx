@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
@@ -271,6 +271,11 @@ export function Dashboard() {
   const [trash, setTrash] = useState<Array<{ id: number; name: string; deletedAt: string; daysRemaining: number }>>([]);
   const [trashLoading, setTrashLoading] = useState(false);
   const [trashActionId, setTrashActionId] = useState<number | null>(null);
+  const [benchmarks, setBenchmarks] = useState<{
+    platform: { totalProjects: number; avgCoherenceScore: number | null; avgMarketPotentialScore: number | null; avgCurrentPhase: number | null; completedProjects: number };
+    user: { totalProjects: number; avgCoherenceScore: number | null };
+  } | null>(null);
+  const benchmarksFetched = useRef(false);
 
   const { data: dashboard, isLoading } = useGetDashboard();
   const createProject = useCreateProject();
@@ -290,6 +295,15 @@ export function Dashboard() {
   }
 
   useEffect(() => { loadTrash(); }, []);
+
+  useEffect(() => {
+    if (benchmarksFetched.current) return;
+    benchmarksFetched.current = true;
+    fetch(`${basePath}/api/benchmarks`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setBenchmarks(data); })
+      .catch(() => undefined);
+  }, [basePath]);
 
   async function restoreProject(id: number) {
     setTrashActionId(id);
@@ -429,6 +443,30 @@ export function Dashboard() {
               <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
               <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="link" />
             </div>
+
+            {benchmarks && benchmarks.platform.totalProjects > 1 && (
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 bg-card border border-card-border rounded-xl px-4 py-3">
+                <span className="text-[11px] font-mono text-primary uppercase tracking-wider font-semibold">Média da plataforma</span>
+                {benchmarks.platform.avgCoherenceScore != null && (
+                  <span className="text-xs text-muted-foreground">
+                    Coerência: <span className="font-medium text-foreground">{benchmarks.platform.avgCoherenceScore}/100</span>
+                  </span>
+                )}
+                {benchmarks.platform.avgMarketPotentialScore != null && (
+                  <span className="text-xs text-muted-foreground">
+                    Potencial: <span className="font-medium text-foreground">{benchmarks.platform.avgMarketPotentialScore}/100</span>
+                  </span>
+                )}
+                {benchmarks.platform.avgCurrentPhase != null && (
+                  <span className="text-xs text-muted-foreground">
+                    Fase média: <span className="font-medium text-foreground">{benchmarks.platform.avgCurrentPhase}/7</span>
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {benchmarks.platform.totalProjects} projetos ativos
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {SHORTCUTS.map((s) => {

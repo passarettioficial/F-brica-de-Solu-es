@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -9,8 +9,11 @@ export const projectsTable = pgTable("projects", {
   briefing: text("briefing").notNull().default(""),
   currentPhase: integer("current_phase").notNull().default(1),
   coherenceScore: integer("coherence_score"),
-  coherenceData: text("coherence_data"),
+  coherenceData: jsonb("coherence_data"),
   coherenceUpdatedAt: timestamp("coherence_updated_at", { withTimezone: true }),
+  marketPotentialScore: integer("market_potential_score"),
+  marketPotentialData: jsonb("market_potential_data"),
+  marketPotentialUpdatedAt: timestamp("market_potential_updated_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

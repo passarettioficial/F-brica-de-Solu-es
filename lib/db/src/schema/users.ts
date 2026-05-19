@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -14,6 +14,7 @@ export const usersTable = pgTable("users", {
   stripeSubscriptionStatus: text("stripe_subscription_status"), // active | canceled | past_due | etc
   isAdmin: boolean("is_admin").notNull().default(false),
   isSuperuser: boolean("is_superuser").notNull().default(false),
+  founderProfile: jsonb("founder_profile"),
   onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
   lgpdConsentAt: timestamp("lgpd_consent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
