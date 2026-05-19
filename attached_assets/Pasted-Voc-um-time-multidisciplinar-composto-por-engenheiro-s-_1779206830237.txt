@@ -1,0 +1,142 @@
+Você é um time multidisciplinar composto por: engenheiro sênior de software, 
+product designer, estrategista de produto e analista de mercado de startups. 
+Faça um diagnóstico completo do projeto FoundersFlow — plataforma com IA para 
+founders, da ideia ao lançamento em 7 fases estruturadas.
+
+O diagnóstico deve ser baseado exclusivamente no código e nos assets reais 
+do projeto. Cite arquivos, componentes e linhas sempre que possível. 
+Evite generalizações.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 1 — INOVAÇÃO E DIFERENCIAL COMPETITIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Analise o produto sob a ótica de diferenciação real de mercado:
+
+- O que a FoundersFlow faz que ferramentas como Notion AI, YC Startup School, 
+  Lean Canvas online ou ChatGPT com prompts manuais NÃO fazem de forma integrada?
+- As 7 fases são apenas um checklist com IA acoplada, ou há lógica proprietária 
+  que adapta o caminho com base no perfil do founder e da ideia?
+- Os outputs gerados (PRD, personas, arquitetura, go-to-market) são genéricos 
+  ou há personalização real baseada nos inputs do usuário?
+- Existe algum mecanismo de aprendizado ou memória entre as fases 
+  (contexto acumulado) ou cada fase começa do zero?
+- Há alguma funcionalidade que poderia ser transformada em moat 
+  (dado proprietário, network effect, integração exclusiva)?
+
+Ao final deste bloco, atribua uma nota de 1 a 10 para o diferencial competitivo 
+atual e explique em 2 linhas o que falta para chegar a 10.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 2 — QUALIDADE DA TECNOLOGIA E PREPARAÇÃO PARA ESCALA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Arquitetura e estrutura:
+- Mapeie o stack completo (frontend, backend, banco de dados, IA, autenticação)
+- A organização de pastas e módulos segue separação de responsabilidades?
+- Há acoplamento excessivo entre camadas que dificultaria escalar ou trocar 
+  componentes (ex: trocar de OpenAI para outro modelo)?
+
+Qualidade do código:
+- Funções ou componentes com mais de 100 linhas que devem ser refatorados
+- Código duplicado ou lógica repetida que poderia ser abstraída
+- Tratamento de erros: há try/catch, feedback ao usuário e logs adequados?
+- Nomes pouco descritivos em variáveis, funções ou arquivos
+
+Performance:
+- Chamadas à API de IA sem streaming, cache ou debounce
+- Queries ou operações de banco que podem ser otimizadas
+- Assets pesados, fontes bloqueantes ou scripts sem lazy loading
+- Re-renderizações desnecessárias no frontend
+
+Segurança:
+- Variáveis de ambiente sensíveis expostas no frontend ou versionadas
+- Validação de inputs apenas no frontend (sem validação server-side)
+- Rotas sem autenticação que deveriam ter
+- Ausência de proteção contra prompt injection nas chamadas de IA
+
+Escalabilidade:
+- O sistema suporta múltiplos usuários simultâneos sem degradação?
+- Há rate limiting nas chamadas de IA para controle de custos?
+- Existe sistema de filas para tarefas pesadas ou tudo é síncrono?
+- Adicionar uma nova fase ou módulo exigiria reescrever código existente?
+
+Ao final deste bloco, atribua uma nota de 1 a 10 para maturidade técnica 
+e liste as 3 dívidas técnicas mais críticas para resolver antes de escalar.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 3 — USABILIDADE (UI e UX)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Interface (UI):
+- O design system é consistente? Há variações de cores, tipografia, espaçamento 
+  ou componentes que fogem de um padrão definido?
+- Os componentes interativos (botões, inputs, modais) têm estados visuais 
+  completos: default, hover, focus, loading, erro, sucesso, disabled?
+- A interface é responsiva e funciona bem em mobile?
+- Há hierarquia visual clara que guia o olhar do usuário nas telas principais?
+
+Experiência (UX):
+- O feedback de ação é imediato? O usuário sabe o que está acontecendo 
+  enquanto a IA processa?
+- O progresso entre as 7 fases é visualmente claro e motivador?
+- Há estados vazios (empty states) bem desenhados para quando o usuário 
+  ainda não tem dados?
+- Em que pontos o usuário pode ficar preso sem orientação? Há dead ends?
+- Existe algum mecanismo de salvamento automático ou o usuário corre risco 
+  de perder trabalho?
+- A plataforma é acessível? Verifique uso de aria-labels, contraste de cores 
+  e navegação por teclado nos componentes principais.
+
+Ao final deste bloco, atribua uma nota de 1 a 10 para a experiência atual 
+e identifique o maior atrito que faria um usuário abandonar a plataforma.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 4 — JORNADA DO CLIENTE E CLAREZA DA PROPOSTA DE VALOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Primeiro contato (landing page / tela inicial):
+- Em menos de 5 segundos, um founder que chega pela primeira vez consegue 
+  entender O QUÊ é a plataforma, PARA QUEM é e POR QUÊ deve usar agora?
+- O headline comunica transformação (o que o founder conquista) ou apenas 
+  funcionalidade (o que a ferramenta faz)?
+- Há prova social, exemplos de output ou demonstração do produto visível 
+  antes de qualquer cadastro?
+- O CTA principal é único, claro e urgente — ou há múltiplas opções que 
+  geram paralisia?
+
+Ativação:
+- O onboarding conduz o usuário à primeira entrega de valor com menos de 
+  3 ações? Qual é o "momento aha" da plataforma e em quanto tempo o usuário 
+  chega até ele?
+- Há coleta de contexto inicial (tipo de ideia, estágio, perfil do founder) 
+  que personaliza a experiência desde o início?
+- O primeiro output gerado pela IA é impressionante o suficiente para fazer 
+  o usuário querer continuar?
+
+Retenção e progressão:
+- Existe algum gatilho que traz o usuário de volta (email, notificação, 
+  progresso salvo visível)?
+- A progressão pelas 7 fases gera senso de conquista e momentum?
+- Em qual fase o usuário provavelmente abandona? Há dados ou indícios 
+  no código (analytics, eventos rastreados)?
+
+Ao final deste bloco, descreva a jornada atual do usuário em 5 passos 
+(do primeiro acesso até completar uma fase) e aponte onde está o maior 
+risco de churn.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 5 — PRIORIZAÇÃO FINAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Consolide tudo em uma tabela de melhorias priorizadas:
+
+| Prioridade | Bloco        | Problema identificado | Impacto no negócio | Esforço |
+|------------|--------------|-----------------------|--------------------|---------|
+| 🔴 Alta    | [1/2/3/4]    | ...                   | ...                | P/M/G   |
+| 🟡 Média   | [1/2/3/4]    | ...                   | ...                | P/M/G   |
+| 🟢 Baixa   | [1/2/3/4]    | ...                   | ...                | P/M/G   |
+
+Em seguida, responda: se você pudesse fazer apenas UMA mudança neste produto 
+esta semana para aumentar a chance de retenção de novos usuários, qual seria 
+e por quê?
