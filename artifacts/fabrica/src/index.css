@@ -589,3 +589,16 @@ select:focus {
 .phase-node-active {
   box-shadow: 0 0 0 3px var(--phase-accent-soft), 0 0 20px var(--phase-glow);
 }
+
+/* ── Selection color ── */
+::selection {
+  background: hsl(265 98% 56% / 0.25);
+  color: hsl(var(--foreground));
+}
+
+/* ── Smooth scroll (respects prefers-reduced-motion) ── */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

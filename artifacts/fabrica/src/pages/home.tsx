@@ -11,13 +11,13 @@ const STATS = [
 ];
 
 const PHASES = [
-  { num: 1, name: "Ideia", icon: "◈", desc: "Validacao e potencial", artifacts: "8 artefatos" },
-  { num: 2, name: "PRD", icon: "◈", desc: "Definicao de produto", artifacts: "7 artefatos" },
+  { num: 1, name: "Ideia", icon: "◈", desc: "Validação e potencial", artifacts: "8 artefatos" },
+  { num: 2, name: "PRD", icon: "◈", desc: "Definição de produto", artifacts: "7 artefatos" },
   { num: 3, name: "Segurança", icon: "◈", desc: "LGPD e privacidade", artifacts: "6 artefatos" },
-  { num: 4, name: "Spec", icon: "◈", desc: "Arquitetura tecnica", artifacts: "8 artefatos" },
-  { num: 5, name: "Implementação", icon: "◈", desc: "Plano de execucao", artifacts: "7 artefatos" },
-  { num: 6, name: "Teste", icon: "◈", desc: "QA e validacao", artifacts: "7 artefatos" },
-  { num: 7, name: "Deploy", icon: "◈", desc: "Lancamento real", artifacts: "7 artefatos" },
+  { num: 4, name: "Spec", icon: "◈", desc: "Arquitetura técnica", artifacts: "8 artefatos" },
+  { num: 5, name: "Implementação", icon: "◈", desc: "Plano de execução", artifacts: "7 artefatos" },
+  { num: 6, name: "Teste", icon: "◈", desc: "QA e validação", artifacts: "7 artefatos" },
+  { num: 7, name: "Deploy", icon: "◈", desc: "Lançamento real", artifacts: "7 artefatos" },
 ];
 
 const FEATURES = [
@@ -25,41 +25,41 @@ const FEATURES = [
     step: "01",
     icon: "◎",
     title: "Valide antes de construir",
-    desc: "Lean Canvas, JTBD, analise competitiva e Score de Potencial — a IA processa sua ideia e diz se vale a pena antes de escrever uma linha de codigo.",
+    desc: "Lean Canvas, JTBD, análise competitiva e Score de Potencial — a IA processa sua ideia e diz se vale a pena antes de escrever uma linha de código.",
     tag: "Fase 1 — Ideia",
   },
   {
     step: "02",
     icon: "◎",
-    title: "Especifique com precisao",
-    desc: "PRD completo, personas, 15 user stories, estrategia de pricing, roadmap trimestral. O produto inteiro especificado em minutos.",
+    title: "Especifique com precisão",
+    desc: "PRD completo, personas, 15 user stories, estratégia de pricing, roadmap trimestral. O produto inteiro especificado em minutos.",
     tag: "Fase 2 — PRD",
   },
   {
     step: "03",
     icon: "◎",
-    title: "Seguranca e LGPD embutidos",
-    desc: "Threat model, matriz RBAC, politica de privacidade e plano de conformidade LGPD — gerados antes de qualquer linha de codigo.",
+    title: "Segurança e LGPD embutidos",
+    desc: "Threat model, matriz RBAC, política de privacidade e plano de conformidade LGPD — gerados antes de qualquer linha de código.",
     tag: "Fase 3 — Segurança & LGPD",
   },
   {
     step: "04",
     icon: "◎",
     title: "Arquitetura documentada",
-    desc: "Modelo de dados, contratos de API, ADRs e plano de seguranca tecnica. Chegue ao dev com tudo documentado e sem ambiguidades.",
+    desc: "Modelo de dados, contratos de API, ADRs no padrão Michael Nygard e plano de segurança técnica. Chegue ao dev com tudo documentado e sem ambiguidades.",
     tag: "Fase 4 — Spec",
   },
   {
     step: "05",
     icon: "◎",
     title: "Construa e valide com rigor",
-    desc: "Plano de milestones, sprint detalhado, plano de testes com 20 casos criticos e script de teste com usuarios reais.",
+    desc: "Plano de milestones, sprint detalhado, plano de testes com 20 casos críticos e script de teste com usuários reais.",
     tag: "Fases 5–6 — Impl. & Teste",
   },
   {
     step: "06",
     icon: "◎",
-    title: "Lance com estrategia",
+    title: "Lance com estratégia",
     desc: "Runbook de deploy, plano Go-to-Market, Launch Checklist e Pitch para investidores. Da ideia ao mercado.",
     tag: "Fase 7 — Deploy",
   },
@@ -72,12 +72,12 @@ const TESTIMONIALS = [
     plan: "Plano Pro",
   },
   {
-    quote: "A fase de validacao salvou meu produto. Percebi que estava resolvendo o problema errado antes de investir qualquer coisa.",
+    quote: "A fase de validação salvou meu produto. Percebi que estava resolvendo o problema errado antes de investir qualquer coisa.",
     name: "Empreendedor de tecnologia",
-    plan: "Plano Avancado",
+    plan: "Plano Avançado",
   },
   {
-    quote: "Os artefatos chegaram em nivel enterprise. Meu co-founder ficou impressionado com a qualidade dos documentos.",
+    quote: "Os artefatos chegaram em nível enterprise. Meu co-founder ficou impressionado com a qualidade dos documentos.",
     name: "CEO de startup de fintech",
     plan: "Plano Pro",
   },
@@ -147,10 +147,18 @@ export function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(26,63,171,0.12),transparent_32%),radial-gradient(circle_at_top_right,rgba(255,140,66,0.12),transparent_28%),linear-gradient(to_bottom,rgba(255,255,255,0.65),transparent_18%)]" />
       </div>
 
+      {/* Skip to content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:text-sm focus:font-medium focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        Pular para o conteúdo principal
+      </a>
+
       {/* ── Header ── */}
       <header className="py-4 px-6 md:px-8 flex justify-between items-center border-b border-border/60 bg-background/75 sticky top-0 z-20 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <img src={`${base}/logo.png`} alt="FoundersFlow" className="w-8 h-8 rounded-full" />
+          <img src={`${base}/logo.png`} alt="Logotipo FoundersFlow" className="w-8 h-8 rounded-full" />
           <div className="leading-tight">
             <span className="font-serif text-base font-semibold text-foreground tracking-tight block">FoundersFlow</span>
           </div>
@@ -158,12 +166,12 @@ export function Home() {
         <nav className="flex gap-1 items-center">
           <Link href="/privacidade" className="text-muted-foreground hover:text-foreground text-sm px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all hidden md:inline-block">Privacidade</Link>
           <ThemeToggle size={16} />
-          <Link href="/sign-in" className="text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all">Entrar</Link>
-          <Link href="/sign-up" className="bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-medium py-1.5 px-4 rounded-lg transition-colors ml-1 font-semibold">Comecar gratis</Link>
+          <Link href="/sign-in" className="text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md outline-none">Entrar</Link>
+          <Link href="/sign-up" aria-label="Começar grátis" className="bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-medium py-1.5 px-4 rounded-lg transition-all duration-300 ml-1 font-semibold focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none">Começar grátis</Link>
         </nav>
       </header>
 
-      <main className="flex-1 flex flex-col">
+      <main id="main-content" className="flex-1 flex flex-col">
 
         {/* ── Hero ── */}
         <section className="relative px-6 pt-20 pb-20 overflow-hidden">
@@ -178,10 +186,14 @@ export function Home() {
               <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">founders</span>.
               </h1>
 
-              <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl font-sans leading-relaxed">
-              Da ideia ao lancamento em 7 fases estruturadas.
+              <p className="text-lg md:text-xl text-muted-foreground mb-3 max-w-2xl font-sans leading-relaxed">
+              Da ideia ao lançamento em 7 fases estruturadas.
               A IA gera artefatos detalhados — PRD, personas, arquitetura, go-to-market —
               tudo baseado no seu briefing.
+              </p>
+
+              <p className="text-sm text-muted-foreground/70 italic max-w-[540px] mb-10 leading-relaxed mx-auto lg:mx-0">
+                Para o founder solo que quer sair da ideia ao lançamento sem virar PM, arquiteto e advogado da LGPD ao mesmo tempo.
               </p>
 
               {/* Stats row */}
@@ -196,13 +208,16 @@ export function Home() {
 
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-center lg:justify-start">
               <Link href="/sign-up">
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 duration-200">
-                  Iniciar minha construcao →
+                <Button
+                  aria-label="Iniciar minha construção"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold py-3 px-8 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none"
+                >
+                  Iniciar minha construção →
                 </Button>
               </Link>
               <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors link-underline py-2">Ver planos e preços</Link>
               </div>
-              <p className="text-sm text-muted-foreground/70 mt-4 font-mono">SEM CARTAO DE CREDITO · 2 GERACOES GRATUITAS/DIA</p>
+              <p className="text-sm text-muted-foreground/70 mt-4 font-mono">SEM CARTÃO DE CRÉDITO · 2 GERAÇÕES GRATUITAS/DIA</p>
             </div>
 
           </div>
@@ -211,7 +226,7 @@ export function Home() {
         <section className="px-6 pb-8">
           <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
             {VALUE_CARDS.map((card) => (
-              <Link key={card.title} href={card.href} className="glass-card rounded-2xl p-6 flex flex-col gap-3 group hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+              <Link key={card.title} href={card.href} className="glass-card rounded-2xl p-6 flex flex-col gap-3 group hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none">
                 <div className="text-sm font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
                 <p className="text-base font-medium text-foreground leading-snug">{card.text}</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">{card.detail}</p>
@@ -224,7 +239,7 @@ export function Home() {
         <section className="px-6 pb-8">
           <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-3">
             {CTA_CARDS.map((card) => (
-              <Link key={card.title} href={card.href} className="glass-card rounded-2xl p-6 flex flex-col gap-3 group hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+              <Link key={card.title} href={card.href} className="glass-card rounded-2xl p-6 flex flex-col gap-3 group hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none">
                 <div className="text-sm font-mono uppercase tracking-[0.18em] text-primary">{card.title}</div>
                 <p className="text-base font-medium text-foreground leading-snug">{card.text}</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">{card.detail}</p>
@@ -240,7 +255,7 @@ export function Home() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">PIPELINE</p>
-              <h2 className="text-3xl md:text-4xl font-serif text-foreground">Do zero ao lancamento</h2>
+              <h2 className="text-3xl md:text-4xl font-serif text-foreground">Do zero ao lançamento</h2>
             </div>
 
             {/* Desktop pipeline */}
@@ -250,7 +265,7 @@ export function Home() {
 
               {PHASES.map((phase, i) => (
                 <div key={i} className="flex flex-col items-center relative group">
-                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold font-mono z-10 mb-3 transition-all duration-300 border-2 ${
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold font-mono z-10 mb-3 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] border-2 ${
                     i === 0
                       ? "bg-primary border-primary text-primary-foreground phase-node-active"
                       : "bg-card border-border text-muted-foreground group-hover:border-primary/40 group-hover:text-primary"
@@ -298,15 +313,15 @@ export function Home() {
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
               <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">CAPACIDADES</p>
-              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Um processo com proposito em cada etapa.</h2>
+              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Um processo com propósito em cada etapa.</h2>
               <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                Nao e so gerador de texto. E um processo rigoroso que forca voce a pensar em cada dimensao do produto.
+                Não é só gerador de texto. É um processo rigoroso que força você a pensar em cada dimensão do produto.
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-5">
               {FEATURES.map((f, i) => (
-                <div key={i} className="glass-card rounded-2xl p-7 group cursor-default hover:-translate-y-0.5 hover:border-primary/40 transition-all duration-200">
+                <div key={i} className="glass-card rounded-2xl p-7 group cursor-default hover:-translate-y-0.5 hover:border-primary/40 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
                   <div className="flex items-start justify-between mb-5">
                     <span className="text-xs font-mono text-primary/60 tracking-wider">{f.step}</span>
                     <span className="text-xs font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full border border-border/60">{f.tag}</span>
@@ -334,7 +349,7 @@ export function Home() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {TESTIMONIALS.map((t, i) => (
-                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-200">
+                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
                   <div className="text-primary text-3xl font-serif mb-4 leading-none">"</div>
                   <p className="text-sm text-background/80 leading-relaxed mb-6 italic">{t.quote}</p>
                   <div className="flex items-center justify-between border-t border-background/10 pt-4">
@@ -351,23 +366,26 @@ export function Home() {
         <section className="py-28 px-6 text-center relative overflow-hidden">
           <div className="hero-glow" style={{ transform: "rotate(180deg)" }} />
           <div className="relative z-10 max-w-2xl mx-auto">
-            <p className="text-sm font-mono text-primary uppercase tracking-[0.2em] mb-6">PRONTO PARA COMECAR?</p>
+            <p className="text-sm font-mono text-primary uppercase tracking-[0.2em] mb-6">PRONTO PARA COMEÇAR?</p>
             <h2 className="text-4xl md:text-6xl font-serif text-foreground mb-6 leading-tight">
               Sua ideia merece<br />
-              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">um processo serio</span>.
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">um processo sério</span>.
             </h2>
             <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
               Comece hoje. Crie seu primeiro projeto em menos de 2 minutos.
             </p>
             <Link href="/sign-up">
-              <Button className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-semibold py-4 px-12 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 duration-200">
+              <Button
+                aria-label="Iniciar gratuitamente"
+                className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-semibold py-4 px-12 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-xl hover:shadow-2xl hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none"
+              >
                 Iniciar gratuitamente →
               </Button>
             </Link>
             <div className="mt-8 flex items-center justify-center gap-8 text-sm font-mono text-muted-foreground tracking-wider">
-              <span>✓ SEM CARTAO</span>
-              <span>✓ 2 GERACOES/DIA</span>
-              <span>✓ CANCELE SEMPRE</span>
+              <span>✓ SEM CARTÃO</span>
+              <span>✓ 2 GERAÇÕES/DIA</span>
+              <span>✓ CANCELE QUANDO QUISER</span>
             </div>
           </div>
         </section>
@@ -378,7 +396,7 @@ export function Home() {
       <footer className="py-8 px-8 border-t border-border/60">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <img src={`${base}/logo.png`} alt="Logo" className="w-5 h-5 rounded-full" />
+            <img src={`${base}/logo.png`} alt="Logotipo FoundersFlow" className="w-5 h-5 rounded-full" />
             <span className="text-sm font-medium text-foreground">FoundersFlow</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">

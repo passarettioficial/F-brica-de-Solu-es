@@ -150,8 +150,20 @@ export function PricingPage() {
     <>
     <Helmet>
       <title>Planos e Preços — FoundersFlow</title>
-      <meta name="description" content="Compare os planos da FoundersFlow: grátis, Starter e Advanced. Escolha o plano ideal para validar sua ideia e lançar seu produto com IA." />
+      <meta name="description" content="Compare os planos da FoundersFlow: grátis, Básico, Pro e Avançado. Escolha o plano ideal para validar sua ideia e lançar seu produto com IA em 7 fases estruturadas." />
       <link rel="canonical" href="https://www.foundersflow.com.br/pricing" />
+      <script type="application/ld+json">{JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": FAQ.map(item => ({
+          "@type": "Question",
+          "name": item.q,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": item.a,
+          },
+        })),
+      })}</script>
     </Helmet>
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/60 bg-background/85 backdrop-blur-xl sticky top-0 z-10">

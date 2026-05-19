@@ -1,0 +1,266 @@
+FoundersFlow — Prompt de Correções para Excelência Premium (Replit Agent)
+Contexto crítico para o agente:Este projeto é o plano de aposentadoria do founder. O padrão de qualidade exigido é100% de excelência, nível produto super premium. Cada caractere, pixel, espaçamento, contraste, hover, transição, meta tag e linha de código será inspecionado. Não há margem para "quase bom" ou "funciona mas". Se você tiver dúvida sobre qual caminho seguir, escolhasempreo de maior rigor estético, técnico e editorial. Você está editando código existente no Replit — NÃO é uma geração do zero.
+
+0. POSTURA DO AGENTE (LEIA ANTES DE TOCAR EM QUALQUER ARQUIVO)
+Você é um engenheiro full stack sênior + revisor editorial + designer de produto premium operando em modo cirúrgico. As regras inegociáveis:
+1. Não reescrever o que já funciona. Faça apenas as correções listadas. Preserve estrutura de rotas, componentes existentes, design system, paleta #0d0b14 + roxo hsl(265 98% 56%), tipografia (Sora + DM Sans + JetBrains Mono) e schema.org já implementado.
+2. Diff mínimo, qualidade máxima. Cada alteração deve ser localizada, justificada e auditável.
+3. Zero regressão visual. Após as correções, todo o resto do site deve renderizar exatamente igual ao estado atual (mesmo layout, mesmas seções, mesmas animações).
+4. Padrão "produto super premium": acabamento de Linear, Vercel, Stripe, Arc Browser. Se uma transição, espaçamento, peso de fonte ou raio de borda parecer "ok", refine até ficar "intencional".
+5. Antes de declarar pronto: rode mentalmente o checklist de QA da seção 9 deste prompt. Se qualquer item falhar, corrija antes de entregar.
+6. Idioma: Português Brasil (pt-BR) com acentuação e cedilhas rigorosamente corretas em todo texto visível ao usuário. Sem exceção.
+
+1. CONTEXTO DO PROJETO
+•	Stack atual confirmada: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui + Supabase + Stripe (pricing).
+•	URL produção:https://www.foundersflow.com.br
+•	Rotas públicas existentes que serão tocadas:/, /pricing, /clareza-imediata, /fluxo-continuo, /pronto-para-vender, /privacidade, /atendimento.
+•	Rotas autenticadas (NÃO tocar):/sign-up, /sign-in, /dashboard e descendentes.
+•	Schema.org JSON-LD já implementado:WebSite, SoftwareApplication, Organization — preservar e estender conforme item 6.
+
+2. ESCOPO — O QUE PRECISA SER CORRIGIDO
+🔴 PRIORIDADE 1 — Auditoria editorial integral (acentuação)
+Problema diagnosticado: múltiplos blocos da landing e provavelmente das páginas filhas estão sem acentos/cedilhas, enquanto outros estão corretos. Isso é fatal para credibilidade num produto que vende rigor processual.
+Tarefa: percorra todos os arquivos .tsx, .ts, .mdx, .md e .json das rotas públicas e corrija 100% das ocorrências. Lista de correções confirmadas que devem estar presentes (não exaustiva — busque outras):
+❌ Errado (atual)	✅ Correto
+Comecar gratis	Começar grátis
+Iniciar minha construcao	Iniciar minha construção
+Especifique com precisao	Especifique com precisão
+Seguranca	Segurança
+Seguranca e LGPD embutidos	Segurança e LGPD embutidos
+Validacao	Validação
+Validacao e potencial	Validação e potencial
+execucao	execução
+Plano de execucao	Plano de execução
+estrategia	estratégia
+Lance com estrategia	Lance com estratégia
+proposito	propósito
+Um processo com proposito em cada etapa	Um processo com propósito em cada etapa
+Definicao de produto	Definição de produto
+Arquitetura tecnica	Arquitetura técnica
+Lancamento real	Lançamento real
+Do zero ao lancamento	Do zero ao lançamento
+QA e validacao	QA e validação
+analise competitiva	análise competitiva
+codigo	código
+Politica	Política
+conformidade	conformidade (verificar todas)
+pre-MVP	pré-MVP
+Sua ideia merece um processo serio	Sua ideia merece um processo sério
+PRONTO PARA COMECAR	PRONTO PARA COMEÇAR
+CANCELE SEMPRE	CANCELE QUANDO QUISER
+GERACOES	GERAÇÕES
+SEM CARTAO	SEM CARTÃO
+nivel enterprise	nível enterprise
+ficaria	ficaria (verificar acentos vizinhos)
+Regra de ouro: se uma palavra portuguesa deveria ter acento, til ou cedilha, ela terá. Sem exceção. Inclusive em texto dentro de constantes, arrays de features, JSON-LD description, atributos alt, aria-label, og:description, meta description, copy de botões, microcopy de toasts e mensagens de erro.
+Validação obrigatória: após corrigir, faça um grep no código para os padrões abaixo e confirme zero ocorrências em strings visíveis ao usuário (preservar em nomes de variáveis, rotas e identificadores técnicos):
+grep -rE "Comecar|construcao|precisao|Seguranca|Validacao|execucao|estrategia|proposito|Definicao|tecnica|Lancamento|lancamento|GERACOES|CARTAO|comecar|nao\b|sao\b|orgao" --include="*.tsx" --include="*.ts" --include="*.mdx" --include="*.json" .
+
+Cada match remanescente em string de UI = bug crítico.
+
+🔴 PRIORIDADE 2 — Hero com prova visual do produto
+Problema: o hero atual é 100% tipografia. Founder cético rola e não vê nada do produto, apenas a promessa. Em SaaS premium, isso é vaporware doubt.
+Tarefa: adicionar um product showcase ao lado direito do bloco textual do hero (em desktop ≥1024px) ou abaixo (em mobile/tablet).
+Especificação:
+•	Conteúdo: mockup estático de um artefato real gerado pela plataforma (sugerido: trecho de um PRD, Lean Canvas ou Threat Model) renderizado dentro de uma "browser frame" estilizada (barra superior com 3 dots no estilo macOS + URL fictícia app.foundersflow.com.br/p/quantum-saas/prd).
+•	Estilo: card com border sutil (border-white/10), backdrop-blur, box-shadow profundo (shadow-2xl shadow-purple-500/10), border-radius: 16px, levemente rotacionado (rotate-[-1.5deg] no desktop) para dar dinamismo.
+•	Conteúdo do mockup (texto interno do PRD fake): use texto real e plausível em PT-BR. Exemplo de cabeçalho: # PRD — QuantumSaaS seguido de subseções ## Visão, ## Personas (3), ## User Stories (15), ## Pricing, ## Roadmap Q1–Q4. Preencha cada seção com 2–3 linhas de texto verossímil. Não invente nomes de empresas reais.
+•	Renderização: use react-markdown + tema escuro de syntax highlighting (Shiki ou similar já no projeto). Se não houver, use HTML estilizado com Tailwind — sem libs novas.
+•	Glow: atrás do mockup, um radial-gradient roxo difuso (bg-purple-500/20 blur-3xl) como halo.
+•	Animação de entrada: fade + slight translate-y, easing cubic-bezier(0.16, 1, 0.3, 1), duração 800ms, com prefers-reduced-motion respeitado.
+•	Performance: componente puramente estático (Server Component), zero JS no cliente. Imagem nenhuma — tudo HTML/CSS/texto.
+•	Responsividade: em telas <1024px, o mockup vai abaixo do texto, sem rotação, com largura 100% e altura limitada. Não deve estourar o viewport mobile (380px+).
+Critério de aceite: o hero passa a comunicar "isso é um produto real" em <2 segundos de scroll. Se ainda parecer landing genérica, refazer.
+
+🟡 PRIORIDADE 3 — CTAs com micro-commitment antes do cadastro
+Problema: todos os CTAs atuais levam a /sign-up. Não há caminho para o curioso "ver antes de cadastrar".
+Tarefa: adicionar um único CTA secundário ao lado do CTA primário no hero e no CTA final.
+Especificação:
+•	Texto:Ver exemplo de PRD →
+•	Comportamento: abre um <Dialog> (shadcn) modal full-content scrollável com um exemplo completo de PRD gerado (mesmo conteúdo do mockup do hero, expandido com 15 user stories de exemplo, pricing tier sugerido e roadmap trimestral).
+•	Estilo: botão variant="ghost" com border border-white/15, hover:bg-white/5. Visualmente subordinado ao CTA primário roxo.
+•	Tracking: se houver Posthog/GA já instalado, disparar evento viewed_prd_example. Se não houver, não instalar tracking novo.
+•	A11y:Dialog com aria-labelledby, foco gerenciado, Escape fecha, Tab cíclico dentro do modal.
+•	Conteúdo do PRD do modal:mesmo PRD fake do hero, mas completo. Preencha com texto real PT-BR. Mínimo 800 palavras. Evite lorem ipsum — isso degrada a percepção de qualidade.
+Localização: apenas hero e CTA final ("Pronto para começar?"). Não espalhar pela página.
+
+🟡 PRIORIDADE 4 — Posicionamento explícito do ICP
+Problema: "founders" é genérico demais.
+Tarefa: adicionar uma única linha de qualificação logo abaixo do parágrafo do hero (antes dos números 7/45+/100%):
+Para o founder solo que quer sair da ideia ao lançamento sem virar PM, arquiteto e advogado da LGPD ao mesmo tempo.
+
+Estilo:text-sm text-white/60 italic, max-width 540px, line-height 1.6, espaçamento mt-3.
+
+🟡 PRIORIDADE 5 — Otimização do logo e ativos estáticos
+Problema:logo.png está em 2048×2048 sendo exibido em ~40px. Desperdício brutal de banda + LCP penalizado.
+Tarefa:
+1. Gerar 3 versões otimizadas do logo a partir do master 2048×2048:
+•	logo.svg (vetorial — preferido se houver fonte vetorial; se não, pular)
+•	logo-96.png (96×96, para uso normal)
+•	logo-192.png (192×192, para retina @2x)
+2. Substituir todas as referências a /logo.png no código por <Image> do Next.js apontando para /logo-96.png com width={48} height={48} (ajustar conforme uso real) e priority apenas no header.
+3. Garantir que og:image (/opengraph.jpg) está em 1200×630 com peso <500KB. Se estiver maior, recomprimir com qualidade 82.
+4. Adicionar favicon.ico (32×32) + apple-touch-icon.png (180×180) + <link rel="icon" type="image/png" sizes="32x32"> se ainda não existir.
+Critério: Lighthouse Performance ≥95 em mobile após as correções.
+
+🟢 PRIORIDADE 6 — SEO técnico e dados estruturados
+Tarefas:
+1. FAQPage schema na /pricing: as perguntas frequentes existem como texto. Envolva cada Q&A em JSON-LD FAQPage com mainEntity array de Question/Answer. Padrão:
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Posso começar no grátis e evoluir depois?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sim. O fluxo foi desenhado para mostrar valor antes da conversão."
+      }
+    }
+    // … todas as outras
+  ]
+}
+
+1. Twitter Card meta tags no <head> global:
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FoundersFlow — Da ideia ao lançamento em 7 fases">
+<meta name="twitter:description" content="Plataforma com IA para founders: valide sua ideia, defina estratégia, construa e lance seu produto em 7 fases estruturadas.">
+<meta name="twitter:image" content="https://www.foundersflow.com.br/opengraph.jpg">
+
+1. 
+sitemap.xml e robots.txt: se ainda não existem, criar. Sitemap deve listar /, /pricing, /clareza-imediata, /fluxo-continuo, /pronto-para-vender, /privacidade, /atendimento. Excluir /sign-in, /sign-up, /dashboard*. Usar next-sitemap se já estiver no projeto; caso contrário, gerar estaticamente.
+2. 
+Aumentar densidade textual da home: o body.innerText atual tem ~4.2KB, abaixo do ideal para uma landing principal. Não inflar com lorem ipsum. Em vez disso, expandir as seções existentes:
+•	Cada um dos 3 cards "CLAREZA IMEDIATA / FLUXO CONTÍNUO / PRONTO PARA VENDER" ganha 1 frase adicional de prova (ex: nome de artefatos específicos gerados, número de campos no PRD, etc.)
+•	A seção CAPACIDADES expande cada fase em mais 1 linha técnica (ex: na Fase 4 — Spec, citar "modelo entidade-relacionamento, contratos OpenAPI, ADRs no padrão Michael Nygard").
+•	Total adicionado: ~600–900 palavras de conteúdo legítimo. Sem fluff.
+
+🟢 PRIORIDADE 7 — Acessibilidade WCAG AA
+Tarefas:
+1. Auditar contraste de todos os textos cinzas (text-white/40, text-white/50, text-white/60) sobre o fundo #0d0b14. Mínimo WCAG AA: 4.5:1 para texto normal, 3:1 para texto grande (≥18pt ou ≥14pt bold). Se algum texto falhar, subir a opacidade até atingir o mínimo.
+2. aria-label em todos os CTAs com setas:
+•	Iniciar minha construção → → aria-label="Iniciar minha construção"
+•	Ver planos e preços → ok (texto completo)
+•	Acessar → → aria-label="Acessar minha conta"
+3. <a> com texto "→" sozinho: nunca. Sempre tem texto antes.
+4. Botão flutuante de WhatsApp: garantir aria-label="Falar pelo WhatsApp" e target="_blank" + rel="noopener noreferrer".
+5. Focus rings visíveis: todos os elementos focáveis devem mostrar ring roxo (focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0b14]). Nada de outline: none sem substituto.
+6. Skip-to-content link: adicionar no topo do <body>, escondido até receber foco. Texto: Pular para o conteúdo principal.
+7. <html lang="pt-BR">: confirmado, manter.
+8. Hierarquia de headings: 1× H1 por página, sem pular níveis (H1 → H2 → H3, nunca H1 → H3). Auditar e corrigir se necessário.
+
+🟢 PRIORIDADE 8 — Páginas filhas (/clareza-imediata, /fluxo-continuo, /pronto-para-vender)
+Estado atual: existem e têm conteúdo (~2KB cada). Tarefa:
+1. Aplicar a mesma auditoria editorial da Prioridade 1 nessas três páginas.
+2. Confirmar consistência visual com a home: header, footer, paleta, tipografia, espaçamento, breadcrumb "← Voltar".
+3. Adicionar metadata específica em cada uma:
+•	<title>: já parecem corretos, validar.
+•	<meta name="description">: cada página tem descrição única de 140–160 caracteres.
+•	og:title, og:description, og:url específicos de cada página.
+4. CTA final em cada uma: botão "Iniciar minha construção →" levando a /sign-up. Se não existir, adicionar.
+5. Densidade de conteúdo: se alguma das três tem menos de ~3KB de body text, expandir com 2–3 parágrafos de profundidade técnica/metodológica. Sem fluff.
+
+🟢 PRIORIDADE 9 — Polimento premium (detalhes que separam "bom" de "irresistível")
+Pequenas decisões que somadas criam a sensação de produto super premium:
+1. Transições globais: todos os hovers em links, cards e botões com transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]. Nada de transition: all cru ou duration-150 em hover de card.
+2. Cursor customizado em CTAs primários: roxo pulsando sutilmente (opcional, só se não atrapalhar performance).
+3. Easter egg na timeline das 7 fases: ao hover em cada fase, mostrar tooltip com nome dos artefatos daquela fase (não só a contagem). Ex: ao passar em "1 IDEIA", aparece tooltip com "Lean Canvas, JTBD, Análise Competitiva, Score de Potencial, ...".
+4. Scroll suave entre seções com scroll-behavior: smooth no html (respeitando prefers-reduced-motion).
+5. Selection color customizada:
+::selection { background: hsl(265 98% 56% / 0.4); color: white; }
+
+1. Scrollbar customizada (Webkit + Firefox) na cor da paleta, fina, com border-radius.
+2. Microcopy do botão WhatsApp: atualmente abre direto. Adicionar tooltip on-hover: "Atendimento humano · seg–sex 9h–18h" (ajustar horário conforme realidade).
+3. Animação de entrada do pipeline 7 fases: quando a seção entra no viewport, as fases aparecem em sequência (stagger de 80ms entre cada uma), com fade + slight scale. Use Intersection Observer + CSS, sem libs novas.
+4. Footer: verificar se tem linha sutil divisória superior (border-t border-white/5), espaçamento generoso (py-16), e os links de Atendimento/Privacidade/Planos com hover em roxo.
+5. Dark mode default: já é dark. Garantir que o toggle sun/moon no header funciona suavemente, sem flash branco em localStorage mismatch (você já tem o script inline — validar que está correto).
+
+3. RESTRIÇÕES DURAS — O QUE NÃO FAZER
+•	❌ NÃO trocar a stack ou adicionar libs novas além das já presentes (sem framer-motion, sem gsap, sem axios). Tudo com Tailwind, CSS nativo e React.
+•	❌ NÃO mexer em /sign-up, /sign-in, /dashboard ou rotas autenticadas.
+•	❌ NÃO mexer no schema do Supabase, em RLS, em fluxo de pricing/Stripe, ou em qualquer lógica de backend.
+•	❌ NÃO instalar tracking novo (Hotjar, Clarity, etc.) — usar só o que já existe.
+•	❌ NÃO mexer nos depoimentos atuais — eles serão substituídos pelo founder em outra rodada.
+•	❌ NÃO adicionar ou remover a seção "VÍDEO DE APRESENTAÇÃO" — será resolvida em outra rodada.
+•	❌ NÃO usar any em TypeScript. Toda nova função/componente fortemente tipada.
+•	❌ NÃO usar a tag HTML img pura — sempre Image do Next.
+•	❌ NÃO deixar console.log em produção.
+•	❌ NÃO introduzir warnings novos no build. Build limpo é critério de aceite.
+
+4. PADRÃO DE CÓDIGO
+•	Componentes: Server Components por padrão; "use client" só onde necessário (Dialog, hover interativo).
+•	Estilo: Tailwind + variantes shadcn. Nada de CSS-in-JS novo.
+•	Tipos: strict TypeScript. Toda prop com interface ou type.
+•	Naming: componentes em PascalCase, arquivos em kebab-case.tsx (manter padrão atual do projeto se diferente).
+•	Imports: absolutos com alias @/ quando o projeto suportar.
+•	Comentários: zero comentários "TODO" ou "FIXME". Se não vai ser feito, não deixar marca.
+
+5. ATENÇÃO A CONTEÚDO INVENTADO (CRÍTICO)
+Onde este prompt pede para você escrever conteúdo novo (PRD fake do mockup/modal, descrições expandidas, etc.):
+•	Use texto plausível, técnico, em PT-BR perfeito.
+•	Não invente nomes de empresas reais, pessoas reais ou métricas reais.
+•	Use nomes fictícios óbvios para o PRD exemplo: QuantumSaaS, Acme Health, ClimaForge etc.
+•	Não invente número de clientes, faturamento, % de growth, ranking de mercado.
+•	Toda métrica do site deve ser a métrica real do produto (7 fases, 45+ artefatos, 2 gerações grátis/dia, R$49/R$149/R$349) — nunca alterar.
+
+6. ENTREGÁVEIS
+Ao terminar, entregue:
+1. Lista de arquivos modificados (caminho relativo + 1 linha do que mudou em cada).
+2. Lista de arquivos novos criados (idem).
+3. Resultado do grep de auditoria de acentos (seção 2, prioridade 1) confirmando zero matches em strings de UI.
+4. Print mental do checklist da seção 9 com todos os itens marcados ✅.
+5. Lista de qualquer decisão tomada por ambiguidade do prompt — para o founder revisar.
+6. Comandos exatos para subir (se Replit: nada; se requer migration/build: listar).
+
+7. VARIÁVEIS DE AMBIENTE
+Não tocar em nenhuma. Todas as env vars atuais permanecem.
+
+8. PONTOS DE ATENÇÃO PÓS-GERAÇÃO (para o founder validar)
+Após o agente declarar pronto, o founder DEVE validar manualmente:
+•	Acentuação: abrir cada página em produção e ler todo o texto visível. Qualquer palavra sem acento que deveria ter = corrigir.
+•	Hero mockup: o PRD fake renderiza limpo em desktop, tablet e mobile (testar 380px, 768px, 1280px, 1920px).
+•	Modal "Ver exemplo de PRD": abre com Tab (focus management), fecha com Escape, conteúdo legível.
+•	Lighthouse mobile: rodar em https://pagespeed.web.dev/ — Performance ≥95, Accessibility ≥98, SEO 100, Best Practices ≥95.
+•	Validação de schema: rodar https://validator.schema.org/ na / e /pricing — zero erros.
+•	Validação de FAQ rich result: Google Rich Results Test — /pricing deve aparecer como elegível para FAQ rich snippet.
+•	Open Graph preview: testar em https://www.opengraph.xyz/ — preview impecável.
+•	Dark mode persistente: trocar tema, fechar aba, abrir de novo — preferência mantida sem flash.
+•	WhatsApp: clicar abre conversa correta com mensagem pré-preenchida.
+•	Toggle de tema: transição suave, sem flash branco em qualquer rota.
+•	Performance percebida: primeiro paint <1s em 4G simulado.
+
+9. CHECKLIST DE QA FINAL DO AGENTE (rodar antes de declarar pronto)
+[ ] grep de acentuação retorna 0 matches em strings de UI
+[ ] Build sem warnings (next build limpo)
+[ ] TypeScript strict sem erros
+[ ] ESLint sem erros nem warnings
+[ ] Todas as imagens com alt descritivo (não "logo" ou "image")
+[ ] Todos os links com texto descritivo (sem "clique aqui" ou "→" isolado)
+[ ] Lighthouse mobile: Perf ≥95 / A11y ≥98 / SEO 100 / BP ≥95
+[ ] Contraste WCAG AA validado em todos os textos (manual ou via axe)
+[ ] FAQPage schema válido em /pricing
+[ ] Twitter Card meta tags presentes
+[ ] sitemap.xml e robots.txt presentes e corretos
+[ ] Hero mockup renderiza em desktop, tablet e mobile sem overflow
+[ ] Modal "Ver exemplo de PRD" funcional, acessível e fechável
+[ ] Animação stagger do pipeline funciona com Intersection Observer
+[ ] prefers-reduced-motion respeitado em todas as animações
+[ ] Focus rings visíveis em todos os elementos focáveis
+[ ] Skip-to-content link presente e funcional
+[ ] Selection color customizada aplicada
+[ ] Scrollbar customizada em Webkit e Firefox
+[ ] Dark mode sem flash branco em primeira carga
+[ ] Páginas /clareza-imediata, /fluxo-continuo, /pronto-para-vender com metadata própria
+[ ] Logo otimizado (96px / 192px) substituindo o 2048px original
+[ ] Zero console.log em produção
+[ ] Zero TODO/FIXME no código
+[ ] Zero `any` em TypeScript
+
+Se qualquer item falhar, corrija antes de entregar. Sem exceção.
+
+10. MENSAGEM FINAL PARA O AGENTE
+Este produto é o legado e o plano de aposentadoria do founder. Cada detalhe importa. Cada palavra importa. Cada pixel importa.
+Não entregue "bom o suficiente". Entregue o melhor que código e cuidado podem produzir.
+Se em qualquer momento a dúvida for "isso pode passar?" — refaça. Se a dúvida for "isso está impecável?" — está pronto.
+Boa execução.
