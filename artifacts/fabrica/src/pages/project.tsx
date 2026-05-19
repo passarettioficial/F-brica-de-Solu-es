@@ -222,6 +222,9 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
   const [analysisContent, setAnalysisContent] = useState("");
   const [analysisGenerating, setAnalysisGenerating] = useState(false);
 
+  const [scriptError, setScriptError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
   useEffect(() => { loadValidations(); }, [projectId]);
 
   useEffect(() => {
@@ -266,8 +269,14 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
     if (!validation) return;
     setScriptGenerating(true);
     setScriptContent("");
+    setScriptError(null);
     const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/generate-script`, { method: "POST" });
-    if (!res.ok || !res.body) { setScriptGenerating(false); return; }
+    if (!res.ok || !res.body) {
+      const body = await res.json().catch(() => ({}));
+      setScriptError(body.error || "Erro ao gerar roteiro. Tente novamente.");
+      setScriptGenerating(false);
+      return;
+    }
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -284,7 +293,7 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
           const parsed = JSON.parse(line.slice(6));
           if (parsed.type === "token") { accumulated += parsed.content; setScriptContent(accumulated); }
           else if (parsed.type === "done") { setScriptGenerating(false); await loadValidations(); }
-          else if (parsed.type === "error") { setScriptGenerating(false); }
+          else if (parsed.type === "error") { setScriptError(parsed.message || "Erro na geração."); setScriptGenerating(false); }
         } catch { /* ignore */ }
       }
     }
@@ -312,12 +321,11 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
     if (!validation) return;
     setAnalysisGenerating(true);
     setAnalysisContent("");
+    setAnalysisError(null);
     const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/analyze`, { method: "POST" });
     if (!res.ok || !res.body) {
-      if (res.status === 400) {
-        const b = await res.json().catch(() => ({}));
-        alert(b.error || "Salve as notas antes de analisar.");
-      }
+      const body = await res.json().catch(() => ({}));
+      setAnalysisError(body.error || "Erro ao analisar notas. Tente novamente.");
       setAnalysisGenerating(false);
       return;
     }
@@ -337,7 +345,7 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
           const parsed = JSON.parse(line.slice(6));
           if (parsed.type === "token") { accumulated += parsed.content; setAnalysisContent(accumulated); }
           else if (parsed.type === "done") { setAnalysisGenerating(false); await loadValidations(); }
-          else if (parsed.type === "error") { setAnalysisGenerating(false); }
+          else if (parsed.type === "error") { setAnalysisError(parsed.message || "Erro na análise."); setAnalysisGenerating(false); }
         } catch { /* ignore */ }
       }
     }
@@ -375,11 +383,17 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
             onChange={(e) => setSelectedPhaseNumber(Number(e.target.value))}
             className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
           >
-            {phasesWithArtifacts.map((p: any) => (
-              <option key={p.phaseNumber} value={p.phaseNumber}>
-                Fase {p.phaseNumber} — {PHASES[p.phaseNumber - 1]?.name ?? `Fase ${p.phaseNumber}`}
-              </option>
-            ))}
+            {phasesWithArtifacts.map((p: any) => {
+              const v = validations.find((vx: any) => vx.phaseNumber === p.phaseNumber);
+              const hasScript = !!v?.interviewScript;
+              const hasAnalysis = !!v?.aiAnalysis;
+              const badge = hasAnalysis ? " ✓ análise" : hasScript ? " ✓ roteiro" : "";
+              return (
+                <option key={p.phaseNumber} value={p.phaseNumber}>
+                  Fase {p.phaseNumber} — {PHASES[p.phaseNumber - 1]?.name ?? `Fase ${p.phaseNumber}`}{badge}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>
@@ -402,6 +416,12 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
             </Button>
           </div>
         </div>
+        {scriptError && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/8 px-4 py-2.5 text-sm text-destructive flex items-start gap-2">
+            <span className="flex-shrink-0 mt-0.5">⚠</span>
+            <span>{scriptError}</span>
+          </div>
+        )}
         {scriptContent ? (
           <div className="bg-muted/40 rounded-lg p-4 max-h-[480px] overflow-y-auto">
             <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
@@ -459,6 +479,12 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
             {analysisGenerating ? <span className="flex items-center gap-1.5"><Spinner />Analisando…</span> : analysisContent ? "Reanalisar" : "Analisar com IA"}
           </Button>
         </div>
+        {analysisError && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/8 px-4 py-2.5 text-sm text-destructive flex items-start gap-2">
+            <span className="flex-shrink-0 mt-0.5">⚠</span>
+            <span>{analysisError}</span>
+          </div>
+        )}
         {analysisContent ? (
           <div className="bg-muted/40 rounded-lg p-4 max-h-[560px] overflow-y-auto">
             <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
@@ -501,8 +527,27 @@ export function ProjectPage() {
   const updateProject = useUpdateProject();
   const [editingBriefing, setEditingBriefing] = useState(false);
   const [briefingDraft, setBriefingDraft] = useState("");
+  const [briefingAutoSaved, setBriefingAutoSaved] = useState(false);
   const [collaboratorEmail, setCollaboratorEmail] = useState("");
   const [activeTab, setActiveTab] = useState<"briefing" | "artifacts" | "validacao" | "collaboration">("briefing");
+
+  // Auto-save briefing after 2s of inactivity
+  useEffect(() => {
+    if (!editingBriefing || !briefingDraft || !project || briefingDraft === project.briefing) return;
+    const timer = setTimeout(() => {
+      updateProject.mutate(
+        { id: projectId, data: { briefing: briefingDraft } },
+        {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
+            setBriefingAutoSaved(true);
+            setTimeout(() => setBriefingAutoSaved(false), 2000);
+          },
+        },
+      );
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [briefingDraft, editingBriefing]);
 
   if (isLoading) {
     return (
@@ -745,6 +790,12 @@ export function ProjectPage() {
                 >
                   Editar
                 </Button>
+              )}
+              {editingBriefing && briefingAutoSaved && (
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Salvo automaticamente
+                </span>
               )}
             </div>
             {editingBriefing ? (

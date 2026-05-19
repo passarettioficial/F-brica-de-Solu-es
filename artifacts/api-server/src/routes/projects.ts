@@ -6,7 +6,7 @@ import {
   CreateProjectBody,
   UpdateProjectBody,
 } from "@workspace/api-zod";
-import { ensureUser } from "../lib/auth";
+import { ensureUser, checkAndIncrementAiUsage } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 import { auditLog } from "../lib/audit";
 import { analyzeProjectCoherence } from "../lib/ai";
@@ -334,6 +334,11 @@ router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> =
 
   if (!artifactContext.trim()) {
     res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;
+  }
+
+  const { allowed, limit } = await checkAndIncrementAiUsage(userId);
+  if (!allowed) {
+    res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` }); return;
   }
 
   try {

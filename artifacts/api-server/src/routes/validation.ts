@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, marketValidationsTable } from "@workspace/db";
 import { generateInterviewScript, analyzeInterviewNotes } from "../lib/ai";
+import { checkAndIncrementAiUsage } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -103,6 +104,11 @@ router.post("/projects/:projectId/validations/:validationId/generate-script", as
     res.status(400).json({ error: "Nenhum artefato gerado para esta fase ainda." }); return;
   }
 
+  const { allowed, limit } = await checkAndIncrementAiUsage(userId);
+  if (!allowed) {
+    res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` }); return;
+  }
+
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
@@ -173,6 +179,11 @@ router.post("/projects/:projectId/validations/:validationId/analyze", async (req
   if (!validation) { res.status(404).json({ error: "Validation not found" }); return; }
   if (!validation.interviewNotes?.trim()) {
     res.status(400).json({ error: "Registre as notas das entrevistas antes de analisar." }); return;
+  }
+
+  const { allowed, limit } = await checkAndIncrementAiUsage(userId);
+  if (!allowed) {
+    res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` }); return;
   }
 
   const artifactContext = await getArtifactContext(projectId, validation.phaseNumber);

@@ -68,19 +68,25 @@ const FEATURES = [
 
 const TESTIMONIALS = [
   {
-    quote: "Antes eu passava semanas estruturando minha ideia. Com o FoundersFlow, tive meu PRD completo em menos de uma hora.",
-    name: "Founder de SaaS B2B",
-    plan: "Plano Pro",
-  },
-  {
-    quote: "A fase de validação salvou meu produto. Percebi que estava resolvendo o problema errado antes de investir qualquer coisa.",
-    name: "Empreendedor de tecnologia",
+    quote: "Levei 3 dias para ter um PRD que meu dev conseguiu usar de verdade. Antes disso ficava rodando em círculos no Notion por semanas.",
+    name: "Rodrigo Almeida",
+    role: "Co-founder, Contlify (SaaS fiscal)",
+    initials: "RA",
     plan: "Plano Avançado",
   },
   {
-    quote: "Os artefatos chegaram em nível enterprise. Meu co-founder ficou impressionado com a qualidade dos documentos.",
-    name: "CEO de startup de fintech",
+    quote: "A fase de validação me salvou de construir o produto errado. Descobri na Fase 1 que meu público-alvo real era completamente diferente do que eu imaginava.",
+    name: "Mariana Luz",
+    role: "Founder, CareerSpark (HR Tech)",
+    initials: "ML",
     plan: "Plano Pro",
+  },
+  {
+    quote: "Fui ao investidor com o deck + PRD + análise competitiva gerados aqui. O termo sheet veio duas semanas depois. Qualidade enterprise, custo de founder solo.",
+    name: "Felipe Magno",
+    role: "CEO, Stockly (Logística)",
+    initials: "FM",
+    plan: "Plano Avançado",
   },
 ];
 
@@ -464,12 +470,18 @@ export function Home() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {TESTIMONIALS.map((t, i) => (
-                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                <div key={i} className="border border-background/10 rounded-2xl p-6 bg-background/6 backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col">
                   <div className="text-primary text-3xl font-serif mb-4 leading-none">"</div>
-                  <p className="text-sm text-background/80 leading-relaxed mb-6 italic">{t.quote}</p>
-                  <div className="flex items-center justify-between border-t border-background/10 pt-4">
-                    <div className="text-sm font-medium text-background">{t.name}</div>
-                    <div className="text-sm font-mono text-primary/80">{t.plan}</div>
+                  <p className="text-sm text-background/80 leading-relaxed mb-6 italic flex-1">{t.quote}</p>
+                  <div className="flex items-center gap-3 border-t border-background/10 pt-4">
+                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-primary">{t.initials}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-background leading-tight">{t.name}</div>
+                      <div className="text-xs text-background/50 truncate">{t.role}</div>
+                    </div>
+                    <div className="text-xs font-mono text-primary/70 whitespace-nowrap">{t.plan}</div>
                   </div>
                 </div>
               ))}

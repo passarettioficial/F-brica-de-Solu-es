@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
@@ -39,12 +39,23 @@ router.post("/projects/:projectId/advisor", async (req, res): Promise<void> => {
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
-  // Gather all generated artifacts as context
+  // Gather all generated artifacts as context — single query instead of N+1
   const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));
-  const allArtifacts: string[] = [];
+  const phaseIds = phases.map(p => p.id);
+  const rawArtifacts = phaseIds.length > 0
+    ? await db.select().from(phaseArtifactsTable).where(inArray(phaseArtifactsTable.phaseId, phaseIds))
+    : [];
 
+  const artifactsByPhase = new Map<number, typeof rawArtifacts>();
+  for (const a of rawArtifacts) {
+    const list = artifactsByPhase.get(a.phaseId) ?? [];
+    list.push(a);
+    artifactsByPhase.set(a.phaseId, list);
+  }
+
+  const allArtifacts: string[] = [];
   for (const phase of phases.sort((a, b) => a.phaseNumber - b.phaseNumber)) {
-    const artifacts = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
+    const artifacts = artifactsByPhase.get(phase.id) ?? [];
     const filled = artifacts.filter(a => a.content?.trim());
     if (filled.length > 0) {
       allArtifacts.push(`=== FASE ${phase.phaseNumber} ===`);
