@@ -5,7 +5,7 @@ export default function Time() {
 
       <div className="absolute top-[6vh] left-[6vw] right-[6vw] flex justify-between items-center">
         <span className="font-body font-medium uppercase tracking-widest" style={{ fontSize: "1vw", color: "#1A3FAB" }}>TIME</span>
-        <span className="font-body" style={{ fontSize: "1vw", color: "rgba(20,30,60,0.3)" }}>09 / 11</span>
+        <span className="font-body" style={{ fontSize: "1vw", color: "rgba(20,30,60,0.3)" }}>11 / 13</span>
       </div>
 
       <div className="absolute left-[6vw] right-[6vw]" style={{ top: "16vh" }}>
