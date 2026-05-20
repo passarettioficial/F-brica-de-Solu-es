@@ -205,6 +205,13 @@ export function SettingsPage() {
                   </Button>
                 </Link>
               </div>
+              {permissions.plan !== "free" && (
+                <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                  Cancele a qualquer momento — sem burocracia, sem penalidade.
+                  Você mantém acesso a todos os artefatos e projetos até o fim do período pago.
+                  Seus dados ficam disponíveis para exportação por 30 dias após o cancelamento.
+                </p>
+              )}
             </div>
           </section>
 

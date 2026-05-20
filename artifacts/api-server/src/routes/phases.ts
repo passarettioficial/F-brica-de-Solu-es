@@ -10,6 +10,8 @@ import { generatePhaseArtifacts } from "../lib/ai";
 import { logEvent } from "../lib/events";
 import { checkAndIncrementAiUsage } from "../lib/auth";
 import { auditLog } from "../lib/audit";
+import { createNotification } from "../lib/notifications";
+import { getPlanConfig } from "../lib/stripe";
 
 const router: IRouter = Router();
 
@@ -107,7 +109,26 @@ router.post("/projects/:projectId/phases/:phaseNumber/complete", async (req, res
   }
 
   void logEvent(userId, "phase_completed", { projectId, phaseId: phase.id });
-  if (phaseNumber === 7) void logEvent(userId, "project_completed", { projectId });
+
+  if (phaseNumber === 7) {
+    void logEvent(userId, "project_completed", { projectId });
+    void createNotification(
+      userId,
+      "PROJECT_COMPLETED",
+      "Produto completo! O que fazer agora",
+      `Parabéns! Você concluiu todas as 7 fases de ${project.name}. Veja os próximos passos.`,
+      `/projects/${projectId}`
+    );
+  } else {
+    void createNotification(
+      userId,
+      "PHASE_COMPLETED",
+      `Fase ${phaseNumber} concluída`,
+      `Excelente! Você concluiu a Fase ${phaseNumber} de ${project.name}. A Fase ${phaseNumber + 1} está desbloqueada.`,
+      `/projects/${projectId}/phases/${phaseNumber + 1}`
+    );
+  }
+
   res.json(updatedPhase);
 });
 
@@ -215,6 +236,21 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
+  // S2.4 — Free plan: fases 1–3 gratuitas; fase 4+ requer upgrade
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser, founderProfile: usersTable.founderProfile })
+    .from(usersTable)
+    .where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  if (planCfg.id === "free" && phaseNumber >= 4) {
+    res.status(402).json({
+      error: "As fases 4 a 7 requerem um plano pago. Complete as 3 primeiras fases gratuitamente e faça upgrade para continuar.",
+      requiresUpgrade: true,
+      code: "FREE_PHASE_LIMIT",
+    });
+    return;
+  }
+
   // Atomic DB-level lock — race-free across multiple server instances
   // UPDATE...WHERE is_generating=false is a single atomic operation in PostgreSQL
   const lockResult = await db.update(phasesTable)
@@ -235,10 +271,8 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
   }
   await auditLog({ eventType: "user.ai.used", actorClerkId: userId, meta: { projectId, phaseNumber, projectName: project.name }, req });
 
-  // Fetch founder profile for personalized AI context
-  const [userRecord] = await db.select({ founderProfile: usersTable.founderProfile })
-    .from(usersTable).where(eq(usersTable.clerkId, userId));
-  const founderProfile = (userRecord?.founderProfile ?? null) as Record<string, string> | null;
+  // Founder profile already fetched in plan check above — reuse it
+  const founderProfile = (userForPlan?.founderProfile ?? null) as Record<string, string> | null;
 
   // Fetch all previous phase artifacts for context
   const allPreviousPhases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));

@@ -1,0 +1,769 @@
+Você é o engenheiro principal, product designer e growth engineer da FoundersFlow.
+Execute um plano de sprints completo para transformar o produto atual em um produto
+de excelência — tecnicamente sólido, retentivo, confiável e com promessa cumprida
+do início ao fim da jornada do founder.
+
+Este prompt é baseado em dois ciclos completos de diagnóstico técnico e de produto
+(v1 e v2) e em uma auditoria de jornada do cliente com 8 blocos e 80 pontos avaliados.
+Não repita diagnósticos. Execute soluções.
+
+Todo código deve ser production-ready: tipado, tratado para erro, testável e sem
+degradar o que já funciona. Cada sprint é deployável de forma independente.
+Confirme cada item concluído com o arquivo modificado e o comportamento resultante.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 0 — ESTABILIDADE CRÍTICA
+Executar antes de qualquer outra coisa. Estes itens podem causar
+perda de dados, custos não controlados ou falhas silenciosas em produção.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+0.1 — TOCTOU no isGenerating: tornar o lock atômico
+Substituir o check + set em duas queries separadas por uma única
+operação atômica em phases.ts:
+
+  const result = await db
+    .update(phasesTable)
+    .set({ isGenerating: true })
+    .where(
+      and(
+        eq(phasesTable.id, phaseId),
+        eq(phasesTable.isGenerating, false)
+      )
+    )
+    .returning({ id: phasesTable.id });
+
+  if (result.length === 0) {
+    return res.status(409).json({
+      error: "Esta fase já está sendo gerada. Aguarde a conclusão."
+    });
+  }
+
+Aplicar em todas as rotas que setam isGenerating.
+
+0.2 — Sanitização contra prompt injection
+Criar função em api-server/src/lib/sanitize.ts:
+
+  export function sanitizeBriefing(input: string): string {
+    const injectionPatterns = [
+      /ignore\s+(all\s+)?previous\s+instructions/gi,
+      /ignore\s+as\s+instru[çc][õo]es\s+anteriores/gi,
+      /esqueça\s+o\s+que\s+foi\s+dito/gi,
+      /you\s+are\s+now/gi,
+      /act\s+as\s+if/gi,
+      /pretend\s+you\s+are/gi,
+      /system\s*:/gi,
+      /\[INST\]/gi,
+      /<\|im_start\|>/gi,
+    ];
+    let sanitized = input;
+    for (const pattern of injectionPatterns) {
+      sanitized = sanitized.replace(pattern, "[conteúdo removido]");
+    }
+    return sanitized.slice(0, 2000).trim();
+  }
+
+Aplicar em todas as interpolações de ${project.briefing}
+e ${founderProfile} nos PHASE_PROMPTS de ai.ts.
+Aplicar também nos inputs de validação e coerência.
+
+0.3 — Rate limiting nos endpoints sem cobertura
+Auditar todos os arquivos em api-server/src/routes/.
+Para cada rota que faz chamada à OpenAI, verificar se
+checkAndIncrementAiUsage() é chamado antes da chamada.
+Qualquer rota sem essa verificação: adicionar imediatamente.
+Listar ao final todos os endpoints auditados e seu status.
+
+0.4 — N+1 restante em phases.ts
+Substituir o Promise.all(previousPhaseIds.map(...)) por:
+
+  const previousArtifacts = await db
+    .select()
+    .from(phaseArtifactsTable)
+    .where(inArray(phaseArtifactsTable.phaseId, previousPhaseIds));
+
+  const artifactsByPhase = previousArtifacts.reduce((acc, artifact) => {
+    if (!acc[artifact.phaseId]) acc[artifact.phaseId] = [];
+    acc[artifact.phaseId].push(artifact);
+    return acc;
+  }, {} as Record<string, typeof previousArtifacts>);
+
+0.5 — Migrar coherenceData para JSONB
+Alterar schema em lib/db/src/schema/projects.ts:
+  coherenceData: jsonb("coherence_data")
+Criar e rodar migration.
+Remover toda serialização/deserialização manual no frontend e backend.
+Drizzle passa o objeto diretamente — verificar todos os pontos de uso.
+
+Entregável: zero race conditions, zero prompt injection,
+todos os endpoints de IA com rate limiting, N+1 eliminado,
+schema correto no banco.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 1 — RETENÇÃO: ATIVAR A INFRAESTRUTURA INERTE
+O sino de notificações existe, a tabela existe, os endpoints existem.
+Zero inserts são feitos no servidor. Isso termina aqui.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.1 — Notificações in-app: ativar os triggers server-side
+Criar api-server/src/lib/notifications.ts com função central:
+
+  export async function createNotification(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    projectId?: string,
+    phaseId?: string,
+    ctaUrl?: string
+  ): Promise<void>
+
+Tipos de notificação (NotificationType enum):
+  PHASE_REMINDER      — fase iniciada há 3 dias sem conclusão
+  PROJECT_STALE       — projeto sem atividade há 7 dias
+  USER_INACTIVE       — usuário sem acesso há 14 dias
+  PHASE_COMPLETED     — confirmação de conclusão de fase
+  PROJECT_COMPLETED   — projeto finalizado
+  AI_LIMIT_WARNING    — atingiu 80% do limite diário de IA
+  UPGRADE_SUGGESTION  — baseado em padrão de uso
+
+Inserir triggers nos eventos certos:
+- phases.ts: ao setar isGenerating=false após conclusão →
+  createNotification(PHASE_COMPLETED)
+- projects.ts: ao marcar projeto como concluído →
+  createNotification(PROJECT_COMPLETED)
+- auth.ts: ao atingir 80% do dailyAiUsage →
+  createNotification(AI_LIMIT_WARNING)
+
+Para PHASE_REMINDER, PROJECT_STALE e USER_INACTIVE:
+Criar api-server/src/jobs/retention-jobs.ts com três funções
+de varredura que rodam via setInterval no startup do servidor:
+  - checkStalePhases(): a cada 6 horas
+  - checkStaleProjects(): a cada 12 horas
+  - checkInactiveUsers(): uma vez por dia às 9h (horário de Brasília)
+
+Cada função consulta o banco, identifica os casos e chama
+createNotification() para cada usuário afetado.
+Deduplicação: não criar notificação do mesmo tipo para o mesmo
+recurso se já existe uma não-lida nos últimos 7 dias.
+
+1.2 — Email transacional com nodemailer + Gmail SMTP
+Criar api-server/src/lib/mailer.ts:
+
+  import nodemailer from "nodemailer";
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+
+  export async function sendEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<void> {
+    await transporter.sendMail({
+      from: `"FoundersFlow" <${process.env.GMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
+  }
+
+Variáveis de ambiente necessárias: GMAIL_USER, GMAIL_APP_PASSWORD.
+GMAIL_APP_PASSWORD é uma App Password do Google Workspace —
+não é a senha da conta. Instruções de configuração no README.
+
+Criar api-server/src/lib/email-templates.ts com 5 templates
+em HTML responsivo (máximo 600px, fundo branco, cor primária
+da FoundersFlow, logo em texto, footer com "Cancelar recebimento"):
+
+  Template 1 — FASE_ABANDONADA (3 dias sem conclusão):
+    Assunto: "Sua Fase [X] está esperando, [nome]"
+    Corpo: o que foi gerado na fase atual (3 bullets dos artefatos),
+    o que a próxima fase vai desbloquear, CTA direto para a fase.
+
+  Template 2 — PROJETO_PARADO (7 dias sem atividade):
+    Assunto: "[nome do projeto] está na Fase [X] — continue de onde parou"
+    Corpo: progresso atual (X de 7 fases), artefatos gerados até agora,
+    CTA para retomar + frase motivacional contextualizada à fase atual.
+
+  Template 3 — USUARIO_INATIVO (14 dias sem acesso):
+    Assunto: "Founders que travam aqui geralmente fazem isso"
+    Corpo: dica específica para a fase em que o founder parou,
+    link para recurso de ajuda ou exemplo, CTA de retorno.
+
+  Template 4 — PROJETO_CONCLUIDO:
+    Assunto: "Você construiu algo real, [nome]. Veja o que vem agora."
+    Corpo: resumo do projeto (nome, fases, artefatos gerados, score
+    de coerência), 3 próximos passos concretos pós-conclusão,
+    CTA para exportar PDF + criar próximo projeto.
+
+  Template 5 — LIMITE_PROXIMO:
+    Assunto: "Você usou 80% das suas gerações de hoje"
+    Corpo: o que ainda é possível fazer hoje, benefícios do upgrade
+    em linguagem emocional ("complete as 7 fases sem interrupção"),
+    CTA para upgrade.
+
+Integrar sendEmail() nos retention-jobs.ts e nos eventos de
+PHASE_COMPLETED e PROJECT_COMPLETED — email enviado em paralelo
+com a notificação in-app, sem bloquear o response ao cliente.
+
+1.3 — Opt-out de emails
+Adicionar campo emailOptOut boolean default false na tabela users.
+Criar rota GET /api/email/unsubscribe?token=[jwt_token] que seta
+emailOptOut=true e exibe página de confirmação simples.
+Incluir link de unsubscribe em todos os templates de email.
+Verificar emailOptOut antes de qualquer sendEmail().
+
+Entregável: founder que para em qualquer fase recebe notificação
+in-app imediata + email em até 72h. Todos os emails com opt-out.
+O sino de notificações mostra dados reais pela primeira vez.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 2 — ATIVAÇÃO: REMOVER FRICÇÃO DO CAMINHO ATÉ O VALOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1 — Reformular o OnboardingTour: show, don't tell
+Problema: tour obrigatório de 4 steps instrucionais bloqueia
+o produto antes de o founder ver qualquer coisa.
+Solução:
+
+  Step 1 (mantido): coleta de perfil do founder — estágio, setor,
+  estrutura de time. Este step tem valor real (personaliza os prompts)
+  e deve permanecer antes do primeiro uso. Reduzir para 1 tela
+  com 3 perguntas visuais simultâneas, não sequenciais.
+
+  Steps 2, 3, 4 (remover como bloqueio): transformar em tooltips
+  contextuais que aparecem na primeira vez que o founder chega
+  em cada área. Usar uma biblioteca de tooltip guided tour leve
+  (driver.js, ~5KB) que não bloqueia a UI — o founder pode
+  fechar e agir ao mesmo tempo.
+
+  Fluxo novo:
+    Signup → Step único de perfil (30 segundos) → Dashboard
+    → tooltip contextual ao passar o mouse no primeiro card vazio
+    → tooltip ao clicar em "Criar Projeto" → tooltip ao chegar
+    na Fase 1 antes do botão "Gerar com IA"
+
+  Todos os tooltips dispensáveis com 1 clique. Nunca bloqueiam ação.
+
+2.2 — Atalho "criar projeto e entrar na Fase 1 automaticamente"
+Ao criar um projeto via o dialog "Criar Projeto", após o POST
+/projects retornar com sucesso, redirecionar automaticamente
+para /projects/:id/phases/1 em vez do dashboard.
+O founder vai direto para onde o valor está — sem os 3 cliques
+intermediários atuais (dashboard → card do projeto → Fase 1).
+Adicionar parâmetro ?autostart=true na URL que, ao carregar
+phase.tsx, exibe um banner: "Seu projeto está pronto. Clique
+em Gerar com IA para começar →" com o botão em destaque.
+
+2.3 — Scaffolding do briefing: guiar sem obrigar
+No campo de briefing (CreateProjectDialog e edição inline):
+  - Placeholder estruturado em vez de texto vago:
+    "Ex: Um app de gestão de estoque para pequenos restaurantes.
+    O dono perde 20% em desperdício por falta de controle.
+    A solução é um painel simples com alertas de validade e
+    relatórios semanais por WhatsApp."
+  - Indicador de qualidade em tempo real (debounce 500ms):
+    < 50 palavras: "Briefing curto — adicione mais contexto
+    para a IA gerar artefatos específicos"
+    50-150 palavras: "Bom — a IA tem contexto suficiente"
+    > 150 palavras: "Excelente — artefatos altamente personalizados"
+  - Contador de palavras visível abaixo do campo.
+
+2.4 — Reformular o plano free para converter, não frustrar
+Substituir "2 gerações/dia" por modelo de trial por fase:
+
+  Plano Free — Trial:
+    Fases 1, 2 e 3 desbloqueadas sem limite de geração
+    A partir da Fase 4: banner de upgrade com CTA claro
+
+  Lógica em auth.ts / getPlanConfig():
+    Free plan: dailyAiLimit removido para fases 1-3
+    Verificação em phases.ts: antes de gerar, checar
+    se (plano === 'free' && phaseNumber >= 4) → retornar
+    402 com payload { requiresUpgrade: true, phase: 4 }
+
+  Banner na Fase 4 para usuário free:
+    "Você construiu a base do seu produto nas 3 primeiras fases.
+    Para continuar com Roadmap, Arquitetura e Go-to-Market,
+    desbloqueie o plano completo."
+    CTA: "Continuar por R$ [preço]/mês →"
+
+  Este modelo garante que o founder vê valor real
+  (3 fases completas, 20-30 artefatos) antes de pagar.
+
+2.5 — Reduzir CTAs redundantes na landing
+Auditar home.tsx e contar todos os calls-to-action na página.
+Manter: 1 CTA primário no hero ("Iniciar minha construção →"),
+1 CTA secundário no hero ("Ver exemplo de PRD →"),
+1 CTA no final da página.
+Remover ou consolidar: os 3 CTA cards de seção e qualquer
+CTA duplicado. O objetivo é uma página com no máximo 3 pontos
+de conversão distintos, não 6+.
+
+Entregável: founder vai do signup ao primeiro output de IA
+em no máximo 4 cliques e 3 minutos (excluindo tempo de geração).
+Plano free demonstra o produto completo antes de pedir pagamento.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 3 — PERCEPÇÃO DE VALOR: O PRODUTO PRECISA IMPRESSIONAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3.1 — Estimativa de tempo durante a geração
+Em phase.tsx, ao iniciar o streaming SSE:
+  - Exibir: "Gerando [N] artefatos para [nome do negócio] —
+    aproximadamente 45 segundos"
+  - Contador de artefatos concluídos em tempo real:
+    "3 de 8 artefatos prontos..." conforme eventos do stream chegam
+  - Ao concluir: substituir o spinner pelo banner de conclusão
+    sem flickering
+
+  Implementação: o stream emite eventos do tipo
+  { type: "artifact_complete", count: N, total: M }
+  phase.tsx escuta e atualiza estado local de progresso.
+  Tempo estimado: média das últimas 10 gerações armazenada
+  em localStorage como heurística local (sem backend).
+
+3.2 — Ritual de conclusão de fase com celebração real
+Ao concluir uma fase (PhaseCompletionBanner):
+  - Instalar canvas-confetti (2KB gzip):
+    npm install canvas-confetti @types/canvas-confetti
+  - Disparar confetti leve (não exagerado) por 2 segundos
+  - O número da fase no PhasePipeline recebe classe .phase-won
+    com animação de glow pulsante por 3 segundos (CSS puro)
+  - O banner exibe card de conquista:
+    "✦ Fase [N] concluída
+     [X] artefatos estratégicos gerados
+     [Y] palavras de estratégia para [nome do negócio]
+     Tempo investido: [Z] minutos
+     → Avançar para a Fase [N+1]"
+
+  O founder precisa sentir que fez algo real — não receber
+  uma notificação com emoji.
+
+3.3 — Copy emocional no Score de Coerência
+Reescrever o copy do CoherenceCard em três faixas:
+
+  Score ≥ 80:
+    "Excelente coerência estratégica
+     Seu produto tem uma narrativa consistente do problema
+     à solução. Poucos founders chegam aqui com esse nível
+     de clareza. Continue assim na próxima fase."
+
+  Score 50-79:
+    "Boa base, com pontos a ajustar
+     Identificamos [N] inconsistências que podem gerar
+     dúvidas em investidores ou confusão no time.
+     Veja os detalhes abaixo antes de avançar."
+
+  Score < 50:
+    "Atenção: contradições críticas detectadas
+     Encontramos conflitos entre [área A] e [área B] que
+     precisam ser resolvidos agora — avançar com essa
+     inconsistência vai amplificar o problema nas fases
+     seguintes. Veja o que ajustar:"
+
+  Adicionar também: linha de referência "Founders de [setor]
+  neste estágio têm score médio de [X]" (quando benchmark
+  cross-projeto estiver disponível no Sprint 5).
+
+3.4 — Headline: articular o diferencial vs. ChatGPT
+Adicionar ao hero da landing, abaixo do headline principal,
+uma linha de diferenciação direta:
+
+  Opção A (testar):
+    "ChatGPT te dá uma resposta. A FoundersFlow te dá um produto."
+  Opção B:
+    "Não é prompt. É processo. A IA acumula contexto entre
+    cada fase — você não copia e cola nada."
+
+  Implementar a Opção A por padrão. Destacar visualmente
+  (badge ou texto em cor de destaque, não corpo corrido).
+  Esta linha é o único lugar da landing onde o concorrente
+  é mencionado implicitamente — e é exatamente onde o visitante
+  que "já tentou com ChatGPT" vai se sentir interpelado.
+
+3.5 — Tabela de planos visível antes do cadastro
+Adicionar seção de pricing em home.tsx com 3 colunas
+(Free / Starter / Advanced), visível sem precisar de cadastro.
+Cada coluna com: preço, o que está incluído e — mais importante —
+linguagem emocional nos benefícios do plano pago:
+  Não: "30 gerações/dia"
+  Sim: "Complete as 7 fases sem interrupção"
+  Não: "Acesso a todos os módulos"
+  Sim: "Do briefing ao go-to-market em uma semana"
+
+Entregável: founder sente que o produto entregou mais do que
+prometeu; sabe exatamente quanto custa e o que ganha antes
+de colocar cartão.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 4 — CONCLUSÃO E EXPORTAÇÃO: O PRODUTO NÃO PODE TERMINAR
+EM DEAD END
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4.1 — Tela de Retrospectiva do Projeto (pós-conclusão das 7 fases)
+Substituir o banner "Projeto concluído!" por uma tela completa
+em /projects/:id/retrospective:
+
+  Seção 1 — O que você construiu:
+    Nome do projeto, data de início e conclusão, total de artefatos,
+    total de palavras geradas, score de coerência final,
+    score de potencial de mercado final.
+
+  Seção 2 — Resumo Executivo (gerado por IA, 1 chamada):
+    Prompt: "Com base em todos os artefatos gerados nas 7 fases
+    do projeto [nome], gere um resumo executivo de 300 palavras
+    em formato de elevator pitch para investidores. Inclua:
+    problema, solução, mercado, diferencial, modelo de receita
+    e próximo milestone."
+    Exibir com streaming SSE. Cacheado após a primeira geração.
+
+  Seção 3 — Próximos passos concretos:
+    "O que fazer agora com o que você construiu:"
+    → Compartilhe o PRD com seu co-founder ou dev
+       [botão: Copiar link do projeto]
+    → Apresente para um mentor ou investidor
+       [botão: Exportar PDF completo]
+    → Refine com base no feedback do mercado
+       [botão: Abrir tab de Validação]
+    → Comece a construir o produto
+       [botão: Criar novo projeto (Fase de Execução)]
+
+  Seção 4 — CTA de próximo projeto:
+    "Founders que concluem um projeto têm 3x mais clareza
+    no segundo. Inicie o próximo com o que aprendeu aqui."
+    [botão primário: Criar próximo projeto]
+
+  Redirecionar automaticamente para /retrospective após
+  a conclusão da Fase 7 (em vez do banner atual).
+
+4.2 — Exportação profissional em PDF
+Instalar puppeteer ou usar a biblioteca @react-pdf/renderer
+(verificar qual é mais adequada para o ambiente Replit).
+Criar rota GET /api/projects/:id/export/pdf que:
+  1. Busca todos os artefatos do projeto
+  2. Gera um documento PDF com:
+     - Capa: nome do projeto, founder, data, logo FoundersFlow
+     - Índice com as 7 fases
+     - Uma seção por fase com todos os artefatos formatados
+     - Score de Coerência e Score de Potencial na última página
+     - Footer em todas as páginas: "Gerado com FoundersFlow"
+  3. Retorna o PDF como stream com Content-Type: application/pdf
+
+Botão "Exportar PDF" disponível em:
+  - Tela de Retrospectiva (projeto completo)
+  - Cada fase individualmente (exportar apenas aquela fase)
+  - Dashboard do projeto (botão secundário no header)
+
+4.3 — Link compartilhável de artefato
+Criar rota GET /api/projects/:id/share que gera um token
+JWT de leitura (sem autenticação) com expiração de 30 dias.
+Rota pública GET /share/:token renderiza os artefatos
+em modo read-only com branding da FoundersFlow.
+Botão "Compartilhar" em cada fase → copia o link para o clipboard
+→ toast "Link copiado — válido por 30 dias".
+Este é o mecanismo viral mais simples possível: o founder
+compartilha com co-founder, mentor ou investidor — cada
+visualização é um usuário potencial que vê o produto funcionando.
+
+Entregável: o produto tem uma saída digna. Founder que conclui
+as 7 fases sabe exatamente o que fazer a seguir, tem um PDF
+para apresentar e um link para compartilhar.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 5 — INTELIGÊNCIA: A PLATAFORMA PRECISA APRENDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5.1 — PostHog para analytics de produto
+Instalar PostHog SDK:
+  Frontend: npm install posthog-js
+  Inicializar em main.tsx com POSTHOG_API_KEY e host
+  (pode ser posthog.com ou self-hosted)
+
+Instrumentar os eventos já existentes na tabela events
+também no PostHog (frontend + backend):
+  posthog.capture("project_created", { projectId, sector, stage })
+  posthog.capture("phase_started", { phaseId, phaseNumber })
+  posthog.capture("ai_generated", { phaseNumber, artifactCount })
+  posthog.capture("phase_completed", { phaseNumber, timeToComplete })
+  posthog.capture("project_completed", { totalPhases, coherenceScore })
+  posthog.capture("upgrade_clicked", { fromPlan, currentPhase })
+  posthog.capture("export_pdf", { projectId })
+  posthog.capture("share_link_created", { projectId })
+
+Isso cria automaticamente: funil de ativação, retenção D7/D30,
+heatmap de abandono por fase, análise de cohort por setor —
+sem uma linha de código adicional de análise.
+
+5.2 — NPS pós-fase (coleta de feedback estruturado)
+Após concluir cada fase (não a cada geração — só na conclusão),
+exibir um widget discreto no PhaseCompletionBanner:
+
+  "Como foram os artefatos desta fase?"
+  [⭐][⭐⭐][⭐⭐⭐][⭐⭐⭐⭐][⭐⭐⭐⭐⭐]
+  [campo opcional: "O que poderia ser melhor?" — max 200 chars]
+  [botão: Enviar feedback] [link: Pular]
+
+Salvar em tabela phase_feedback:
+  (userId, projectId, phaseId, rating, comment, createdAt)
+Exibir médias no admin panel por fase.
+Isso responde qual fase tem pior qualidade percebida —
+dado que nenhum diagnóstico técnico consegue capturar.
+
+5.3 — Benchmark cross-projeto anônimo
+Após qualquer projeto ser concluído com score de coerência,
+agregar métricas anônimas em tabela benchmarks:
+  (sector, stage, avgCoherenceScore, avgPhasesCompleted,
+   avgTimeToComplete, sampleSize)
+
+Criar endpoint GET /api/benchmarks?sector=saas&stage=mvp.
+Exibir no CoherenceCard e no MarketPotentialCard:
+  "Founders de SaaS no estágio MVP têm score médio de 7,1.
+   O seu está em 8,3 — você está no top 20%."
+
+Este dado é proprietário e inimitável — só existe dentro
+da FoundersFlow. É o embrião do moat real.
+
+5.4 — Admin panel: funil de ativação visível
+Em /admin, adicionar aba "Funil de Produto" com:
+  - Cadastros nos últimos 30 dias
+  - % que criou pelo menos 1 projeto
+  - % que gerou IA pela primeira vez
+  - % que completou a Fase 1
+  - % que completou a Fase 3 (ponto de conversão do free)
+  - % que completou as 7 fases
+  - % que voltou em D7
+
+Estes números são calculáveis a partir dos eventos já
+existentes na tabela events. Renderizar como funil visual
+(barras horizontais com percentuais de conversão entre etapas).
+O PM nunca mais precisa rodar SQL manual para saber onde
+o produto perde founders.
+
+Entregável: em 48h após o deploy, o time sabe onde está
+o churn real, qual fase tem pior NPS e como o produto
+se compara entre setores.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 6 — MOBILE E QUALIDADE TÉCNICA ESTRUTURAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6.1 — Layout mobile em phase.tsx (crítico)
+phase.tsx tem sidebar + área principal + grid de artefatos —
+inutilizável em < 390px. Implementar:
+
+  Em mobile (< 768px):
+    - Sidebar de fases: substituir por bottom sheet deslizável
+      (componente Sheet do shadcn/ui já disponível)
+    - Grid de artefatos: coluna única (grid-cols-1)
+    - ArtifactCard: acordeão com preview de 3 linhas visível
+    - Botão "Gerar com IA": fixo no bottom da tela (fixed bottom-4)
+    - Header do projeto: compacto com apenas nome e fase atual
+
+  Em tablet (768px-1024px):
+    - Sidebar: 200px (reduzida de 240px)
+    - Grid: 2 colunas
+
+  Testar em: iPhone SE (375px), iPhone 14 (390px),
+  Galaxy S21 (360px), iPad (768px).
+
+6.2 — Layout mobile em project.tsx
+  Em mobile (< 768px):
+    - PhasePipeline: scroll horizontal com snap (já tem overflow-x-auto,
+      adicionar scroll-snap-type: x mandatory nas fases)
+    - Indicador visual de scroll: gradiente desbotando na borda direita
+      (pseudo-elemento ::after em CSS)
+    - Tabs: scroll horizontal com o mesmo padrão
+    - CoherenceCard: coluna única, sem truncamento de texto
+
+6.3 — Fatiamento dos god components
+phase.tsx (920 linhas) → fatiamento em componentes:
+  components/phase/PhaseHeader.tsx
+    — título, status, badge de fase, botão de execução
+  components/phase/ArtifactGrid.tsx
+    — grid/lista de artefatos, memoização, auto-expand lógica
+  components/phase/ArtifactCard.tsx
+    — card individual, acordeão, edição inline, copy button
+  components/phase/GateChecklist.tsx
+    — gates com estado, animação de check, progress
+  components/phase/GenerationProgress.tsx
+    — estado de loading, log de progresso, estimativa de tempo
+  components/phase/PhaseCompletionBanner.tsx
+    — ritual de conclusão, confetti, card de conquista
+
+project.tsx (945 linhas) → fatiamento em componentes:
+  components/project/ProjectHeader.tsx
+    — nome, briefing, autosave indicator
+  components/project/PhasePipeline.tsx
+    — navegação entre fases, progresso global, mobile scroll
+  components/project/tabs/ArtifactsTab.tsx
+  components/project/tabs/ValidationTab.tsx
+  components/project/tabs/CoherenceTab.tsx
+  components/project/tabs/CollaborationTab.tsx
+
+Regra: nenhum componente deve ter mais de 250 linhas.
+Props tipadas com TypeScript em todos os componentes.
+Nenhuma lógica de negócio dentro de componentes de UI
+(extrair para hooks quando necessário).
+
+6.4 — Adapter pattern para o provedor de IA
+Criar interface em api-server/src/lib/ai-provider.ts:
+
+  export interface AIProvider {
+    generatePhaseArtifacts(
+      phase: PhaseConfig,
+      context: PhaseContext
+    ): Promise<ReadableStream>;
+
+    analyzeCoherence(
+      artifacts: Artifact[]
+    ): Promise<CoherenceResult>;
+
+    analyzeMarketPotential(
+      artifacts: Artifact[],
+      founderProfile: FounderProfile
+    ): Promise<MarketPotentialResult>;
+
+    generateValidation(
+      phase: PhaseConfig,
+      artifacts: Artifact[]
+    ): Promise<ValidationResult>;
+  }
+
+Renomear a implementação atual para OpenAIProvider
+implementando a interface.
+Injetar via parâmetro nas rotas (ou via variável de ambiente
+AI_PROVIDER=openai que seleciona a implementação).
+Resultado: trocar para Anthropic Claude, Gemini ou modelo
+próprio fine-tunado é criar uma nova classe — sem tocar
+nas rotas.
+
+Entregável: produto funcional em qualquer dispositivo;
+codebase manutenível com componentes < 250 linhas;
+desacoplamento do provedor de IA.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SPRINT 7 — CONFIANÇA E CREDIBILIDADE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+7.1 — Testimonials com foto e prova de resultado em destaque
+Atualizar os 3 testimonials existentes:
+  - Adicionar campo avatarUrl (foto real ou ilustração personalizada)
+  - Adicionar cargo explícito (não apenas empresa)
+  - Destacar o testemunho de Felipe Magno ("o termo sheet veio
+    duas semanas depois") como case study hero — fora do grid
+    de testimonials, em seção separada com formatação de destaque:
+    headline da conquista + citação + resultado mensurável.
+
+7.2 — Screenshot real de artefato na landing
+Na seção "Veja o que a IA gera", substituir ou complementar
+o conteúdo texto por uma imagem de mockup realista do produto
+em uso: a tela de artefatos da Fase 1 com o Lean Canvas visível,
+em dark mode, com o nome "Fintrack" como exemplo.
+Isso ancora a promessa no concreto — o visitante vê o produto
+antes de criar conta.
+
+7.3 — Sinal de segurança para dados confidenciais
+Adicionar na landing, próximo ao CTA de cadastro:
+  "Seus dados de negócio nunca são usados para treinar
+   modelos de IA. Conforme LGPD — Política de Privacidade →"
+Este texto específico responde à maior objeção do founder
+técnico antes de inserir dados confidenciais de negócio.
+
+7.4 — Changelog público e sinal de produto vivo
+Criar página /changelog (pode ser estática em Markdown)
+com as últimas 5-10 atualizações do produto.
+Adicionar link "Novidades" no footer.
+Isso responde à pergunta não-dita: "esse produto vai continuar
+existindo?" — um changelog ativo é a prova mais barata de
+que o produto é mantido.
+
+7.5 — Copy de cancelamento visível
+Em /settings ou na página de pricing, adicionar linha:
+  "Cancele quando quiser. Sem fidelidade mínima.
+   Seus projetos e artefatos ficam disponíveis para download
+   por 30 dias após o cancelamento."
+Remove a barreira psicológica de assinar por medo de travar.
+
+Entregável: founder que chega com ceticismo (dados, preço,
+continuidade do produto) tem todas as objeções respondidas
+sem precisar entrar em contato.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITÉRIOS GLOBAIS DE CONCLUSÃO
+O produto está em estado de excelência quando:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ESTABILIDADE
+☐ Zero operações de lock em duas queries separadas
+☐ Todo briefing sanitizado antes de interpolar em prompts
+☐ Todos os endpoints de IA com rate limiting verificado
+☐ coherenceData é JSONB no banco
+
+ATIVAÇÃO
+☐ Do signup ao primeiro output: máximo 4 cliques, 3 minutos
+☐ Plano free dá acesso completo às 3 primeiras fases
+☐ Campo de briefing tem scaffolding e indicador de qualidade
+☐ Onboarding não bloqueia o produto — apenas coleta perfil
+
+RETENÇÃO
+☐ 3 triggers de notificação in-app ativos e inserindo dados
+☐ 5 templates de email implementados e disparando
+☐ Founder que para por 3 dias recebe sinal de retorno
+☐ Sino de notificações mostra dados reais
+
+PERCEPÇÃO DE VALOR
+☐ Founder vê estimativa de tempo durante a geração
+☐ Conclusão de fase tem ritual com confetti e card de conquista
+☐ Score de Coerência tem copy emocional nas 3 faixas
+☐ Headline diferencia da FoundersFlow vs. ChatGPT em 1 linha
+
+CONCLUSÃO E EXPORTAÇÃO
+☐ Tela de Retrospectiva ativa após a Fase 7
+☐ Exportação em PDF funcional por fase e por projeto completo
+☐ Link compartilhável com expiração de 30 dias
+
+INTELIGÊNCIA
+☐ PostHog capturando eventos com identidade do usuário
+☐ Funil de ativação visível no admin panel sem SQL manual
+☐ NPS pós-fase coletando dados
+☐ Benchmark cross-projeto exibindo comparativos por setor
+
+MOBILE E CÓDIGO
+☐ phase.tsx funcional em iPhone SE (375px)
+☐ project.tsx funcional em todos os breakpoints
+☐ Nenhum componente com mais de 250 linhas
+☐ Interface AIProvider implementada
+
+CONFIANÇA
+☐ Testimonials com foto, cargo e case study em destaque
+☐ Screenshot real de artefato na landing
+☐ Texto de segurança de dados visível no CTA
+☐ Changelog público com últimas atualizações
+☐ Copy de cancelamento sem barreiras visível
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ORDEM DE EXECUÇÃO E DEPENDÊNCIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Sprint 0 → Sprint 1 → Sprint 2 → Sprint 3
+Os primeiros 4 sprints têm dependências sequenciais:
+  0 (estabilidade) deve estar deployado antes de qualquer
+  outro sprint para não amplificar bugs em produção.
+  1 (retenção) depende de 0 (mailer.ts não pode ter bugs
+  de concorrência).
+  2 (ativação) pode rodar em paralelo com 1 após o Sprint 0.
+  3 (percepção) pode rodar em paralelo com 1 e 2.
+
+Sprint 4, 5, 6, 7 podem ser executados em paralelo
+após os Sprints 0-3 estarem concluídos, por diferentes
+áreas do produto (exportação, analytics, mobile, confiança).
+
+Após cada sprint: rodar o produto manualmente no fluxo
+completo (signup → Fase 1 → conclusão → retrospectiva)
+antes de marcar o sprint como concluído.

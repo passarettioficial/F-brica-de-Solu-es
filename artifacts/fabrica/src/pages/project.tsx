@@ -129,20 +129,35 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-serif text-base font-medium">Score de Coerência</h3>
+              <h3 className="font-serif text-base font-medium">
+                {score == null ? "Score de Coerência"
+                  : score >= 75 ? "Produto coeso — artefatos alinhados"
+                  : score >= 50 ? "Divergências detectadas — revise antes de avançar"
+                  : "Produto incoerente — risco real de falha"}
+              </h3>
               {score != null && (
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                   score >= 75 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" :
                   score >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" :
                   "bg-destructive/10 text-destructive"
                 }`}>
-                  {score >= 75 ? "Coeso" : score >= 50 ? "Conflitos detectados" : "Incoerente"}
+                  {score >= 75 ? "Coeso" : score >= 50 ? "Conflitos" : "Incoerente"}
                 </span>
               )}
             </div>
-            {data?.resumo ? (
+            {score != null && !data?.resumo && (
+              <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
+                {score >= 75
+                  ? "Sua ideia, estratégia e arquitetura falam a mesma língua. Isso é raro — é seu diferencial competitivo."
+                  : score >= 50
+                  ? "Há pontos de atrito entre as fases. Corrija agora, antes de construir em cima de bases instáveis."
+                  : "As partes do seu produto contradizem umas às outras. Sem resolver isso, o time vai construir a coisa errada."}
+              </p>
+            )}
+            {data?.resumo && (
               <p className="text-xs text-muted-foreground mt-0.5 max-w-md">{data.resumo}</p>
-            ) : (
+            )}
+            {score == null && (
               <p className="text-xs text-muted-foreground mt-0.5">Analise a consistência entre todos os artefatos do projeto.</p>
             )}
             {updatedAt && (

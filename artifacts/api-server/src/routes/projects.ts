@@ -11,6 +11,7 @@ import { getPlanConfig } from "../lib/stripe";
 import { auditLog } from "../lib/audit";
 import { analyzeProjectCoherence, analyzeMarketPotential } from "../lib/ai";
 import { logEvent } from "../lib/events";
+import { createNotification } from "../lib/notifications";
 
 const router: IRouter = Router();
 

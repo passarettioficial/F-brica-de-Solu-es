@@ -1,4 +1,5 @@
-import { useState, memo } from "react";
+import { useState, memo, useEffect, useRef } from "react";
+import confetti from "canvas-confetti";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -352,18 +353,42 @@ const ArtifactCard = memo(function ArtifactCard({
   );
 });
 
-function GenerationLoadingState({ artifactCount, text }: { artifactCount: number; text: string }) {
+function GenerationLoadingState({ artifactCount, text, projectName }: { artifactCount: number; text: string; projectName?: string }) {
   const lines = text.split("\n").filter(Boolean);
   const lastLine = lines[lines.length - 1] ?? "";
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const estimateSec = Math.max(45, artifactCount * 6);
+  const progress = Math.min(95, Math.round((elapsed / estimateSec) * 100));
+  const remaining = Math.max(0, estimateSec - elapsed);
+  const remainingLabel = remaining > 60 ? `~${Math.ceil(remaining / 60)} min` : `~${remaining}s`;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0" aria-hidden="true" />
-        <div>
-          <span className="text-sm text-primary font-medium">Gerando {artifactCount} artefatos com IA...</span>
-          <p className="text-xs text-muted-foreground mt-0.5">Isso pode levar de 30 a 90 segundos. Nao feche esta pagina.</p>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm text-primary font-medium">
+            Gerando {artifactCount} artefatos{projectName ? ` para ${projectName}` : ""} com IA…
+          </span>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {elapsed < estimateSec ? `${remainingLabel} restantes` : "Finalizando…"} · Não feche esta página.
+          </p>
         </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-1000 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
       </div>
 
       <div className="bg-muted/30 rounded-xl border border-border p-4">
@@ -453,6 +478,7 @@ export function PhasePage() {
   const [justCompleted, setJustCompleted] = useState(false);
   const [aiJustDone, setAiJustDone] = useState(false);
   const [aiWordCount, setAiWordCount] = useState(0);
+  const [upgradeRequired, setUpgradeRequired] = useState(false);
 
   const phaseDef = PHASES[phaseNumber - 1];
   const artifacts: any[] = (phase as any)?.artifacts ?? [];
@@ -493,6 +519,7 @@ export function PhasePage() {
           queryClient.invalidateQueries({ queryKey: getGetProjectQueryKey(projectId) });
           queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
           setJustCompleted(true);
+          void confetti({ particleCount: phaseNumber === 7 ? 180 : 80, spread: 70, origin: { y: 0.6 }, colors: ["#1A3FAB", "#FF8C42", "#ffffff"] });
           toast({
             title: `Fase ${phaseNumber} concluida!`,
             description: phaseNumber < 7 ? `Avancando para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Todas as 7 fases concluidas. Produto pronto!",
@@ -515,7 +542,12 @@ export function PhasePage() {
       credentials: "include",
     }).then(async (response) => {
       if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: "Erro desconhecido" })) as { error?: string };
+        const err = await response.json().catch(() => ({ error: "Erro desconhecido" })) as { error?: string; code?: string; requiresUpgrade?: boolean };
+        if (response.status === 402 || err.requiresUpgrade) {
+          setUpgradeRequired(true);
+          setGenerating(false);
+          return;
+        }
         const errorMsg = err.error ?? "Erro ao gerar artefatos";
         setGenerationError(errorMsg);
         setGenerating(false);
@@ -734,9 +766,25 @@ export function PhasePage() {
               </div>
             </div>
           ) : generating ? (
-            <GenerationLoadingState artifactCount={phaseDef?.artifacts?.length ?? 0} text={generatingText} />
+            <GenerationLoadingState artifactCount={phaseDef?.artifacts?.length ?? 0} text={generatingText} projectName={project?.name} />
           ) : (
           <div className="space-y-3">
+              {upgradeRequired ? (
+                <div className="flex items-start gap-3 bg-accent/10 border border-accent/30 rounded-xl p-4">
+                  <span className="text-xl flex-shrink-0">🚀</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Fases 4 a 7 requerem upgrade</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Você concluiu as 3 fases gratuitas. Faça upgrade para desbloquear Spec, Implementação, Testes e Deploy.
+                    </p>
+                    <Link href="/pricing" className="inline-block mt-2">
+                      <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold text-xs">
+                        Ver planos e fazer upgrade →
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
               <Button
                 onClick={handleExecuteAI}
                 className="bg-primary hover:bg-primary/90 text-white"
@@ -744,6 +792,7 @@ export function PhasePage() {
               >
                 {hasArtifacts ? "Regenerar todos os artefatos" : `Gerar artefatos da fase ${phaseDef?.name} com IA`}
               </Button>
+              )}
               {generationError && (
                 <div className="flex items-start gap-3 bg-destructive/10 border border-destructive/20 rounded-xl p-4" role="alert">
                   <span className="text-destructive flex-shrink-0">⚠️</span>
@@ -759,7 +808,7 @@ export function PhasePage() {
                   </button>
                 </div>
               )}
-              {hasArtifacts && !generationError && (
+              {!upgradeRequired && hasArtifacts && !generationError && (
                 <p className="text-xs text-muted-foreground">Regenerar substituira todos os artefatos atuais.</p>
               )}
             </div>

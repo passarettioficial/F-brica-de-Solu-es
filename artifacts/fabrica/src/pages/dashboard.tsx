@@ -355,8 +355,8 @@ export function Dashboard() {
       onSuccess: (project) => {
         queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
         setShowNew(false); setName(""); setBriefing(""); setSelectedTemplate(null);
-        toast({ title: "Projeto criado!", description: `"${project.name}" esta pronto. Comecemos a Fase 1.` });
-        setTimeout(() => setLocation(`/projects/${project.id}`), 80);
+        toast({ title: "Projeto criado!", description: `"${project.name}" pronto. Abrindo Fase 1…` });
+        setTimeout(() => setLocation(`/projects/${project.id}/phases/1`), 80);
       },
       onError: () => { toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" }); },
     });
@@ -676,10 +676,14 @@ export function Dashboard() {
               <Label htmlFor="proj-briefing" className="text-sm font-medium">
                 Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span>
               </Label>
-              <Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder="Descreva sua ideia, o problema que resolve, o publico-alvo e diferenciais..." className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />
-              {briefing.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1 font-mono">{briefing.length} chars — {briefing.length < 200 ? "adicione mais contexto" : "otimo nivel de detalhe"}</p>
-              )}
+              <Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder={"Descreva: (1) qual problema resolve, (2) para quem, (3) como é diferente do que existe hoje.\n\nEx: App de delivery para pets em condominios. O morador pede racao e medicamentos sem sair de casa. Diferencial: parceria com petshops locais e entrega em 2h."} className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />
+              {briefing.trim().length > 0 && (() => {
+                const wc = briefing.trim().split(/\s+/).filter(Boolean).length;
+                const tier = wc >= 80 ? { label: "Excelente — artefatos altamente personalizados", color: "text-emerald-600 dark:text-emerald-400" }
+                  : wc >= 40 ? { label: "Bom contexto — a IA tem informação suficiente", color: "text-amber-600 dark:text-amber-400" }
+                  : { label: "Briefing curto — adicione problema, público e diferencial", color: "text-muted-foreground" };
+                return <p className={`text-xs mt-1.5 font-mono ${tier.color}`}>{wc} palavras · {tier.label}</p>;
+              })()}
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => { setShowNew(false); setSelectedTemplate(null); }}>Cancelar</Button>
