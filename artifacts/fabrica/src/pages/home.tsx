@@ -26,22 +26,22 @@ const FEATURES = [
   {
     step: "01",
     icon: "◎",
-    title: "Valide antes de construir",
-    desc: "Lean Canvas, JTBD, análise competitiva e Score de Potencial — a IA processa sua ideia e diz se vale a pena antes de escrever uma linha de código.",
-    tag: "Fase 1 — Ideia",
+    title: "Audite sua ideia — ou o que já existe",
+    desc: "Lean Canvas, JTBD, análise competitiva e Score de Potencial — a IA processa o que você tem e mapeia o que falta antes de qualquer decisão cara.",
+    tag: "Fase 1 — Diagnóstico de Ideia",
   },
   {
     step: "02",
     icon: "◎",
     title: "Especifique com precisão",
-    desc: "PRD completo, personas, 15 user stories, estratégia de pricing, roadmap trimestral. O produto inteiro especificado em minutos.",
+    desc: "PRD completo, personas, 15 user stories, estratégia de pricing, roadmap trimestral. O produto inteiro estruturado em minutos — com ou sem versão anterior.",
     tag: "Fase 2 — PRD",
   },
   {
     step: "03",
     icon: "◎",
-    title: "Segurança e LGPD embutidos",
-    desc: "Threat model, matriz RBAC, política de privacidade e plano de conformidade LGPD — gerados antes de qualquer linha de código.",
+    title: "Segurança e LGPD sem lacunas",
+    desc: "Threat model, matriz RBAC, política de privacidade e plano de conformidade LGPD — gerados para o seu produto real, não para um template genérico.",
     tag: "Fase 3 — Segurança & LGPD",
   },
   {
@@ -62,7 +62,7 @@ const FEATURES = [
     step: "06",
     icon: "◎",
     title: "Lance com estratégia",
-    desc: "Runbook de deploy, plano Go-to-Market, Launch Checklist e Pitch para investidores. Da ideia ao mercado.",
+    desc: "Runbook de deploy, plano Go-to-Market, Launch Checklist e Pitch para investidores. Do produto validado ao mercado — sem improvisar.",
     tag: "Fase 7 — Deploy",
   },
 ];
@@ -93,23 +93,23 @@ const TESTIMONIALS = [
 
 const VALUE_CARDS = [
   {
-    title: "Clareza imediata",
-    text: "Transforme ideia solta em direção concreta em minutos.",
-    detail: "Responda um briefing e a IA organiza tudo: mercado, público-alvo, hipóteses e riscos — sem dispersão e sem folha em branco.",
+    title: "Diagnóstico imediato",
+    text: "Calibre o que você já construiu em minutos.",
+    detail: "Traga o briefing do que você tem. A IA mapeia mercado, público-alvo, hipóteses e riscos — revelando o que está sólido e o que precisa de atenção.",
     href: "/clareza-imediata",
     cta: "Entender a metodologia →",
   },
   {
     title: "Fluxo contínuo",
-    text: "Cada fase entrega o próximo passo sem travar o time.",
-    detail: "Os artefatos de uma fase alimentam automaticamente a próxima. Você nunca fica sem saber o que fazer agora.",
+    text: "Cada fase alimenta a próxima — sem lacunas de contexto.",
+    detail: "Os artefatos de uma fase viram insumo da próxima. Você sai de cada etapa sabendo exatamente o que fazer agora.",
     href: "/fluxo-continuo",
     cta: "Ver como funciona →",
   },
   {
     title: "Pronto para vender",
     text: "Artefatos compartilháveis que apoiam decisão e execução.",
-    detail: "PRD, personas, arquitetura, go-to-market — tudo exportável e apresentável para investidores, parceiros e equipe.",
+    detail: "PRD, personas, arquitetura, go-to-market — tudo exportável e apresentável para investidores, parceiros e dev.",
     href: "/pronto-para-vender",
     cta: "Ver os artefatos →",
   },
@@ -119,7 +119,7 @@ const CTA_CARDS = [
   {
     title: "Comece grátis",
     text: "Teste o fluxo e veja valor antes de decidir.",
-    detail: "Sem cartão de crédito. Crie seu primeiro projeto, rode as fases e gere artefatos reais — 2 gerações gratuitas por dia.",
+    detail: "Sem cartão de crédito. Traga o que você tem, rode as 3 primeiras fases completas e veja os artefatos gerados para o seu produto.",
     href: "/sign-up",
     cta: "Criar conta →",
   },
@@ -333,7 +333,7 @@ export function Home() {
           <Link href="/privacidade" className="text-muted-foreground hover:text-foreground text-sm px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all hidden md:inline-block">Privacidade</Link>
           <ThemeToggle size={16} />
           <Link href="/sign-in" className="text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-1.5 rounded-md hover:bg-muted/60 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md outline-none">Entrar</Link>
-          <Link href="/sign-up" aria-label="Começar grátis" className="bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-medium py-1.5 px-4 rounded-lg transition-all duration-300 ml-1 font-semibold focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none">Começar grátis</Link>
+          <Link href="/sign-up" aria-label="Analisar meu projeto" className="bg-accent text-accent-foreground hover:bg-accent/90 text-sm font-medium py-1.5 px-4 rounded-lg transition-all duration-300 ml-1 font-semibold focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none">Analisar meu projeto</Link>
         </nav>
       </header>
 
@@ -488,7 +488,7 @@ export function Home() {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">PIPELINE</p>
-              <h2 className="text-3xl md:text-4xl font-serif text-foreground">Do zero ao lançamento</h2>
+              <h2 className="text-3xl md:text-4xl font-serif text-foreground">Do diagnóstico ao lançamento</h2>
             </div>
 
             {/* Desktop pipeline */}
@@ -691,9 +691,9 @@ export function Home() {
         <section className="py-24 px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
-              <h2 className="text-4xl md:text-5xl font-serif text-foreground mb-4">Da ideia ao produto em 7 fases.</h2>
+              <h2 className="text-4xl md:text-5xl font-serif text-foreground mb-4">Do diagnóstico ao produto estruturado.</h2>
               <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
-                Veja como a plataforma transforma um briefing em artefatos prontos — PRD, arquitetura, go-to-market e mais.
+                Veja como a plataforma audita o que você tem e gera os artefatos que faltam — PRD, arquitetura, go-to-market e mais.
               </p>
             </div>
             <MarketingVideo />
@@ -705,9 +705,9 @@ export function Home() {
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
               <p className="text-sm font-mono font-semibold text-primary uppercase tracking-[0.2em] mb-3">CAPACIDADES</p>
-              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Um processo com propósito em cada etapa.</h2>
+              <h2 className="text-3xl md:text-4xl font-serif text-foreground mb-4">Uma estrutura com propósito em cada etapa.</h2>
               <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                Não é só gerador de texto. É um processo rigoroso que força você a pensar em cada dimensão do produto.
+                Não é gerador de texto. É auditoria estruturada — cada fase valida o que existe e gera o insumo que a próxima precisa.
               </p>
             </div>
 
@@ -764,21 +764,21 @@ export function Home() {
         <section className="py-28 px-6 text-center relative overflow-hidden">
           <div className="hero-glow" style={{ transform: "rotate(180deg)" }} />
           <div className="relative z-10 max-w-2xl mx-auto">
-            <p className="text-sm font-mono text-primary uppercase tracking-[0.2em] mb-6">PRONTO PARA COMEÇAR?</p>
+            <p className="text-sm font-mono text-primary uppercase tracking-[0.2em] mb-6">SEU PRODUTO ESTÁ NA DIREÇÃO CERTA?</p>
             <h2 className="text-4xl md:text-6xl font-serif text-foreground mb-6 leading-tight">
-              Sua ideia merece<br />
-              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">um processo sério</span>.
+              Seu produto merece<br />
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">uma estrutura séria</span>.
             </h2>
             <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
-              Comece hoje. Crie seu primeiro projeto em menos de 2 minutos.
+              Traga o que você já tem. A IA audita, valida e entrega o próximo passo em minutos.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
               <Link href="/sign-up">
                 <Button
-                  aria-label="Iniciar gratuitamente"
+                  aria-label="Analisar meu projeto agora"
                   className="bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-semibold py-4 px-12 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-xl hover:shadow-2xl hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none"
                 >
-                  Iniciar gratuitamente →
+                  Analisar meu projeto agora →
                 </Button>
               </Link>
               <PrdDialog
@@ -787,14 +787,14 @@ export function Home() {
                     variant="ghost"
                     className="text-sm text-muted-foreground border border-border/60 hover:bg-muted/60 hover:text-foreground transition-all duration-300 py-4 px-6 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
                   >
-                    Ver exemplo de PRD →
+                    Ver o que a IA gera →
                   </Button>
                 }
               />
             </div>
             <div className="mt-8 flex items-center justify-center gap-8 text-sm font-mono text-muted-foreground tracking-wider">
               <span>✓ SEM CARTÃO</span>
-              <span>✓ 2 GERAÇÕES/DIA</span>
+              <span>✓ 3 FASES GRATUITAS</span>
               <span>✓ CANCELE QUANDO QUISER</span>
             </div>
           </div>
