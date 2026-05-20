@@ -54,7 +54,7 @@ const STEPS = [
   {
     title: "Bem-vindo ao FoundersFlow!",
     description:
-      "Transformamos sua ideia em produto validado em 7 fases estruturadas — da ideação ao lançamento, com IA guiando cada etapa.",
+      "Em 7 fases estruturadas, a IA audita o que você já tem, valida suas hipóteses e gera os artefatos que faltam — do diagnóstico ao lançamento.",
     icon: "🏭",
     tag: "Passo 1 de 4",
   },
@@ -68,7 +68,7 @@ const STEPS = [
   {
     title: "IA gera seus artefatos",
     description:
-      "Descreva sua ideia no briefing e a IA gera PRD, personas, arquitetura, go-to-market e mais — cada fase com entregáveis prontos para usar.",
+      "Descreva seu projeto no briefing e a IA gera PRD, personas, arquitetura, go-to-market e mais — cada fase com entregáveis prontos para usar.",
     icon: "🤖",
     tag: "Passo 3 de 4",
   },

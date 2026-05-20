@@ -17,12 +17,12 @@ import { AppSidebar } from "@/components/app-sidebar";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const ENCOURAGEMENT: Record<number, string> = {
-  0: "Tudo comeca aqui. Vamos validar sua ideia.",
-  1: "Excelente! Ideia validada. Hora de definir o produto.",
-  2: "Incrivel! Produto definido. Vamos especificar tecnicamente.",
-  3: "Otimo progresso! Especificacao pronta. Hora de implementar.",
-  4: "Quase la! Implementacao concluida. Vamos testar.",
-  5: "Produto pronto e testado. Hora do grande lancamento!",
+  0: "Tudo começa aqui. Vamos calibrar e validar seu produto.",
+  1: "Excelente! Diagnóstico concluído. Hora de definir o produto.",
+  2: "Incrível! Produto definido. Vamos especificar tecnicamente.",
+  3: "Ótimo progresso! Especificação pronta. Hora de implementar.",
+  4: "Quase lá! Implementação concluída. Vamos testar.",
+  5: "Produto pronto e testado. Hora do grande lançamento!",
 };
 
 function PhasePipeline({ phases, currentPhase, projectId }: {
@@ -50,7 +50,7 @@ function PhasePipeline({ phases, currentPhase, projectId }: {
             <button
               onClick={() => isClickable && setLocation(`/projects/${projectId}/phases/${phase.phaseNumber}`)}
               disabled={!isClickable}
-              aria-label={`Fase ${phase.phaseNumber} — ${phaseDef?.name ?? ""} (${phase.status === "completed" ? "concluida" : phase.status === "active" ? "em andamento" : "bloqueada"})`}
+              aria-label={`Fase ${phase.phaseNumber} — ${phaseDef?.name ?? ""} (${phase.status === "completed" ? "concluída" : phase.status === "active" ? "em andamento" : "bloqueada"})`}
               className={`flex flex-col items-center group transition-all ${isClickable ? "cursor-pointer" : "cursor-not-allowed"}`}
               data-testid={`phase-circle-${phase.phaseNumber}`}
             >
@@ -764,7 +764,7 @@ export function ProjectPage() {
     navigator.clipboard.writeText(shareUrl).then(() => {
       toast({ title: "Link copiado", description: "Compartilhe esse projeto com sua equipe." });
     }).catch(() => {
-      toast({ title: "Nao foi possivel copiar", variant: "destructive" });
+      toast({ title: "Não foi possível copiar", variant: "destructive" });
     });
   }
 
@@ -772,7 +772,7 @@ export function ProjectPage() {
     if (!collaboratorEmail.trim()) return;
     toast({
       title: "Convite preparado",
-      description: `${collaboratorEmail} sera adicionado assim que a camada de colaboracao estiver ativa.`,
+      description: `${collaboratorEmail} será adicionado assim que a camada de colaboração estiver ativa.`,
     });
     setCollaboratorEmail("");
   }
@@ -906,8 +906,8 @@ export function ProjectPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Projeto concluido com sucesso!</p>
-                  <p className="text-xs text-muted-foreground">Todas as 7 fases foram concluidas. Seu produto esta pronto para o mercado.</p>
+                  <p className="text-sm font-semibold text-foreground">Projeto concluído com sucesso!</p>
+                  <p className="text-xs text-muted-foreground">Todas as 7 fases foram concluídas. Seu produto está pronto para o mercado.</p>
                 </div>
               </div>
             </div>

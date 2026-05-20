@@ -118,7 +118,7 @@ function ProgressBar({ completed, total = 7 }: { completed: number; total?: numb
 function ResumeCard({ project }: { project: { projectId: number; name: string; currentPhase: number; completedPhases: number } }) {
   const phaseName = PHASES[project.currentPhase - 1]?.name ?? `Fase ${project.currentPhase}`;
   const pct = Math.round((project.completedPhases / 7) * 100);
-  const motivations = ["Continue de onde parou — seu produto esta ganhando forma.", "Cada artefato concluido e um produto mais solido.", "Quase la! Falta pouco para concluir esta fase.", "Nao pare agora — voce esta no caminho certo."];
+  const motivations = ["Continue de onde parou — seu produto está ganhando forma.", "Cada artefato concluído é um produto mais sólido.", "Quase lá! Falta pouco para concluir esta fase.", "Não pare agora — você está no caminho certo."];
   const motivation = motivations[project.completedPhases % motivations.length];
   return (
     <Link href={`/projects/${project.projectId}/phases/${project.currentPhase}`}>
@@ -135,7 +135,7 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
           </div>
           <div className="flex-shrink-0 text-right">
             <div className="text-3xl font-bold font-serif text-primary">{pct}%</div>
-            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">concluido</div>
+            <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">concluído</div>
           </div>
         </div>
         <div className="mt-5">
@@ -164,10 +164,10 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium ${isExhausted ? "text-red-300" : "text-primary"}`}>
-          {isExhausted ? `Limite de IA atingido — ${used}/${limit} geracoes usadas hoje` : `${pct}% das suas geracoes de IA usadas hoje (${used}/${limit})`}
+          {isExhausted ? `Limite de IA atingido — ${used}/${limit} gerações usadas hoje` : `${pct}% das suas gerações de IA usadas hoje (${used}/${limit})`}
         </p>
         <p className={`text-xs mt-0.5 ${isExhausted ? "text-red-400/80" : "text-primary/70"}`}>
-          {isExhausted ? "Creditos renovam a meia-noite. Faca upgrade para nao parar." : "Faca upgrade para mais geracoes e manter o ritmo."}
+          {isExhausted ? "Créditos renovam à meia-noite. Faça upgrade para não parar." : "Faça upgrade para mais gerações e manter o ritmo."}
         </p>
       </div>
       <Link href="/pricing">
@@ -252,7 +252,7 @@ const SHORTCUTS = [
   { label: "Brandbook", href: "/brandbook", icon: "🎨", desc: "Guia visual da marca" },
   { label: "AI Advisor", href: null, icon: "🤖", desc: "Consultor de produto", planRequired: true },
   { label: "Atendimento", href: "/atendimento", icon: "💬", desc: "Suporte e WhatsApp" },
-  { label: "Configuracoes", href: "/settings", icon: "⚙️", desc: "Conta e preferencias" },
+  { label: "Configurações", href: "/settings", icon: "⚙️", desc: "Conta e preferências" },
 ];
 
 export function Dashboard() {

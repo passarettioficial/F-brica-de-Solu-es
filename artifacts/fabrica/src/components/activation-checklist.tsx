@@ -44,14 +44,14 @@ export function ActivationChecklist({
   if (dismissed) return null;
 
   const steps = [
-    { id: "account", label: "Criar sua conta", description: "Voce ja esta aqui.", done: true },
-    { id: "project", label: "Criar o primeiro projeto", description: "Descreva sua ideia e deixe a IA trabalhar.", done: hasProjects, cta: "Criar projeto" },
+    { id: "account", label: "Criar sua conta", description: "Você já está aqui.", done: true },
+    { id: "project", label: "Criar o primeiro projeto", description: "Descreva seu projeto e deixe a IA trabalhar.", done: hasProjects, cta: "Criar projeto" },
     { id: "ai", label: "Gerar artefatos com IA", description: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: hasAiUsage },
-    { id: "templates", label: "Usar um template", description: "Comece a partir de um modelo do produto.", done: hasTemplates },
+    { id: "templates", label: "Usar um template", description: "Comece a partir de um modelo de produto.", done: hasTemplates },
     { id: "share", label: "Compartilhar um projeto", description: "Convide alguém e gere contexto compartilhável.", done: hasSharedProject },
-    { id: "phase1", label: "Concluir a Fase 1 — Ideacao", description: "Valide sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed, href: hasProjects ? "/dashboard" : undefined },
+    { id: "phase1", label: "Concluir a Fase 1 — Diagnóstico", description: "Audite sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed, href: hasProjects ? "/dashboard" : undefined },
     { id: "phase3", label: "Chegar na metade — Fase 3", description: "Segurança, LGPD e privacidade mapeados antes da arquitetura.", done: phase3Completed },
-    { id: "complete", label: "Concluir as 7 fases", description: "Da ideia ao lancamento — produto pronto.", done: allPhasesCompleted },
+    { id: "complete", label: "Concluir as 7 fases", description: "Do diagnóstico ao lançamento — produto pronto.", done: allPhasesCompleted },
   ];
 
   const doneCount = steps.filter((step) => step.done).length;
@@ -64,8 +64,8 @@ export function ActivationChecklist({
       <div className="glass-card rounded-2xl p-5 mb-8 flex items-center gap-4">
         <div className="text-3xl flex-shrink-0">🏆</div>
         <div className="flex-1">
-          <h3 className="font-serif text-lg text-foreground mb-0.5">Ativacao completa!</h3>
-          <p className="text-sm text-muted-foreground">Voce passou por todas as etapas. Seu produto esta pronto para o mercado.</p>
+          <h3 className="font-serif text-lg text-foreground mb-0.5">Ativação completa!</h3>
+          <p className="text-sm text-muted-foreground">Você passou por todas as etapas. Seu produto está pronto para o mercado.</p>
         </div>
         <button onClick={dismiss} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
           Fechar
@@ -79,18 +79,18 @@ export function ActivationChecklist({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="font-serif text-base text-foreground">Primeiros passos</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{doneCount} de {steps.length} etapas concluidas</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{doneCount} de {steps.length} etapas concluídas</p>
         </div>
         <button
           onClick={dismiss}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Fechar checklist de ativacao"
+          aria-label="Fechar checklist de ativação"
         >
           Ocultar
         </button>
       </div>
 
-      <div className="w-full bg-muted rounded-full h-1.5 mb-5" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${pct}% das etapas concluidas`}>
+      <div className="w-full bg-muted rounded-full h-1.5 mb-5" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${pct}% das etapas concluídas`}>
         <div className="bg-primary h-1.5 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
 

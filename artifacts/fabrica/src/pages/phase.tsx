@@ -24,13 +24,13 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 const LEAN_CANVAS_BLOCKS = [
   { key: "problema", label: "Problema", hint: "Top 3 problemas" },
   { key: "segmentos_clientes", label: "Segmentos de Clientes", hint: "Clientes-alvo" },
-  { key: "proposta_valor_unica", label: "Proposta de Valor Unica", hint: "Mensagem clara e convincente" },
-  { key: "solucao", label: "Solucao", hint: "Top 3 solucoes" },
+  { key: "proposta_valor_unica", label: "Proposta de Valor Única", hint: "Mensagem clara e convincente" },
+  { key: "solucao", label: "Solução", hint: "Top 3 soluções" },
   { key: "canais", label: "Canais", hint: "Caminho para os clientes" },
   { key: "fluxo_receita", label: "Fluxo de Receita", hint: "Modelo de receita, LTV, receita bruta" },
-  { key: "estrutura_custos", label: "Estrutura de Custos", hint: "Custos fixos e variaveis" },
-  { key: "metricas_chave", label: "Metricas-Chave", hint: "Atividades-chave a medir" },
-  { key: "vantagem_injusta", label: "Vantagem Injusta", hint: "Dificil de copiar ou comprar" },
+  { key: "estrutura_custos", label: "Estrutura de Custos", hint: "Custos fixos e variáveis" },
+  { key: "metricas_chave", label: "Métricas-Chave", hint: "Atividades-chave a medir" },
+  { key: "vantagem_injusta", label: "Vantagem Injusta", hint: "Difícil de copiar ou comprar" },
 ];
 
 function parseJsonBlock<T = Record<string, unknown>>(content: string): T | null {
@@ -89,12 +89,12 @@ function ScorePotencial({ content }: { content: string }) {
       </div>
       {rec && (
         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${recColors[rec] ?? "bg-muted text-muted-foreground"}`}>
-          Recomendacao: {rec}
+          Recomendação: {rec}
         </div>
       )}
       {data.proximos_passos?.length > 0 && (
         <div>
-          <div className="text-xs font-medium mb-1">Proximos passos</div>
+          <div className="text-xs font-medium mb-1">Próximos passos</div>
           <ul className="space-y-0.5">
             {data.proximos_passos.map((step: string, i: number) => (
               <li key={i} className="text-xs text-foreground flex gap-2">
@@ -109,50 +109,50 @@ function ScorePotencial({ content }: { content: string }) {
 }
 
 const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = {
-  LEAN_CANVAS: { label: "Lean Canvas", description: "9 blocos do modelo de negocio" },
+  LEAN_CANVAS: { label: "Lean Canvas", description: "9 blocos do modelo de negócio" },
   JTBD: { label: "Jobs to Be Done", description: "O que o cliente realmente quer realizar" },
-  ANALISE_COMPETITIVA: { label: "Analise Competitiva", description: "5 concorrentes com tabela comparativa" },
-  PADROES_MORTALIDADE: { label: "Padroes de Mortalidade", description: "Casos comparáveis e sinais de risco por segmento" },
-  SWOT: { label: "Analise SWOT", description: "Forcas, fraquezas, oportunidades e ameacas" },
+  ANALISE_COMPETITIVA: { label: "Análise Competitiva", description: "5 concorrentes com tabela comparativa" },
+  PADROES_MORTALIDADE: { label: "Padrões de Mortalidade", description: "Casos comparáveis e sinais de risco por segmento" },
+  SWOT: { label: "Análise SWOT", description: "Forças, fraquezas, oportunidades e ameaças" },
   DIMENSIONAMENTO_MERCADO: { label: "TAM / SAM / SOM", description: "Tamanho real do mercado com metodologia" },
-  VALIDACAO_RAPIDA: { label: "Script de Validacao", description: "10 perguntas de entrevista para validar a hipotese" },
-  HIPOTESE_CENTRAL: { label: "Hipotese Central", description: "Aposta principal em 1 frase testavel" },
-  SCORE_POTENCIAL: { label: "Score de Potencial", description: "Avaliacao 1-5 em 5 dimensoes com recomendacao" },
-  PRD: { label: "Product Requirements Document", description: "Escopo, funcionalidades e criterios de sucesso" },
+  VALIDACAO_RAPIDA: { label: "Script de Validação", description: "10 perguntas de entrevista para validar a hipótese" },
+  HIPOTESE_CENTRAL: { label: "Hipótese Central", description: "Aposta principal em 1 frase testável" },
+  SCORE_POTENCIAL: { label: "Score de Potencial", description: "Avaliação 1-5 em 5 dimensões com recomendação" },
+  PRD: { label: "Product Requirements Document", description: "Escopo, funcionalidades e critérios de sucesso" },
   PERSONAS: { label: "Personas", description: "3 personas detalhadas incluindo persona negativa" },
-  USER_STORIES: { label: "User Stories", description: "15 user stories com criterios de aceitacao" },
-  METRICAS_SUCESSO: { label: "Framework de Metricas", description: "North Star, inputs, guardrails e AARRR" },
-  HIPOTESE_PRICING: { label: "Estrategia de Pricing", description: "3 tiers com unit economics e willingness to pay" },
-  BENCHMARKING: { label: "Benchmarking", description: "3 referencias globais com o que copiar e evitar" },
+  USER_STORIES: { label: "User Stories", description: "15 user stories com critérios de aceitação" },
+  METRICAS_SUCESSO: { label: "Framework de Métricas", description: "North Star, inputs, guardrails e AARRR" },
+  HIPOTESE_PRICING: { label: "Estratégia de Pricing", description: "3 tiers com unit economics e willingness to pay" },
+  BENCHMARKING: { label: "Benchmarking", description: "3 referências globais com o que copiar e evitar" },
   ROADMAP_3_MESES: { label: "Roadmap 3 Meses", description: "Plano trimestral com objetivos e entregas-chave" },
   ARQUITETURA: { label: "Arquitetura do Sistema", description: "Stack, componentes, diagramas e trade-offs" },
-  MODELO_DADOS: { label: "Modelo de Dados", description: "Entidades, campos, indices e relacionamentos" },
-  CONTRATOS_API: { label: "Contratos de API", description: "8+ endpoints criticos documentados" },
-  SEGURANCA: { label: "Plano de Seguranca", description: "OWASP Top 10, LGPD, autenticacao e auditoria" },
-  FLUXOS_UI: { label: "Fluxos de UX", description: "5 fluxos criticos tela por tela com edge cases" },
-  ESCALABILIDADE: { label: "Plano de Escalabilidade", description: "Estrategia para 1K, 10K e 100K usuarios" },
-  ADR: { label: "Architecture Decision Records", description: "5 ADRs com contexto, decisao e consequencias" },
+  MODELO_DADOS: { label: "Modelo de Dados", description: "Entidades, campos, índices e relacionamentos" },
+  CONTRATOS_API: { label: "Contratos de API", description: "8+ endpoints críticos documentados" },
+  SEGURANCA: { label: "Plano de Segurança", description: "OWASP Top 10, LGPD, autenticação e auditoria" },
+  FLUXOS_UI: { label: "Fluxos de UX", description: "5 fluxos críticos tela por tela com edge cases" },
+  ESCALABILIDADE: { label: "Plano de Escalabilidade", description: "Estratégia para 1K, 10K e 100K usuários" },
+  ADR: { label: "Architecture Decision Records", description: "5 ADRs com contexto, decisão e consequências" },
   SETUP_DEVOPS: { label: "DevOps & Infraestrutura", description: "CI/CD, ambientes, observabilidade e custo estimado" },
-  MILESTONES: { label: "Plano de Milestones", description: "5+ milestones com features, criterios e demos" },
+  MILESTONES: { label: "Plano de Milestones", description: "5+ milestones com features, critérios e demos" },
   SPRINT_1: { label: "Sprint 1 Detalhado", description: "Primeira semana hora a hora com bloqueadores" },
-  ESTRUTURA_PASTAS: { label: "Estrutura do Projeto", description: "Arvore de arquivos comentada" },
-  README: { label: "README Completo", description: "Setup em 5 comandos, .env.example e contribuicao" },
-  GUIA_CONTRIBUICAO: { label: "CONTRIBUTING.md", description: "Padroes, PR checklist e convencao de commits" },
-  TECH_DEBT_LOG: { label: "Log de Debito Tecnico", description: "8+ atalhos documentados com plano de resolucao" },
-  DEFINITION_OF_DONE: { label: "Definition of Done", description: "Criterios para codigo, testes e deploy" },
-  PLANO_TESTES: { label: "Plano de Testes", description: "Estrategia, piramide, ferramentas e cobertura minima" },
-  CASOS_TESTE_CRITICOS: { label: "20 Casos de Teste Criticos", description: "P0/P1/P2 com steps e resultados esperados" },
-  CHECKLIST_QA: { label: "Checklist de QA", description: "Funcionalidade, performance, seguranca, acessibilidade" },
-  SCRIPT_USER_TEST: { label: "Script de Teste com Usuarios", description: "Roteiro para 5 testes reais com metricas" },
-  RELATORIO_PERFORMANCE: { label: "Benchmarks de Performance", description: "Core Web Vitals, latencia e carga suportada" },
-  BUGS_PREVENCAO: { label: "Top 10 Bugs a Prevenir", description: "Causa raiz, impacto, prevencao e deteccao" },
-  OBSERVABILIDADE: { label: "Plano de Observabilidade", description: "Logs, metricas, alertas e dashboards" },
-  RUNBOOK_DEPLOY: { label: "Runbook de Deploy", description: "Pre-deploy, deploy, smoke tests, rollback" },
-  GTM: { label: "Plano Go-to-Market", description: "Canais, mensagem, 10 primeiros clientes e metricas" },
-  LAUNCH_CHECKLIST: { label: "Launch Checklist", description: "Tecnico, produto, marketing, legal e operacional" },
-  METRICAS_POS_LAUNCH: { label: "Dashboard Pos-Lancamento", description: "Metricas semana a semana nas primeiras 4 semanas" },
-  PLANO_CRESCIMENTO_90_DIAS: { label: "Plano de Crescimento 90 Dias", description: "Metas, canais, experimentos e triggers de pivo" },
-  PITCH_INVESTIDORES: { label: "Narrativa para Investidores", description: "8 slides — problema, solucao, mercado e pedido" },
+  ESTRUTURA_PASTAS: { label: "Estrutura do Projeto", description: "Árvore de arquivos comentada" },
+  README: { label: "README Completo", description: "Setup em 5 comandos, .env.example e contribuição" },
+  GUIA_CONTRIBUICAO: { label: "CONTRIBUTING.md", description: "Padrões, PR checklist e convenção de commits" },
+  TECH_DEBT_LOG: { label: "Log de Débito Técnico", description: "8+ atalhos documentados com plano de resolução" },
+  DEFINITION_OF_DONE: { label: "Definition of Done", description: "Critérios para código, testes e deploy" },
+  PLANO_TESTES: { label: "Plano de Testes", description: "Estratégia, pirâmide, ferramentas e cobertura mínima" },
+  CASOS_TESTE_CRITICOS: { label: "20 Casos de Teste Críticos", description: "P0/P1/P2 com steps e resultados esperados" },
+  CHECKLIST_QA: { label: "Checklist de QA", description: "Funcionalidade, performance, segurança, acessibilidade" },
+  SCRIPT_USER_TEST: { label: "Script de Teste com Usuários", description: "Roteiro para 5 testes reais com métricas" },
+  RELATORIO_PERFORMANCE: { label: "Benchmarks de Performance", description: "Core Web Vitals, latência e carga suportada" },
+  BUGS_PREVENCAO: { label: "Top 10 Bugs a Prevenir", description: "Causa raiz, impacto, prevenção e detecção" },
+  OBSERVABILIDADE: { label: "Plano de Observabilidade", description: "Logs, métricas, alertas e dashboards" },
+  RUNBOOK_DEPLOY: { label: "Runbook de Deploy", description: "Pré-deploy, deploy, smoke tests, rollback" },
+  GTM: { label: "Plano Go-to-Market", description: "Canais, mensagem, 10 primeiros clientes e métricas" },
+  LAUNCH_CHECKLIST: { label: "Launch Checklist", description: "Técnico, produto, marketing, legal e operacional" },
+  METRICAS_POS_LAUNCH: { label: "Dashboard Pós-Lançamento", description: "Métricas semana a semana nas primeiras 4 semanas" },
+  PLANO_CRESCIMENTO_90_DIAS: { label: "Plano de Crescimento 90 Dias", description: "Metas, canais, experimentos e gatilhos de pivô" },
+  PITCH_INVESTIDORES: { label: "Narrativa para Investidores", description: "8 slides — problema, solução, mercado e pedido" },
   SLA_SUPORTE: { label: "SLA & Plano de Suporte", description: "Canais, SLA, playbooks e FAQ inicial" },
 };
 
@@ -234,7 +234,7 @@ const ArtifactCard = memo(function ArtifactCard({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-          {isEmpty && <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Nao gerado</span>}
+          {isEmpty && <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Não gerado</span>}
           {downloaded && !isEmpty && (
             <span
               title="Artefato já baixado"
@@ -272,7 +272,7 @@ const ArtifactCard = memo(function ArtifactCard({
           ) : (
             <div>
               {isEmpty ? (
-                <p className="text-sm text-muted-foreground italic">Este artefato nao foi gerado ainda. Clique em "Gerar com IA" acima.</p>
+                <p className="text-sm text-muted-foreground italic">Este artefato não foi gerado ainda. Clique em "Gerar com IA" acima.</p>
               ) : isLeanCanvas ? (
                 <LeanCanvas content={artifact.content} />
               ) : isScorePotencial ? (
@@ -427,12 +427,12 @@ function PhaseCompletionBanner({ phaseNumber, projectId }: { phaseNumber: number
     <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="text-4xl mb-3">🎉</div>
       <h3 className="font-serif text-xl text-foreground mb-2">
-        Fase {phaseNumber} concluida!
+        Fase {phaseNumber} concluída!
       </h3>
       <p className="text-sm text-muted-foreground mb-5">
         {phaseNumber < 7
-          ? `Excelente trabalho! Agora voce pode avancar para a Fase ${phaseNumber + 1} — ${nextPhase?.name}.`
-          : "Incrivel! Voce concluiu todas as 7 fases. Seu produto esta pronto para o mercado."}
+          ? `Excelente trabalho! Agora você pode avançar para a Fase ${phaseNumber + 1} — ${nextPhase?.name}.`
+          : "Incrível! Você concluiu todas as 7 fases. Seu produto está pronto para o mercado."}
       </p>
       {phaseNumber < 7 && nextPhase ? (
         <Button
@@ -521,12 +521,12 @@ export function PhasePage() {
           setJustCompleted(true);
           void confetti({ particleCount: phaseNumber === 7 ? 180 : 80, spread: 70, origin: { y: 0.6 }, colors: ["#1A3FAB", "#FF8C42", "#ffffff"] });
           toast({
-            title: `Fase ${phaseNumber} concluida!`,
-            description: phaseNumber < 7 ? `Avancando para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Todas as 7 fases concluidas. Produto pronto!",
+            title: `Fase ${phaseNumber} concluída!`,
+            description: phaseNumber < 7 ? `Avançando para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Todas as 7 fases concluídas. Produto pronto!",
           });
         },
         onError: () => {
-          toast({ title: "Erro ao concluir fase", description: "Verifique se todos os criterios estao marcados.", variant: "destructive" });
+          toast({ title: "Erro ao concluir fase", description: "Verifique se todos os critérios estão marcados.", variant: "destructive" });
         },
       }
     );
@@ -551,12 +551,12 @@ export function PhasePage() {
         const errorMsg = err.error ?? "Erro ao gerar artefatos";
         setGenerationError(errorMsg);
         setGenerating(false);
-        toast({ title: "Erro na geracao", description: errorMsg, variant: "destructive" });
+        toast({ title: "Erro na geração", description: errorMsg, variant: "destructive" });
         return;
       }
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      if (!reader) { setGenerationError("Streaming nao suportado"); setGenerating(false); return; }
+      if (!reader) { setGenerationError("Streaming não suportado"); setGenerating(false); return; }
       let buffer = "";
       let accText = "";
       while (true) {
@@ -876,9 +876,9 @@ export function PhasePage() {
         {/* Gate */}
         {!isLocked && !justCompleted && (
           <div className="glass-card rounded-2xl p-6">
-            <h2 className="font-serif text-lg mb-1">Portao de saida</h2>
-            <p className="text-xs text-muted-foreground mb-5">Marque os 3 criterios para avancar. Nao avance ate estar genuinamente satisfeito.</p>
-            <div className="space-y-4" role="group" aria-label="Criterios de saida da fase">
+            <h2 className="font-serif text-lg mb-1">Portão de saída</h2>
+            <p className="text-xs text-muted-foreground mb-5">Marque os 3 critérios para avançar. Não avance até estar genuinamente satisfeito.</p>
+            <div className="space-y-4" role="group" aria-label="Critérios de saída da fase">
               {phaseDef?.gates.map((gate, i) => {
                 const gateNum = (i + 1) as 1 | 2 | 3;
                 const checked = gateNum === 1 ? phase?.gate1Checked : gateNum === 2 ? phase?.gate2Checked : phase?.gate3Checked;
@@ -901,8 +901,8 @@ export function PhasePage() {
             {allGatesChecked && !isCompleted && (
               <div className="mt-6 pt-5 border-t border-border">
                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
-                  <p className="text-sm text-primary font-medium">Todos os criterios marcados — voce esta pronto para avancar!</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Esta acao e irreversivel. Certifique-se de que os artefatos estao revisados.</p>
+                  <p className="text-sm text-primary font-medium">Todos os critérios marcados — você está pronto para avançar!</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Esta ação é irreversível. Certifique-se de que os artefatos estão revisados.</p>
                 </div>
                 <Button
                   onClick={handleComplete}
@@ -910,7 +910,7 @@ export function PhasePage() {
                   className="bg-primary hover:bg-primary/90 text-white w-full sm:w-auto"
                   data-testid="button-complete-phase"
                 >
-                  {completePhase.isPending ? "Avancando..." : (phaseNumber < 7 ? `Concluir e avancar para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Concluir o projeto!")}
+                  {completePhase.isPending ? "Avançando..." : (phaseNumber < 7 ? `Concluir e avançar para Fase ${phaseNumber + 1} — ${PHASES[phaseNumber]?.name}` : "Concluir o projeto!")}
                 </Button>
               </div>
             )}
@@ -923,7 +923,7 @@ export function PhasePage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Fase {phaseNumber} concluida</p>
+                  <p className="text-sm font-medium text-foreground">Fase {phaseNumber} concluída</p>
                   {phaseNumber < 7 && (
                     <Link href={`/projects/${projectId}/phases/${phaseNumber + 1}`} className="text-xs text-primary hover:underline">
                       Ir para Fase {phaseNumber + 1} — {PHASES[phaseNumber]?.name} →
@@ -941,7 +941,7 @@ export function PhasePage() {
             <div className="text-2xl flex-shrink-0">⬆️</div>
             <div className="flex-1">
               <h3 className="font-medium text-foreground mb-1">Copie, edite e baixe seus artefatos</h3>
-              <p className="text-sm text-muted-foreground mb-3">Faca upgrade para o plano Pro e tenha acesso completo a todos os artefatos gerados — inclui edicao, copia e download em Markdown.</p>
+              <p className="text-sm text-muted-foreground mb-3">Faça upgrade para o plano Pro e tenha acesso completo a todos os artefatos gerados — inclui edição, cópia e download em Markdown.</p>
               <Link href="/pricing">
                 <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">Ver planos</Button>
               </Link>

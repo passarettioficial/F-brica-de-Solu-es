@@ -43,7 +43,7 @@ export function SettingsPage() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
-          toast({ title: "Configuracoes salvas com sucesso!" });
+          toast({ title: "Configurações salvas com sucesso!" });
         },
         onError: () => {
           toast({ title: "Erro ao salvar", description: "Tente novamente.", variant: "destructive" });
@@ -53,7 +53,7 @@ export function SettingsPage() {
   }
 
   async function handleDeleteRequest() {
-    if (!confirm("Isso abrira um chamado de exclusao de dados conforme a LGPD. Continuar?")) return;
+    if (!confirm("Isso abrirá um chamado de exclusão de dados conforme a LGPD. Continuar?")) return;
     try {
       await fetch(`${basePath}/api/support/tickets`, {
         method: "POST",
