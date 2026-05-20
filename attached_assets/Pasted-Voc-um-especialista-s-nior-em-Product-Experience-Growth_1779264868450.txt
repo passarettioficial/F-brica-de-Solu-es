@@ -1,0 +1,305 @@
+Você é um especialista sênior em Product Experience, Growth e 
+Customer Journey Design. Faça uma auditoria completa da jornada 
+e experiência do cliente da FoundersFlow — plataforma com IA 
+para founders, da ideia ao lançamento em 7 fases estruturadas.
+
+A auditoria deve ser baseada no código real do projeto. Cite 
+arquivos, componentes e linhas sempre que possível. Para cada 
+item avaliado, atribua:
+
+  [✅ Resolvido] — implementado adequadamente
+  [⚠️ Parcial]  — existe mas com lacunas relevantes
+  [❌ Ausente]  — não implementado
+  [🔴 Crítico]  — ausência causa dano direto à retenção ou conversão
+
+Ao final de cada bloco: nota de 1 a 10 + síntese executiva 
+de 3 linhas com o maior gap e a correção de maior impacto.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 1 — PROPOSTA DE VALOR E POSICIONAMENTO
+"O founder entende imediatamente por que a FoundersFlow existe?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar em home.tsx e nos textos da landing page:
+
+1.1 — Em menos de 5 segundos, o visitante consegue entender 
+      O QUÊ é a plataforma?
+1.2 — Em menos de 5 segundos, consegue entender PARA QUEM é?
+1.3 — Em menos de 5 segundos, consegue entender POR QUÊ importa?
+1.4 — O headline comunica transformação (o que o founder conquista) 
+      ou apenas funcionalidade (o que a ferramenta faz)?
+1.5 — Há alinhamento entre a promessa da landing e o que o produto 
+      efetivamente entrega nas 7 fases?
+1.6 — A linguagem usada é a linguagem real do founder brasileiro 
+      (dores, vocabulário, referências) ou é linguagem de produto?
+1.7 — O diferencial frente a ChatGPT, Notion AI e Lean Canvas 
+      online está perceptível sem precisar ler texto longo?
+1.8 — Há um posicionamento único que nenhum concorrente poderia 
+      usar como próprio?
+1.9 — A comunicação é consistente entre: landing page, dashboard, 
+      emails transacionais, tooltips e mensagens de erro?
+1.10 — O problema que a FoundersFlow resolve está declarado 
+       explicitamente, ou apenas implícito nas features?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 2 — PRIMEIRO CONTATO E ATIVAÇÃO
+"O que acontece entre o clique em 'Começar grátis' e o primeiro valor percebido?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar o fluxo de cadastro, onboarding e criação do primeiro projeto:
+
+2.1 — Qual é o número de passos entre o clique no CTA da landing 
+      e o primeiro output da IA? Listar cada passo com atrito.
+2.2 — O cadastro via Clerk gera fricção desnecessária? 
+      Quantos campos são exigidos antes do founder ver valor?
+2.3 — O onboarding tour de 3 passos ensina o suficiente para 
+      o founder agir com confiança, ou é apenas decorativo?
+2.4 — Existe coleta de perfil do founder (estágio, setor, 
+      estrutura de time) antes da primeira geração de IA? 
+      Os prompts são personalizados com esse contexto?
+2.5 — Os templates de projeto (SaaS, App, Marketplace) reduzem 
+      adequadamente a fricção do briefing inicial?
+2.6 — Qual é o Time to Value real? (do cadastro até ver o primeiro 
+      artefato gerado pela IA — medir em número de cliques e 
+      tempo estimado)
+2.7 — Existe um "quick win" — algo que o founder consegue 
+      completar em menos de 5 minutos e que já entrega valor?
+2.8 — O founder que chega sem saber exatamente o que fazer 
+      tem um caminho claro ou fica perdido no dashboard?
+2.9 — Existe preview do produto (output real da IA) visível 
+      na landing page antes do cadastro?
+2.10 — O CTA principal da landing é único e urgente, ou há 
+       múltiplas opções que geram paralisia de decisão?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 3 — WOW MOMENT E PROGRESSÃO EMOCIONAL
+"O produto gera momentos de surpresa, deleite e sensação de conquista?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar em phase.tsx, project.tsx e nos componentes de output:
+
+3.1 — O primeiro output da IA (Fase 1) é apresentado de forma 
+      que comunica o volume e a qualidade do que foi gerado?
+      Ou os artefatos ficam escondidos em acordeão comprimido?
+3.2 — Existe um "aha moment" identificável e deliberadamente 
+      projetado? Em qual fase/ação ele ocorre?
+3.3 — Qual é a intensidade emocional desse momento na interface 
+      atual — há celebração visual, feedback de conquista, 
+      ou simplesmente o conteúdo aparece sem cerimônia?
+3.4 — O streaming em tempo real dos tokens da IA cria sensação 
+      de geração ao vivo, ou é apenas funcional?
+3.5 — Ao concluir cada fase, há algum ritual de conclusão 
+      (animação, badge, resumo do que foi conquistado)?
+3.6 — A barra de progresso entre as 7 fases comunica momentum 
+      ("você está 43% do caminho") ou apenas localização?
+3.7 — O Score de Coerência gera orgulho quando alto e senso 
+      de urgência quando baixo — ou é apenas um número?
+3.8 — Existem microinterações que tornam a experiência mais 
+      humana (hover states, transições, feedback tátil visual)?
+3.9 — O founder tem sensação de que a plataforma "conhece" 
+      seu negócio, ou a experiência parece genérica?
+3.10 — Existem momentos de recompensa frequentes ao longo 
+       da jornada, além da conclusão de fase?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 4 — RETENÇÃO E FORMAÇÃO DE HÁBITO
+"Por que o founder voltaria amanhã — e daqui a 6 meses?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar os mecanismos de retorno, loops e dependência funcional:
+
+4.1 — Existe algum gatilho de retorno quando o founder sai sem 
+      completar uma fase? (email, notificação in-app, lembrete)
+4.2 — As notificações in-app (notificationsTable) são acionadas 
+      por eventos reais da jornada ou são apenas estrutura vazia?
+4.3 — O projeto salvo cria dependência funcional — o founder 
+      perde algo significativo se não voltar?
+4.4 — Existe valor recorrente: algo novo que o founder descobre 
+      ou desbloqueia a cada retorno?
+4.5 — Existe descoberta progressiva de funcionalidades 
+      (o founder que usa há 30 dias descobre coisas que 
+      o founder de 1 dia ainda não viu)?
+4.6 — A plataforma tem potencial de virar rotina de trabalho 
+      do founder, ou é usada uma vez e abandonada?
+4.7 — Existem motivadores intrínsecos (sensação de progresso, 
+      domínio, propósito) além dos extrínsecos (limits, badges)?
+4.8 — Existe algum loop viral — o founder tem motivo para 
+      compartilhar o produto ou seus outputs espontaneamente?
+4.9 — Os artefatos gerados têm formato e qualidade que o 
+      founder apresentaria para um co-founder, investidor 
+      ou mentor — gerando divulgação orgânica?
+4.10 — Existe alguma razão real para o founder continuar 
+       usando a FoundersFlow após completar as 7 fases 
+       (novo projeto, refinamento, benchmark)?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 5 — FRICÇÃO E BARREIRAS
+"Onde o founder encontra resistência desnecessária?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Mapear todos os pontos de atrito na jornada:
+
+5.1 — Fricção no cadastro: quantos cliques e campos entre 
+      a landing e o dashboard?
+5.2 — Fricção no primeiro uso: o founder sabe o que fazer 
+      ao chegar no dashboard pela primeira vez?
+5.3 — Fricção na ativação: existe alguma barreira entre 
+      criar o projeto e executar a primeira fase?
+5.4 — Fricção cognitiva: o nível de esforço mental exigido 
+      para escrever o briefing é adequado, ou o campo em 
+      branco intimida?
+5.5 — Fricção na navegação: as 4 tabs do projeto 
+      (Briefing, Artefatos, Validação, Colaboração) são 
+      intuitivas ou o founder não sabe para onde ir?
+5.6 — Fricção no pagamento: o fluxo de upgrade para plano 
+      pago é claro, sem surpresas e com percepção de valor 
+      antes do clique em "assinar"?
+5.7 — Fricção no suporte: se o founder travar, existe caminho 
+      claro para pedir ajuda sem sair da plataforma?
+5.8 — Fricção na recuperação de erro: se uma geração de IA 
+      falhar, o founder sabe o que aconteceu e o que fazer?
+5.9 — Fricção mobile: a experiência em telas < 390px é 
+      funcional para as ações principais?
+5.10 — Existe algum dead end — tela ou estado em que o founder 
+       fica preso sem orientação sobre o próximo passo?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 6 — CONFIANÇA E CREDIBILIDADE
+"O founder confia na plataforma antes e depois do cadastro?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar os sinais de confiança em home.tsx e na experiência logada:
+
+6.1 — Os testimonials existentes têm credibilidade real 
+      (nome + cargo + empresa + contexto de uso)?
+6.2 — Existe prova de resultado — não apenas depoimentos, 
+      mas evidência do que o produto gerou para founders reais?
+6.3 — A percepção de segurança técnica está comunicada 
+      (autenticação Clerk, dados do founder protegidos)?
+6.4 — A qualidade visual e o cuidado com os detalhes transmitem 
+      que o produto é mantido ativamente?
+6.5 — A ausência de comunidade ou pertencimento é um gap 
+      perceptível para o founder que usa sozinho?
+6.6 — O modelo de monetização é transparente — o founder 
+      sabe exatamente o que está no plano free antes de 
+      bater no limite?
+6.7 — A percepção de custo-benefício é favorável: o que 
+      o plano pago entrega justifica visivelmente o preço?
+6.8 — Existe sensação de justiça no limite do plano free 
+      (5 execuções/dia) — é generoso o suficiente para 
+      demonstrar valor antes de pedir pagamento?
+6.9 — O processo de cancelamento é claro e sem barreiras 
+      excessivas (dark patterns)?
+6.10 — A plataforma transmite que vai continuar existindo 
+       e evoluindo — ou parece um projeto abandonável?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 7 — INSTRUMENTAÇÃO E CAPACIDADE DE APRENDER
+"A plataforma consegue melhorar com base no comportamento real dos founders?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar a infraestrutura de dados e aprendizado do produto:
+
+7.1 — Existem métricas de ativação claras e instrumentadas? 
+      (ex: % de founders que chegam ao primeiro output de IA)
+7.2 — Existem métricas de retenção? 
+      (ex: % de founders que retornam após 7 dias)
+7.3 — Existem métricas de engajamento por fase? 
+      (qual fase tem maior taxa de conclusão/abandono)
+7.4 — Há event tracking implementado para os momentos 
+      críticos da jornada (project_created, phase_executed, 
+      gate_checked, phase_completed, project_completed)?
+7.5 — Existe análise de funil — é possível ver onde os 
+      founders abandonam entre cadastro e primeiro valor?
+7.6 — Existe monitoramento de drop-offs por fase — 
+      qual das 7 fases perde mais founders?
+7.7 — Há coleta de feedback direto do founder dentro 
+      da plataforma (NPS, rating pós-fase, campo aberto)?
+7.8 — Existem hipóteses documentadas de crescimento, 
+      retenção e monetização — ou as decisões são intuitivas?
+7.9 — A plataforma tem sinais de Product-Market Fit? 
+      (retenção acima de 40% em D7, NPS > 40, 
+      uso espontâneo sem incentivo)
+7.10 — Existe capacidade de segmentação comportamental — 
+       tratar diferente founders que usam muito vs. pouco, 
+       que chegaram na Fase 3 vs. que travaram na Fase 1?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BLOCO 8 — COMPATIBILIDADE ENTRE PROMESSA E ENTREGA
+"O produto cumpre o que o marketing promete?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Avaliar a coerência entre o que é prometido e o que é entregue:
+
+8.1 — A promessa "da ideia ao lançamento em 7 fases" é 
+      cumprida integralmente — as 7 fases cobrem de fato 
+      todo o caminho até o lançamento?
+8.2 — "Gerados automaticamente" (PRD, personas, arquitetura, 
+      go-to-market) — os outputs são suficientemente específicos 
+      para justificar esse claim, ou são genéricos?
+8.3 — "IA que conhece o seu negócio" — o founder sente que 
+      a IA realmente aprendeu sobre o negócio dele ao longo 
+      das fases, ou parece que cada fase começa do zero?
+8.4 — A fase de Validação com Mercado entrega o que promete — 
+      scripts de entrevista e análise de feedback reais?
+8.5 — O Score de Coerência é percebido como útil e confiável, 
+      ou como um número arbitrário sem explicação?
+8.6 — A experiência mobile corresponde à promessa de uma 
+      plataforma profissional?
+8.7 — O tempo de geração da IA é compatível com a expectativa 
+      criada — o founder espera segundos ou minutos?
+8.8 — Existe risco de o founder chegar na Fase 7 e sentir 
+      que ainda não está "pronto para lançar"? 
+      O que acontece no final das 7 fases?
+8.9 — Os artefatos gerados têm qualidade suficiente para 
+      serem usados diretamente, ou exigem tanto retrabalho 
+      que a promessa se esvazia?
+8.10 — A plataforma entrega mais valor do que o founder 
+       esperava (overdeliver) ou exatamente o esperado 
+       (satisfação sem deleite)?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ENTREGÁVEL FINAL — MAPA DA JORNADA E PRIORIZAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Após avaliar os 8 blocos, entregar:
+
+1. MAPA DA JORNADA ATUAL
+Descreva a jornada real do founder em etapas sequenciais,
+do primeiro acesso até completar as 7 fases. Para cada etapa:
+  - O que o founder faz
+  - O que o founder sente (fricção, dúvida, deleite, confusão)
+  - O risco de abandono neste ponto (Baixo / Médio / Alto / Crítico)
+
+2. TOP 3 MOMENTOS CRÍTICOS
+Os 3 pontos da jornada onde a experiência atual mais ameaça 
+a retenção — com evidência no código e sugestão de correção.
+
+3. TOP 3 OPORTUNIDADES DE DELEITE
+Os 3 pontos onde uma melhoria relativamente pequena geraria 
+impacto desproporcional na percepção de valor e no NPS.
+
+4. TABELA DE PRIORIZAÇÃO FINAL
+
+| # | Bloco | Item | Status | Impacto | Esforço | Prioridade |
+|---|-------|------|--------|---------|---------|------------|
+|   |       |      |        |         | P/M/G   | 🔴/🟡/🟢  |
+
+5. UMA PERGUNTA
+A pergunta mais importante que a FoundersFlow deveria 
+estar respondendo com dados agora — e ainda não está.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INSTRUÇÕES GERAIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+- Baseie cada avaliação no código real. Cite arquivos e linhas.
+- Quando o código não for suficiente para avaliar um item 
+  (ex: percepção emocional, NPS), indique como uma lacuna 
+  de instrumentação e classifique como ❌ Ausente.
+- Não gere sugestões genéricas. Cada recomendação deve ser 
+  específica para a FoundersFlow e para o founder brasileiro.
+- Se um item não se aplica à natureza do produto, 
+  classifique como [N/A] e explique brevemente por quê.
+- Execute bloco por bloco. Não pule para a tabela final 
+  sem completar todos os 8 blocos.
