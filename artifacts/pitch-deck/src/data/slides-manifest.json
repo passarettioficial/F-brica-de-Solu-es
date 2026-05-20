@@ -1,1 +1,90 @@
-[]
+[
+  {
+    "id": "a1b2c3d4-0001-4000-8000-000000000001",
+    "position": 1,
+    "filepath": "src/pages/slides/Cover.tsx",
+    "title": "FoundersFlow",
+    "description": "Slide de abertura com identidade da marca",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0002-4000-8000-000000000002",
+    "position": 2,
+    "filepath": "src/pages/slides/Problema.tsx",
+    "title": "O problema",
+    "description": "O problema que founders enfrentam sem validação estruturada",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0003-4000-8000-000000000003",
+    "position": 3,
+    "filepath": "src/pages/slides/Solucao.tsx",
+    "title": "A solução",
+    "description": "7 fases sequenciais com artefatos acionáveis",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0004-4000-8000-000000000004",
+    "position": 4,
+    "filepath": "src/pages/slides/ComoFunciona.tsx",
+    "title": "Como funciona",
+    "description": "As 7 fases e seus entregáveis",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0005-4000-8000-000000000005",
+    "position": 5,
+    "filepath": "src/pages/slides/Tracao.tsx",
+    "title": "Tração",
+    "description": "Métricas de uso e crescimento",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0006-4000-8000-000000000006",
+    "position": 6,
+    "filepath": "src/pages/slides/ModeloNegocio.tsx",
+    "title": "Modelo de negócio",
+    "description": "Planos Free, Starter e Advanced com recorrência mensal",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0007-4000-8000-000000000007",
+    "position": 7,
+    "filepath": "src/pages/slides/Mercado.tsx",
+    "title": "Mercado",
+    "description": "TAM, SAM e SOM para founders early-stage no Brasil e LatAm",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0008-4000-8000-000000000008",
+    "position": 8,
+    "filepath": "src/pages/slides/Diferenciais.tsx",
+    "title": "Diferenciais",
+    "description": "Por que FoundersFlow e não outra ferramenta",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0009-4000-8000-000000000009",
+    "position": 9,
+    "filepath": "src/pages/slides/Time.tsx",
+    "title": "Time",
+    "description": "Os fundadores por trás da FoundersFlow",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0010-4000-8000-000000000010",
+    "position": 10,
+    "filepath": "src/pages/slides/Captacao.tsx",
+    "title": "O que buscamos",
+    "description": "Rodada de captação e uso do capital",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0011-4000-8000-000000000011",
+    "position": 11,
+    "filepath": "src/pages/slides/Closing.tsx",
+    "title": "Contato",
+    "description": "Slide de encerramento com contato",
+    "speakerNotes": ""
+  }
+]

@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "J3vWJyoLYEeYVUm2b7-nA"
+uri = "file://artifacts/pitch-deck/public/cover-bg.png"
+type = "image"
+title = "dark navy cover background"
