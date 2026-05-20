@@ -344,6 +344,33 @@ export function Home() {
           <div className="hero-glow" />
           <div className="hero-grid" />
 
+          {/* ── Paper Airplane — floating background decoration ── */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-14 right-10 z-[2] select-none hidden lg:block"
+          >
+            {/* Ghost trail 2 — farthest, barely there */}
+            <div className="absolute" style={{ top: 30, right: -10, opacity: 0.04 }}>
+              <svg width="180" height="140" viewBox="0 0 180 140" fill="none">
+                <path d="M5 70 L175 5 L120 70 L175 135 Z" fill="hsl(var(--primary))" />
+              </svg>
+            </div>
+            {/* Ghost trail 1 — closer */}
+            <div className="absolute" style={{ top: 15, right: 5, opacity: 0.07 }}>
+              <svg width="200" height="160" viewBox="0 0 200 160" fill="none">
+                <path d="M5 80 L195 5 L135 80 L195 155 Z" fill="hsl(var(--primary))" />
+              </svg>
+            </div>
+            {/* Main animated plane */}
+            <div className="hero-paper-plane">
+              <svg width="240" height="190" viewBox="0 0 240 190" fill="none" style={{ opacity: 0.09 }}>
+                <path d="M8 95 L232 8 L160 95 L232 182 Z" fill="hsl(var(--primary))" />
+                <path d="M8 95 L160 95 L132 145 Z" fill="hsl(var(--primary))" />
+                <line x1="8" y1="95" x2="232" y2="8" stroke="white" strokeWidth="1.5" opacity="0.35" />
+              </svg>
+            </div>
+          </div>
+
           <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
