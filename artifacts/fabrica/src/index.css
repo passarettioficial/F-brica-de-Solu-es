@@ -602,25 +602,6 @@ select:focus {
   .animate-hero-mockup { animation: none; }
 }
 
-/* ── Paper Airplane — hero floating decoration ── */
-@keyframes plane-float {
-  0%   { transform: translateY(0px)   rotate(-22deg); }
-  25%  { transform: translateY(-14px) rotate(-19deg); }
-  50%  { transform: translateY(-8px)  rotate(-24deg); }
-  75%  { transform: translateY(-18px) rotate(-20deg); }
-  100% { transform: translateY(0px)   rotate(-22deg); }
-}
-.hero-paper-plane {
-  will-change: transform;
-  animation: plane-float 7s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .hero-paper-plane {
-    animation: none;
-    transform: rotate(-22deg);
-  }
-}
-
 /* ── Selection color ── */
 ::selection {
   background: hsl(265 98% 56% / 0.25);
