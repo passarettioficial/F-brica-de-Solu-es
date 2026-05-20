@@ -347,25 +347,24 @@ export function Home() {
           <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-12 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-foreground leading-[0.94] tracking-tight mb-8">
-              Pare de travar<br />
-              entre a ideia<br />
-              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">e a execução</span>.
+              Você já<br />
+              começou.<br />
+              <span className="text-primary underline underline-offset-4 decoration-accent decoration-4">Na direção certa?</span>
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground mb-3 max-w-2xl font-sans leading-relaxed">
-              PRD, personas, arquitetura, go-to-market e validação com o mercado —
-              gerados para o <strong className="text-foreground font-semibold">seu negócio</strong>, não para qualquer um.
-              Em 7 fases estruturadas, com IA que acumula contexto entre cada entrega.
+              Em 7 fases estruturadas, a IA <strong className="text-foreground font-semibold">audita o que você já construiu</strong>, valida suas hipóteses e gera os artefatos que alimentam cada próxima decisão — PRD, personas, arquitetura, go-to-market.
+              Sem achismo. Sem retrabalho caro.
               </p>
 
               <div className="inline-flex items-center gap-2.5 bg-card/80 border border-border/60 rounded-full px-4 py-2 mb-5 backdrop-blur-sm">
                 <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest">vs ChatGPT</span>
                 <span className="w-px h-3 bg-border" />
-                <span className="text-xs text-foreground font-medium">O ChatGPT te dá uma resposta. A FoundersFlow te dá um produto.</span>
+                <span className="text-xs text-foreground font-medium">O ChatGPT te dá uma resposta. A FoundersFlow audita seu produto.</span>
               </div>
 
               <p className="text-sm text-muted-foreground/70 italic max-w-[540px] mb-10 leading-relaxed mx-auto lg:mx-0">
-                Para o founder solo que quer sair da ideia ao lançamento sem virar PM, arquiteto e advogado da LGPD ao mesmo tempo.
+                Não importa onde você está. As primeiras fases calibram o que você já construiu. As seguintes aceleram o que vem a seguir.
               </p>
 
               {/* Stats row */}
@@ -381,10 +380,10 @@ export function Home() {
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-center lg:justify-start">
               <Link href="/sign-up">
                 <Button
-                  aria-label="Iniciar minha construção"
+                  aria-label="Analisar meu projeto agora"
                   className="bg-accent text-accent-foreground hover:bg-accent/90 text-base font-semibold py-3 px-8 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 outline-none"
                 >
-                  Iniciar minha construção →
+                  Analisar meu projeto agora →
                 </Button>
               </Link>
               <PrdDialog
@@ -393,7 +392,7 @@ export function Home() {
                     variant="ghost"
                     className="text-sm text-muted-foreground border border-border/60 hover:bg-muted/60 hover:text-foreground transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
                   >
-                    Ver exemplo de PRD →
+                    Ver o que a IA gera →
                   </Button>
                 }
               />
