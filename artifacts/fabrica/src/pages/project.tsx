@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
 import { downloadProjectPdf } from "@/lib/pdf-export";
+import { handleAiLimit } from "@/lib/paywall";
 
 const ARTIFACT_LABELS: Record<string, string> = (() => {
   const map: Record<string, string> = {};
@@ -110,7 +111,11 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
     setError(null);
     try {
       const res = await fetch(`${basePath}/api/projects/${projectId}/coherence/analyze`, { method: "POST" });
-      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || "Erro ao analisar"); }
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        if (await handleAiLimit(res, b)) { setLoading(false); return; }
+        throw new Error(b.error || "Erro ao analisar");
+      }
       onRefresh();
     } catch (e: any) {
       setError(e.message);
@@ -247,7 +252,11 @@ function MarketPotentialCard({ project, projectId, onRefresh }: { project: any; 
     setError(null);
     try {
       const res = await fetch(`${basePath}/api/projects/${projectId}/potential/analyze`, { method: "POST" });
-      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || "Erro ao analisar"); }
+      if (!res.ok) {
+        const b = await res.json().catch(() => ({}));
+        if (await handleAiLimit(res, b)) { setLoading(false); return; }
+        throw new Error(b.error || "Erro ao analisar");
+      }
       onRefresh();
     } catch (e: any) {
       setError(e.message);
@@ -429,6 +438,7 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
     const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/generate-script`, { method: "POST" });
     if (!res.ok || !res.body) {
       const body = await res.json().catch(() => ({}));
+      if (await handleAiLimit(res, body)) { setScriptGenerating(false); return; }
       setScriptError(body.error || "Erro ao gerar roteiro. Tente novamente.");
       setScriptGenerating(false);
       return;
@@ -481,6 +491,7 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
     const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/analyze`, { method: "POST" });
     if (!res.ok || !res.body) {
       const body = await res.json().catch(() => ({}));
+      if (await handleAiLimit(res, body)) { setAnalysisGenerating(false); return; }
       setAnalysisError(body.error || "Erro ao analisar notas. Tente novamente.");
       setAnalysisGenerating(false);
       return;

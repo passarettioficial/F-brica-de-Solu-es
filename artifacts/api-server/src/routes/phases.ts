@@ -8,7 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { generatePhaseArtifacts } from "../lib/ai";
 import { logEvent } from "../lib/events";
-import { checkAndIncrementAiUsage } from "../lib/auth";
+import { checkAndIncrementAiUsage, aiLimitPayload } from "../lib/auth";
 import { auditLog } from "../lib/audit";
 import { createNotification } from "../lib/notifications";
 import { getPlanConfig } from "../lib/stripe";
@@ -362,11 +362,11 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
-  const { allowed, limit } = await checkAndIncrementAiUsage(userId);
+  const { allowed, limit, plan, used } = await checkAndIncrementAiUsage(userId);
   if (!allowed) {
     await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
     await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit, phaseNumber, projectId }, req });
-    res.status(429).json({ error: `Limite diário de ${limit} execuções de IA atingido. Tente novamente amanhã ou faça upgrade do plano.` });
+    res.status(429).json(aiLimitPayload({ limit, plan, used, context: `Geração da Fase ${phaseNumber}` }));
     return;
   }
   await auditLog({ eventType: "user.ai.used", actorClerkId: userId, meta: { projectId, phaseNumber, projectName: project.name }, req });

@@ -31,6 +31,7 @@ import { ClarezaImediataPage } from "@/pages/clareza-imediata";
 import { FluxoContinuoPage } from "@/pages/fluxo-continuo";
 import { ProntoParaVenderPage } from "@/pages/pronto-para-vender";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { PaywallModal } from "@/components/paywall-modal";
 import { PublicSharePage } from "@/pages/public-share";
 
 const queryClient = new QueryClient();
@@ -245,6 +246,7 @@ function ClerkProviderWithRoutes() {
           <Router />
           <Toaster />
           <WhatsAppButton />
+          <PaywallModal />
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>

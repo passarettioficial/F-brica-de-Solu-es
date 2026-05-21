@@ -30,6 +30,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ArtifactBody } from "@/components/artifact-body";
 import { downloadArtifactPdf } from "@/lib/pdf-export";
+import { handleAiLimit } from "@/lib/paywall";
 import {
   SeletorNichoCanvas,
   MatrizCompetitivaCanvas,
@@ -898,6 +899,10 @@ export function PhasePage() {
         const err = await response.json().catch(() => ({ error: "Erro desconhecido" })) as { error?: string; code?: string; requiresUpgrade?: boolean };
         if (response.status === 402 || err.requiresUpgrade) {
           setUpgradeRequired(true);
+          setGenerating(false);
+          return;
+        }
+        if (await handleAiLimit(response, err)) {
           setGenerating(false);
           return;
         }
