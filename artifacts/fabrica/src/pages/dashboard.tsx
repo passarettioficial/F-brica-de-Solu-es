@@ -20,6 +20,7 @@ import { OnboardingTour } from "@/components/onboarding-tour";
 import { ProgressiveProfile } from "@/components/progressive-profile";
 import { ActivationChecklist } from "@/components/activation-checklist";
 import { AppSidebar } from "@/components/app-sidebar";
+import { JourneyWidget } from "@/components/journey-widget";
 
 const EXAMPLE_TEMPLATES = [
   { id: "saas", label: "SaaS B2B", icon: "💼", tag: "Recorrente", name: "Plataforma de gestão para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e médias empresas gerenciarem projetos, clientes e receitas. Problema: PMEs perdem contratos por falta de acompanhamento. Público-alvo: donos de empresas de 5-50 funcionários. Diferencial: simplicidade e preço acessível (R$99/mês). Modelo: freemium com limite de projetos." },
@@ -494,6 +495,8 @@ export function Dashboard() {
               <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
               <MetricCard label="Plano" value={permissions.planName} sub="ver planos →" variant="link" />
             </div>
+
+            {!isLoading && projects.length > 0 && <JourneyWidget projects={projects} />}
 
             {benchmarks && benchmarks.platform.totalProjects > 1 && (
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 bg-card border border-card-border rounded-xl px-4 py-3">
