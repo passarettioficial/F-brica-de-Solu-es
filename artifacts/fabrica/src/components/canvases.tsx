@@ -570,6 +570,61 @@ export function EditableValorQuantificadoCanvas({
   );
 }
 
+// ───────────────────────── Cross-editor sync helpers ─────────────────────────
+export type SiblingArtifact = { artifactKey: string; content: string };
+
+function findSibling(siblings: SiblingArtifact[] | undefined, key: string): SiblingArtifact | undefined {
+  return siblings?.find((s) => s.artifactKey === key && !!s.content?.trim());
+}
+
+function toPosNum(v: unknown): number | null {
+  if (v == null) return null;
+  const n = typeof v === "number" ? v : typeof v === "string" ? parseFloat(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+export function getArpuFromPricing(siblings?: SiblingArtifact[]): number | null {
+  const sib = findSibling(siblings, "HIPOTESE_PRICING");
+  if (!sib) return null;
+  const d = parseJsonBlock<PricingData>(sib.content);
+  if (!d?.tiers?.length) return null;
+  const arpu = toPosNum(d.arpu_recomendado);
+  if (arpu != null) return Math.round(arpu);
+  const mid = toPosNum(d.tiers[1]?.preco_mensal);
+  if (mid != null) return Math.round(mid);
+  const prices = d.tiers.map((t) => toPosNum(t?.preco_mensal)).filter((n): n is number => n != null);
+  if (!prices.length) return null;
+  return Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
+}
+
+export function getCeilingFromValor(siblings?: SiblingArtifact[]): number | null {
+  const sib = findSibling(siblings, "VALOR_QUANTIFICADO");
+  if (!sib) return null;
+  const d = parseJsonBlock<VqNumericData>(sib.content);
+  if (!d) return null;
+  let economia = d.ganho_liquido?.dinheiro_economizado_mensal;
+  if (typeof economia !== "number" || economia <= 0) {
+    economia = parseBrlFromStr(d.ganho_liquido?.dinheiro_economizado) ?? undefined;
+  }
+  if (typeof economia !== "number" || economia <= 0) return null;
+  return Math.max(1, Math.round(economia * 0.1));
+}
+
+function SyncChip({ label, onClick, testId }: { label: string; onClick: () => void; testId: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid={testId}
+      className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full border border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+      title="Puxar valor do artefato relacionado"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      {label}
+    </button>
+  );
+}
+
 // ───────────────────────── 4c. HIPÓTESE PRICING (read + editor) ─────────────────────────
 type PricingTier = { nome?: string; preco_mensal?: number; publico?: string; features?: string[] };
 type PricingData = {
@@ -634,7 +689,7 @@ const DEFAULT_TIERS: PricingTier[] = [
 ];
 
 export function EditableHipotesePricingCanvas({
-  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate,
+  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate, siblings,
 }: {
   content: string;
   projectId: number;
@@ -642,7 +697,9 @@ export function EditableHipotesePricingCanvas({
   artifactKey: string;
   canEdit: boolean;
   onUpdate?: () => void;
+  siblings?: SiblingArtifact[];
 }) {
+  const ceiling = getCeilingFromValor(siblings);
   const original = parseJsonBlock<PricingData>(content);
   const hasJson = !!original?.tiers?.length;
   const [editing, setEditing] = useState(false);
@@ -746,6 +803,21 @@ export function EditableHipotesePricingCanvas({
         <div className="text-[10px] font-mono uppercase tracking-wider text-primary">Editor de pricing · ARPU ao vivo</div>
         <div className="text-[10px] text-muted-foreground">3 tiers · regra: Pro ~3× Starter, Business ~2× Pro</div>
       </div>
+
+      {ceiling != null && ceiling > 0 && (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2">
+          <div className="text-[11px] text-foreground">
+            <span className="font-mono uppercase text-accent-foreground">Teto sugerido pelo Valor Quantificado:</span>{" "}
+            <span className="font-semibold">{fmtBRLmes(ceiling)}</span>{" "}
+            <span className="text-muted-foreground">(10% do ganho mensal do cliente)</span>
+          </div>
+          <SyncChip
+            label={`Aplicar no Tier 2 (${fmtBRLmes(ceiling)})`}
+            onClick={() => updateTier(1, { preco_mensal: ceiling })}
+            testId="chip-sync-ceiling-tier2"
+          />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-3">
         {tiers.map((t, i) => (
@@ -971,7 +1043,7 @@ function computeLtvCac(ticket: number, margemPct: number, churnPct: number, cac:
 }
 
 export function EditableLtvCacCanvas({
-  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate,
+  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate, siblings,
 }: {
   content: string;
   projectId: number;
@@ -979,8 +1051,10 @@ export function EditableLtvCacCanvas({
   artifactKey: string;
   canEdit: boolean;
   onUpdate?: () => void;
+  siblings?: SiblingArtifact[];
 }) {
   const original = parseJsonBlock<LtvCacData>(content);
+  const arpuFromPricing = getArpuFromPricing(siblings);
   const [editing, setEditing] = useState(false);
   const [ticket, setTicket] = useState<number>(original?.premissas?.ticket_medio_mensal ?? 0);
   const [margem, setMargem] = useState<number>(original?.premissas?.margem_bruta_pct ?? 70);
@@ -1073,7 +1147,16 @@ export function EditableLtvCacCanvas({
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <label className="block">
-          <div className="text-xs text-muted-foreground mb-1">Ticket médio/mês (R$)</div>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="text-xs text-muted-foreground">Ticket médio/mês (R$)</div>
+            {arpuFromPricing != null && arpuFromPricing > 0 && arpuFromPricing !== Math.round(ticket) && (
+              <SyncChip
+                label={`Pricing: ${fmtBRLmes(arpuFromPricing)}`}
+                onClick={() => setTicket(arpuFromPricing)}
+                testId="chip-sync-arpu-ticket"
+              />
+            )}
+          </div>
           <input type="number" min={0} step="1" value={ticket || ""} onChange={(e) => setTicket(parseFloat(e.target.value) || 0)} className={inputCls} data-testid="input-ticket" />
         </label>
         <label className="block">

@@ -177,6 +177,7 @@ const ArtifactCard = memo(function ArtifactCard({
   onUpdate,
   expanded,
   onToggleExpanded,
+  siblings,
 }: {
   artifact: { id: number; artifactKey: string; content: string; contentJson: string | null; downloadedAt?: string | null };
   phaseNumber: number;
@@ -186,6 +187,7 @@ const ArtifactCard = memo(function ArtifactCard({
   onUpdate: () => void;
   expanded: boolean;
   onToggleExpanded: () => void;
+  siblings?: Array<{ artifactKey: string; content: string }>;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(artifact.content);
@@ -342,6 +344,7 @@ const ArtifactCard = memo(function ArtifactCard({
                     artifactKey={artifact.artifactKey}
                     canEdit={canCopy}
                     onUpdate={onUpdate}
+                    siblings={siblings}
                   />
                 </ProtectWrap>
               ) : isLtvCac ? (
@@ -353,6 +356,7 @@ const ArtifactCard = memo(function ArtifactCard({
                     artifactKey={artifact.artifactKey}
                     canEdit={canCopy}
                     onUpdate={onUpdate}
+                    siblings={siblings}
                   />
                 </ProtectWrap>
               ) : isMatrizRbac ? (
@@ -1047,6 +1051,7 @@ export function PhasePage() {
                   onUpdate={invalidatePhase}
                   expanded={expandedIds.has(artifact.id)}
                   onToggleExpanded={() => toggleExpanded(artifact.id)}
+                  siblings={artifacts}
                 />
               );
               if (!sections) return artifacts.map(renderCard);
