@@ -26,6 +26,8 @@ import {
   MapaDecisaoCompraCanvas,
   ValorQuantificadoCanvas,
   EditableValorQuantificadoCanvas,
+  HipotesePricingCanvas,
+  EditableHipotesePricingCanvas,
   LtvCacCanvas,
   EditableLtvCacCanvas,
   EditableScorePotencialCanvas,
@@ -200,6 +202,7 @@ const ArtifactCard = memo(function ArtifactCard({
   const isMapaDecisao = phaseNumber === 2 && artifact.artifactKey === "MAPA_DECISAO_COMPRA";
   const isValorQuant = phaseNumber === 2 && artifact.artifactKey === "VALOR_QUANTIFICADO";
   const isLtvCac = phaseNumber === 2 && artifact.artifactKey === "LTV_CAC";
+  const isPricing = phaseNumber === 2 && artifact.artifactKey === "HIPOTESE_PRICING";
   const isMatrizRbac = phaseNumber === 3 && artifact.artifactKey === "MATRIZ_RBAC";
   const isModeloDados = phaseNumber === 4 && artifact.artifactKey === "MODELO_DADOS";
   const isMilestones = phaseNumber === 5 && artifact.artifactKey === "MILESTONES";
@@ -322,6 +325,17 @@ const ArtifactCard = memo(function ArtifactCard({
               ) : isValorQuant ? (
                 <ProtectWrap protect={!canCopy}>
                   <EditableValorQuantificadoCanvas
+                    content={artifact.content}
+                    projectId={projectId}
+                    phaseNumber={phaseNumber}
+                    artifactKey={artifact.artifactKey}
+                    canEdit={canCopy}
+                    onUpdate={onUpdate}
+                  />
+                </ProtectWrap>
+              ) : isPricing ? (
+                <ProtectWrap protect={!canCopy}>
+                  <EditableHipotesePricingCanvas
                     content={artifact.content}
                     projectId={projectId}
                     phaseNumber={phaseNumber}

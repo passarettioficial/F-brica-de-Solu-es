@@ -570,6 +570,256 @@ export function EditableValorQuantificadoCanvas({
   );
 }
 
+// ───────────────────────── 4c. HIPÓTESE PRICING (read + editor) ─────────────────────────
+type PricingTier = { nome?: string; preco_mensal?: number; publico?: string; features?: string[] };
+type PricingData = {
+  modelo?: string;
+  moeda?: string;
+  tiers?: PricingTier[];
+  perguntas_chave?: { valor_capturado?: string; alternativa_atual?: string; sensibilidade?: string };
+  go_to_market?: string;
+  comparacao_concorrentes?: string;
+  arpu_recomendado?: number;
+};
+
+export function HipotesePricingCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<PricingData>(content);
+  if (!data?.tiers?.length) return <Fallback content={content} />;
+  const prices = data.tiers.map((t) => t.preco_mensal ?? 0).filter((n) => n > 0);
+  const arpu = prices.length ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+  return (
+    <div className="space-y-4">
+      {data.modelo && (
+        <div className="text-xs text-muted-foreground">
+          <span className="font-mono uppercase tracking-wider text-primary">Modelo:</span> {data.modelo}
+        </div>
+      )}
+      <div className="grid md:grid-cols-3 gap-3">
+        {data.tiers.map((t, i) => (
+          <div key={i} className={`rounded-xl border p-4 ${i === 1 ? "border-primary/40 bg-primary/5" : "border-border bg-background"}`}>
+            <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Tier {i + 1}</div>
+            <div className="text-base font-semibold text-foreground mt-0.5">{t.nome ?? "—"}</div>
+            <div className="text-2xl font-bold text-primary mt-1">{t.preco_mensal != null ? fmtBRLmes(t.preco_mensal) : "—"}</div>
+            {t.publico && <div className="text-xs text-muted-foreground mt-2 italic">{t.publico}</div>}
+            {!!t.features?.length && (
+              <ul className="mt-3 space-y-1 text-xs text-foreground/80">
+                {t.features.map((f, j) => <li key={j} className="flex gap-1.5"><span className="text-primary">✓</span><span>{f}</span></li>)}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+      {arpu > 0 && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-foreground">
+          <span className="font-mono uppercase text-primary">ARPU médio:</span> <span className="font-semibold">{fmtBRLmes(arpu)}</span>
+          <span className="text-muted-foreground"> · use como `ticket_medio_mensal` no LTV÷CAC</span>
+        </div>
+      )}
+      {data.perguntas_chave && (
+        <div className="space-y-1.5 text-xs">
+          {data.perguntas_chave.valor_capturado && <div><span className="text-muted-foreground">Valor capturado: </span><span className="text-foreground">{data.perguntas_chave.valor_capturado}</span></div>}
+          {data.perguntas_chave.alternativa_atual && <div><span className="text-muted-foreground">Alternativa atual: </span><span className="text-foreground">{data.perguntas_chave.alternativa_atual}</span></div>}
+          {data.perguntas_chave.sensibilidade && <div><span className="text-muted-foreground">Sensibilidade: </span><span className="text-foreground">{data.perguntas_chave.sensibilidade}</span></div>}
+        </div>
+      )}
+      {data.go_to_market && <div className="text-xs text-muted-foreground"><span className="font-mono uppercase text-primary">GTM:</span> {data.go_to_market}</div>}
+    </div>
+  );
+}
+
+const DEFAULT_TIERS: PricingTier[] = [
+  { nome: "Starter", preco_mensal: 97, publico: "", features: [] },
+  { nome: "Pro", preco_mensal: 297, publico: "", features: [] },
+  { nome: "Business", preco_mensal: 697, publico: "", features: [] },
+];
+
+export function EditableHipotesePricingCanvas({
+  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate,
+}: {
+  content: string;
+  projectId: number;
+  phaseNumber: number;
+  artifactKey: string;
+  canEdit: boolean;
+  onUpdate?: () => void;
+}) {
+  const original = parseJsonBlock<PricingData>(content);
+  const hasJson = !!original?.tiers?.length;
+  const [editing, setEditing] = useState(false);
+
+  const seedTiers = (): PricingTier[] => {
+    if (hasJson) {
+      const arr = (original!.tiers ?? []).slice(0, 3);
+      while (arr.length < 3) arr.push({ ...DEFAULT_TIERS[arr.length] });
+      return arr.map((t) => ({
+        nome: t.nome ?? "",
+        preco_mensal: clampNonNeg(t.preco_mensal ?? 0),
+        publico: t.publico ?? "",
+        features: Array.isArray(t.features) ? t.features.map((f) => (typeof f === "string" ? f.trim() : "")).filter(Boolean) : [],
+      }));
+    }
+    return DEFAULT_TIERS.map((t) => ({ ...t }));
+  };
+  const [tiers, setTiers] = useState<PricingTier[]>(seedTiers);
+  const updateArtifact = useUpdateArtifact();
+  const { toast } = useToast();
+
+  const live = useMemo(() => {
+    const prices = tiers.map((t) => clampNonNeg(t.preco_mensal ?? 0)).filter((n) => n > 0);
+    const arpu = prices.length ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+    const min = prices.length ? Math.min(...prices) : 0;
+    const max = prices.length ? Math.max(...prices) : 0;
+    const spreadX = min > 0 ? max / min : 0;
+    return { arpu, min, max, spreadX, mid: tiers[1]?.preco_mensal ?? 0 };
+  }, [tiers]);
+
+  if (!editing) {
+    return (
+      <div className="space-y-3">
+        {hasJson ? <HipotesePricingCanvas content={content} /> : <Fallback content={content} />}
+        {canEdit && (
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="button-edit-pricing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              {hasJson ? "Editar tiers" : "Estruturar pricing"}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function updateTier(i: number, patch: Partial<PricingTier>) {
+    setTiers((prev) => prev.map((t, idx) => (idx === i ? { ...t, ...patch } : t)));
+  }
+  function updateFeatures(i: number, text: string) {
+    const features = text.split("\n").map((s) => s.trim()).filter(Boolean);
+    updateTier(i, { features });
+  }
+
+  function cancel() {
+    setTiers(seedTiers());
+    setEditing(false);
+  }
+
+  function save() {
+    const cleanTiers: PricingTier[] = tiers.map((t) => ({
+      nome: (t.nome ?? "").trim() || "Tier",
+      preco_mensal: clampNonNeg(t.preco_mensal ?? 0),
+      publico: (t.publico ?? "").trim() || undefined,
+      features: (t.features ?? []).map((f) => (typeof f === "string" ? f.trim() : "")).filter(Boolean),
+    }));
+    const prices = cleanTiers.map((t) => t.preco_mensal ?? 0).filter((n) => n > 0);
+    const arpu = prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0;
+    const next: PricingData = {
+      ...original,
+      modelo: original?.modelo ?? "SaaS recorrente",
+      moeda: original?.moeda ?? "BRL",
+      tiers: cleanTiers,
+      arpu_recomendado: arpu,
+    };
+    const newContent = replaceJsonBlock(content, next as object);
+    updateArtifact.mutate(
+      { projectId, phaseNumber, artifactKey, data: { content: newContent, contentJson: null } },
+      {
+        onSuccess: () => {
+          toast({ title: "Pricing atualizado", description: `ARPU: ${fmtBRLmes(arpu)} · use no LTV÷CAC` });
+          setEditing(false);
+          onUpdate?.();
+        },
+        onError: () => toast({ title: "Erro ao salvar", variant: "destructive" }),
+      }
+    );
+  }
+
+  const spreadHint = live.spreadX >= 5
+    ? { text: `Spread ${live.spreadX.toFixed(1)}× — bom: cobre econômico até enterprise`, color: "text-green-700 dark:text-green-400" }
+    : live.spreadX >= 2.5
+    ? { text: `Spread ${live.spreadX.toFixed(1)}× — saudável`, color: "text-amber-700 dark:text-amber-400" }
+    : live.spreadX > 0
+    ? { text: `Spread ${live.spreadX.toFixed(1)}× — tiers muito próximos, perde segmentação`, color: "text-red-700 dark:text-red-400" }
+    : { text: "Defina preços nos 3 tiers", color: "text-muted-foreground" };
+
+  return (
+    <div className="space-y-4 rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-primary">Editor de pricing · ARPU ao vivo</div>
+        <div className="text-[10px] text-muted-foreground">3 tiers · regra: Pro ~3× Starter, Business ~2× Pro</div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3">
+        {tiers.map((t, i) => (
+          <div key={i} className={`rounded-lg border p-3 space-y-2 ${i === 1 ? "border-primary/40 bg-primary/5" : "border-border bg-background"}`}>
+            <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Tier {i + 1}{i === 1 && " · destaque"}</div>
+            <input
+              type="text"
+              value={t.nome ?? ""}
+              onChange={(e) => updateTier(i, { nome: e.target.value })}
+              placeholder="Nome do tier"
+              data-testid={`input-tier-${i}-nome`}
+              className="w-full px-2 py-1 rounded-md border border-border bg-background text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground">R$</span>
+              <input
+                type="number"
+                min={0}
+                step="any"
+                inputMode="decimal"
+                value={Number.isFinite(t.preco_mensal) ? t.preco_mensal : 0}
+                onChange={(e) => updateTier(i, { preco_mensal: Number(e.target.value) })}
+                data-testid={`input-tier-${i}-preco`}
+                className="flex-1 px-2 py-1 rounded-md border border-border bg-background text-lg font-bold text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">/mês</span>
+            </div>
+            <input
+              type="text"
+              value={t.publico ?? ""}
+              onChange={(e) => updateTier(i, { publico: e.target.value })}
+              placeholder="Para quem é este tier"
+              data-testid={`input-tier-${i}-publico`}
+              className="w-full px-2 py-1 rounded-md border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <textarea
+              value={(t.features ?? []).join("\n")}
+              onChange={(e) => updateFeatures(i, e.target.value)}
+              placeholder="Uma feature por linha"
+              data-testid={`textarea-tier-${i}-features`}
+              rows={4}
+              className="w-full px-2 py-1 rounded-md border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3 pt-3 border-t border-border/40">
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">ARPU médio</div>
+          <div className="text-2xl font-bold text-primary">{fmtBRLmes(live.arpu)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Faixa</div>
+          <div className="text-sm font-semibold text-foreground">{fmtBRLmes(live.min)} → {fmtBRLmes(live.max)}</div>
+          <div className={`text-[10px] mt-0.5 ${spreadHint.color}`}>{spreadHint.text}</div>
+        </div>
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 flex flex-col justify-center">
+          <div className="text-[10px] font-mono uppercase text-primary">→ usar no LTV÷CAC</div>
+          <div className="text-sm font-semibold text-foreground">{fmtBRLmes(live.mid > 0 ? live.mid : live.arpu)}</div>
+          <div className="text-[10px] text-muted-foreground">tier do meio (mais provável)</div>
+        </div>
+      </div>
+
+      <div className="flex gap-2 justify-end pt-2 border-t border-border/40">
+        <Button variant="outline" size="sm" onClick={cancel} disabled={updateArtifact.isPending}>Cancelar</Button>
+        <Button size="sm" onClick={save} disabled={updateArtifact.isPending} data-testid="button-save-pricing">
+          {updateArtifact.isPending ? "Salvando…" : "Salvar pricing"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ───────────────────────── 5. LTV ÷ CAC ─────────────────────────
 type LtvCacData = {
   premissas?: { ticket_medio_mensal?: number; margem_bruta_pct?: number; churn_mensal_pct?: number; tempo_vida_estimado_meses?: number };

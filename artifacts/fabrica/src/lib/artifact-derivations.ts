@@ -76,6 +76,17 @@ const DERIVERS: Record<string, Deriver> = {
     if (g?.tempo_economizado) return { state: "ok", label: g.tempo_economizado, tooltip: "Tempo economizado" };
     return null;
   },
+  HIPOTESE_PRICING: (c) => {
+    const d = parseJson<{ tiers?: Array<{ preco_mensal?: number }>; arpu_recomendado?: number }>(c);
+    if (!d?.tiers?.length) return null;
+    const prices = d.tiers.map((t) => t?.preco_mensal ?? 0).filter((n) => typeof n === "number" && n > 0);
+    const arpu = typeof d.arpu_recomendado === "number" && d.arpu_recomendado > 0
+      ? d.arpu_recomendado
+      : prices.length ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+    if (arpu <= 0) return { state: "warn", label: `${d.tiers.length} tiers · sem preço` };
+    const label = `ARPU R$ ${Math.round(arpu).toLocaleString("pt-BR")}`;
+    return { state: "ok", label, tooltip: `${d.tiers.length} tiers definidos` };
+  },
   LTV_CAC: (c) => {
     const d = parseJson<{ razao_ltv_cac?: number; veredito?: string; ltv?: number; cac?: number }>(c);
     if (typeof d?.razao_ltv_cac === "number") {
