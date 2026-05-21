@@ -171,6 +171,20 @@ router.patch("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey", 
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable)
+    .where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  if (!planCfg.canCopy) {
+    res.status(402).json({
+      error: "A edição de artefatos requer um plano pago.",
+      requiresUpgrade: true,
+      code: "EDIT_REQUIRES_PAID_PLAN",
+    });
+    return;
+  }
+
   const [phase] = await db.select().from(phasesTable).where(
     and(eq(phasesTable.projectId, projectId), eq(phasesTable.phaseNumber, phaseNumber))
   );

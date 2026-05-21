@@ -1,4 +1,8 @@
+import { useState, useMemo } from "react";
 import { ArtifactBody } from "./artifact-body";
+import { Button } from "@/components/ui/button";
+import { useUpdateArtifact } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 
 function parseJsonBlock<T = Record<string, unknown>>(content: string): T | null {
   try {
@@ -451,6 +455,203 @@ export function LtvCacCanvas({ content }: { content: string }) {
           </ol>
         </div>
       )}
+    </div>
+  );
+}
+
+// ───────────────────────── 5b. LTV ÷ CAC EDITOR (interactive) ─────────────────────────
+function replaceJsonBlock(original: string, newJson: object): string {
+  const pretty = "```json\n" + JSON.stringify(newJson, null, 2) + "\n```";
+  // Only replace fences whose contents parse as JSON (avoids corrupting unrelated code blocks)
+  const fenceRe = /```(?:json)?\s*(\{[\s\S]*?\})\s*```/g;
+  let replaced = false;
+  const out = original.replace(fenceRe, (match, body) => {
+    if (replaced) return match;
+    try { JSON.parse(body); replaced = true; return pretty; }
+    catch { return match; }
+  });
+  if (replaced) return out;
+  const trimmed = original.trim();
+  if (trimmed.startsWith("{")) {
+    try { JSON.parse(trimmed); return pretty; } catch { /* fall through */ }
+  }
+  return original.trim() ? `${original.trim()}\n\n${pretty}\n` : pretty;
+}
+
+function clampNonNeg(n: number, max?: number): number {
+  if (!isFinite(n) || n < 0) return 0;
+  if (max != null && n > max) return max;
+  return n;
+}
+
+function computeLtvCac(ticket: number, margemPct: number, churnPct: number, cac: number) {
+  const ticketSafe = isFinite(ticket) && ticket > 0 ? ticket : 0;
+  const margemSafe = isFinite(margemPct) && margemPct > 0 ? margemPct / 100 : 0;
+  const churnSafe = isFinite(churnPct) && churnPct > 0 ? churnPct / 100 : 0;
+  const cacSafe = isFinite(cac) && cac > 0 ? cac : 0;
+  const vidaMeses = churnSafe > 0 ? 1 / churnSafe : 0;
+  const ltv = ticketSafe * margemSafe * vidaMeses;
+  const margemMensal = ticketSafe * margemSafe;
+  const payback = margemMensal > 0 && cacSafe > 0 ? cacSafe / margemMensal : 0;
+  const razao = cacSafe > 0 ? ltv / cacSafe : 0;
+  let veredito: "SAUDAVEL" | "AJUSTAR" | "INVIAVEL" = "AJUSTAR";
+  if (razao >= 3) veredito = "SAUDAVEL";
+  else if (razao < 1 && razao > 0) veredito = "INVIAVEL";
+  return { ltv, payback, razao, veredito, vidaMeses };
+}
+
+export function EditableLtvCacCanvas({
+  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate,
+}: {
+  content: string;
+  projectId: number;
+  phaseNumber: number;
+  artifactKey: string;
+  canEdit: boolean;
+  onUpdate?: () => void;
+}) {
+  const original = parseJsonBlock<LtvCacData>(content);
+  const [editing, setEditing] = useState(false);
+  const [ticket, setTicket] = useState<number>(original?.premissas?.ticket_medio_mensal ?? 0);
+  const [margem, setMargem] = useState<number>(original?.premissas?.margem_bruta_pct ?? 70);
+  const [churn, setChurn] = useState<number>(original?.premissas?.churn_mensal_pct ?? 5);
+  const [cac, setCac] = useState<number>(original?.cac?.valor_calculado ?? 0);
+  const updateArtifact = useUpdateArtifact();
+  const { toast } = useToast();
+
+  const live = useMemo(() => computeLtvCac(ticket, margem, churn, cac), [ticket, margem, churn, cac]);
+
+  if (!editing) {
+    return (
+      <div className="space-y-3">
+        <LtvCacCanvas content={content} />
+        {canEdit && original && (
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="button-edit-ltv-cac">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Editar premissas
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const vMap = {
+    SAUDAVEL: { bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-300 dark:border-green-900/50", text: "text-green-700 dark:text-green-400", label: "SAUDÁVEL ✓" },
+    AJUSTAR: { bg: "bg-amber-50 dark:bg-amber-950/20", border: "border-amber-300 dark:border-amber-900/50", text: "text-amber-700 dark:text-amber-400", label: "AJUSTAR ⚠" },
+    INVIAVEL: { bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-300 dark:border-red-900/50", text: "text-red-700 dark:text-red-400", label: "INVIÁVEL ✕" },
+  } as const;
+  const v = vMap[live.veredito];
+
+  function cancel() {
+    setTicket(original?.premissas?.ticket_medio_mensal ?? 0);
+    setMargem(original?.premissas?.margem_bruta_pct ?? 70);
+    setChurn(original?.premissas?.churn_mensal_pct ?? 5);
+    setCac(original?.cac?.valor_calculado ?? 0);
+    setEditing(false);
+  }
+
+  function save() {
+    const ticketC = clampNonNeg(ticket);
+    const margemC = clampNonNeg(margem, 100);
+    const churnC = clampNonNeg(churn, 100);
+    const cacC = clampNonNeg(cac);
+    const next: LtvCacData = {
+      ...original,
+      premissas: {
+        ...original?.premissas,
+        ticket_medio_mensal: ticketC,
+        margem_bruta_pct: margemC,
+        churn_mensal_pct: churnC,
+        tempo_vida_estimado_meses: Math.round(live.vidaMeses * 10) / 10,
+      },
+      ltv: {
+        ...original?.ltv,
+        valor_calculado: Math.round(live.ltv),
+        formula: `Ticket × Margem × (1 / Churn) = ${ticketC} × ${margemC}% × ${(live.vidaMeses).toFixed(1)}`,
+      },
+      cac: {
+        ...original?.cac,
+        valor_calculado: Math.round(cacC),
+      },
+      razao_ltv_cac: Math.round(live.razao * 10) / 10,
+      payback_meses: Math.round(live.payback * 10) / 10,
+      veredito: live.veredito,
+    };
+    const newContent = replaceJsonBlock(content, next as object);
+    updateArtifact.mutate(
+      { projectId, phaseNumber, artifactKey, data: { content: newContent, contentJson: null } },
+      {
+        onSuccess: () => {
+          toast({ title: "Premissas atualizadas", description: `Nova razão LTV÷CAC: ${(Math.round(live.razao * 10) / 10).toFixed(1)}×` });
+          setEditing(false);
+          onUpdate?.();
+        },
+        onError: () => toast({ title: "Erro ao salvar", variant: "destructive" }),
+      }
+    );
+  }
+
+  const inputCls = "w-full px-3 py-2 rounded-md border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30";
+
+  return (
+    <div className="space-y-4 rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-primary">Editor de premissas · cálculo ao vivo</div>
+        <div className="text-[10px] text-muted-foreground">Não usa IA — pura matemática</div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <label className="block">
+          <div className="text-xs text-muted-foreground mb-1">Ticket médio/mês (R$)</div>
+          <input type="number" min={0} step="1" value={ticket || ""} onChange={(e) => setTicket(parseFloat(e.target.value) || 0)} className={inputCls} data-testid="input-ticket" />
+        </label>
+        <label className="block">
+          <div className="text-xs text-muted-foreground mb-1">Margem bruta (%)</div>
+          <input type="number" min={0} max={100} step="1" value={margem || ""} onChange={(e) => setMargem(parseFloat(e.target.value) || 0)} className={inputCls} data-testid="input-margem" />
+        </label>
+        <label className="block">
+          <div className="text-xs text-muted-foreground mb-1">Churn mensal (%)</div>
+          <input type="number" min={0} max={100} step="0.1" value={churn || ""} onChange={(e) => setChurn(parseFloat(e.target.value) || 0)} className={inputCls} data-testid="input-churn" />
+        </label>
+        <label className="block">
+          <div className="text-xs text-muted-foreground mb-1">CAC (R$)</div>
+          <input type="number" min={0} step="1" value={cac || ""} onChange={(e) => setCac(parseFloat(e.target.value) || 0)} className={inputCls} data-testid="input-cac" />
+        </label>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t border-border/40">
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">LTV calculado</div>
+          <div className="text-xl font-bold text-primary">{formatBRL(live.ltv)}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Vida média</div>
+          <div className="text-xl font-bold text-foreground">{live.vidaMeses > 0 ? `${live.vidaMeses.toFixed(1)} m` : "—"}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Payback</div>
+          <div className="text-xl font-bold text-foreground">{live.payback > 0 ? `${live.payback.toFixed(1)} m` : "—"}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Razão LTV÷CAC</div>
+          <div className={`text-xl font-bold ${v.text}`}>{live.razao > 0 ? `${live.razao.toFixed(1)}×` : "—"}</div>
+        </div>
+      </div>
+      <div className={`rounded-lg border-2 px-3 py-2 ${v.bg} ${v.border} flex items-center justify-between flex-wrap gap-2`}>
+        <div className={`text-sm font-bold ${v.text}`}>Veredito: {v.label}</div>
+        <div className="text-xs text-muted-foreground">
+          {live.razao >= 3 && "Unit economics saudáveis — pode escalar"}
+          {live.razao >= 1 && live.razao < 3 && "Funciona mas margem apertada — otimizar CAC ou ticket"}
+          {live.razao < 1 && live.razao > 0 && "Cada cliente gera prejuízo — não escalar antes de corrigir"}
+          {live.razao === 0 && "Preencha CAC e premissas pra calcular"}
+        </div>
+      </div>
+      <div className="flex gap-2 justify-end pt-2 border-t border-border/40">
+        <Button variant="outline" size="sm" onClick={cancel} disabled={updateArtifact.isPending}>Cancelar</Button>
+        <Button size="sm" onClick={save} disabled={updateArtifact.isPending || live.razao === 0} data-testid="button-save-ltv-cac">
+          {updateArtifact.isPending ? "Salvando…" : "Salvar premissas"}
+        </Button>
+      </div>
     </div>
   );
 }
