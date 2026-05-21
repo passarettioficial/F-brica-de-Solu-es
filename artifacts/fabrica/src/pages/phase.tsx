@@ -29,6 +29,7 @@ import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ArtifactBody } from "@/components/artifact-body";
+import { downloadArtifactPdf } from "@/lib/pdf-export";
 import {
   SeletorNichoCanvas,
   MatrizCompetitivaCanvas,
@@ -188,6 +189,7 @@ const ArtifactCard = memo(function ArtifactCard({
   expanded,
   onToggleExpanded,
   siblings,
+  projectName,
 }: {
   artifact: { id: number; artifactKey: string; content: string; contentJson: string | null; downloadedAt?: string | null };
   phaseNumber: number;
@@ -198,6 +200,7 @@ const ArtifactCard = memo(function ArtifactCard({
   expanded: boolean;
   onToggleExpanded: () => void;
   siblings?: Array<{ artifactKey: string; content: string }>;
+  projectName: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(artifact.content);
@@ -413,25 +416,54 @@ const ArtifactCard = memo(function ArtifactCard({
                     </div>
                   )}
                   {canDownload ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`text-xs gap-1 ${downloaded ? "border-green-500/40 text-green-600 dark:text-green-400" : ""}`}
-                      onClick={() => {
-                        downloadMarkdown(artifact.artifactKey, artifact.content, projectId, phaseNumber);
-                        setDownloaded(true);
-                      }}
-                      aria-label={`Baixar ${meta?.label ?? artifact.artifactKey} em Markdown`}
-                    >
-                      {downloaded ? (
-                        <>
-                          <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          Baixado
-                        </>
-                      ) : "↓ .md"}
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`text-xs gap-1 ${downloaded ? "border-green-500/40 text-green-600 dark:text-green-400" : ""}`}
+                        onClick={() => {
+                          downloadMarkdown(artifact.artifactKey, artifact.content, projectId, phaseNumber);
+                          setDownloaded(true);
+                        }}
+                        aria-label={`Baixar ${meta?.label ?? artifact.artifactKey} em Markdown`}
+                      >
+                        {downloaded ? (
+                          <>
+                            <svg viewBox="0 0 24 24" fill="none" className="w-3 h-3" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            Baixado
+                          </>
+                        ) : "↓ .md"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1"
+                        onClick={() => {
+                          try {
+                            downloadArtifactPdf({
+                              artifactKey: artifact.artifactKey,
+                              artifactLabel: meta?.label ?? artifact.artifactKey,
+                              content: artifact.content,
+                              projectName,
+                              phaseNumber,
+                            });
+                            setDownloaded(true);
+                            fetch(`${basePath}/api/projects/${projectId}/phases/${phaseNumber}/artifacts/${artifact.artifactKey}/download`, {
+                              method: "PATCH",
+                              credentials: "include",
+                            }).catch(() => {});
+                          } catch (e) {
+                            toast({ title: "Erro ao gerar PDF", description: e instanceof Error ? e.message : "Tente novamente.", variant: "destructive" });
+                          }
+                        }}
+                        aria-label={`Baixar ${meta?.label ?? artifact.artifactKey} em PDF`}
+                        data-testid="button-download-pdf"
+                      >
+                        ↓ PDF
+                      </Button>
+                    </div>
                   ) : (
                     <Link href="/pricing">
                       <span className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
@@ -1230,6 +1262,7 @@ export function PhasePage() {
                   expanded={expandedIds.has(artifact.id)}
                   onToggleExpanded={() => toggleExpanded(artifact.id)}
                   siblings={artifacts}
+                  projectName={project?.name ?? "Projeto"}
                 />
               );
               if (!sections) return artifacts.map(renderCard);

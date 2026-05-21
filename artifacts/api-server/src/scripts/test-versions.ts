@@ -18,7 +18,7 @@ async function main() {
 
   await db.delete(projectsTable).where(eq(projectsTable.clerkId, CLERK_ID));
   const [proj] = await db.insert(projectsTable).values({ clerkId: CLERK_ID, name: "RegenTest", briefing: "t" }).returning();
-  const [phase] = await db.insert(phasesTable).values({ projectId: proj.id, phaseNumber: 1, status: "in_progress" }).returning();
+  const [phase] = await db.insert(phasesTable).values({ projectId: proj.id, phaseNumber: 1, status: "active" }).returning();
   const phaseId = phase.id;
 
   await db.insert(phaseArtifactsTable).values({ phaseId, artifactKey: ART_KEY, content: "# v0" });

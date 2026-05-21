@@ -324,6 +324,19 @@ router.get("/projects/:id/export.md", async (req, res): Promise<void> => {
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable).where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  if (!planCfg.canDownload) {
+    res.status(402).json({
+      error: "Exportar artefatos requer um plano pago.",
+      requiresUpgrade: true,
+      code: "EXPORT_REQUIRES_PAID_PLAN",
+    });
+    return;
+  }
+
   const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
   const sorted = phases.sort((a, b) => a.phaseNumber - b.phaseNumber);
   const phaseIds = sorted.map((p) => p.id);
@@ -392,6 +405,69 @@ router.get("/projects/:id/export.md", async (req, res): Promise<void> => {
     eventType: "user.project.exported", actorClerkId: userId,
     meta: { projectId: id, format: "markdown", artifacts: artifacts.length }, req,
   }).catch(() => { /* fire and forget */ });
+});
+
+// GET /projects/:id/export.json — full project tree for client-side PDF rendering
+router.get("/projects/:id/export.json", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable).where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  if (!planCfg.canDownload) {
+    res.status(402).json({
+      error: "Exportar artefatos requer um plano pago.",
+      requiresUpgrade: true,
+      code: "EXPORT_REQUIRES_PAID_PLAN",
+    });
+    return;
+  }
+
+  const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
+  const sorted = phases.sort((a, b) => a.phaseNumber - b.phaseNumber);
+  const phaseIds = sorted.map((p) => p.id);
+  const artifacts = phaseIds.length
+    ? await db.select().from(phaseArtifactsTable).where(inArray(phaseArtifactsTable.phaseId, phaseIds))
+    : [];
+  const byPhase = new Map<number, typeof artifacts>();
+  for (const a of artifacts) {
+    const arr = byPhase.get(a.phaseId) ?? [];
+    arr.push(a);
+    byPhase.set(a.phaseId, arr);
+  }
+
+  const MAX_ARTIFACT_CHARS = 200_000;
+  res.json({
+    id: project.id,
+    name: project.name,
+    briefing: project.briefing,
+    phases: sorted.map((p) => ({
+      phaseNumber: p.phaseNumber,
+      status: p.status,
+      artifacts: (byPhase.get(p.id) ?? []).map((a) => {
+        const content = (a.content ?? "");
+        const truncated = content.length > MAX_ARTIFACT_CHARS;
+        return {
+          artifactKey: a.artifactKey,
+          content: truncated
+            ? content.slice(0, MAX_ARTIFACT_CHARS) + `\n\n> Artefato truncado em ${MAX_ARTIFACT_CHARS} caracteres.`
+            : content,
+        };
+      }),
+    })),
+  });
 });
 
 // GET /benchmarks — platform aggregate metrics for cross-project comparison

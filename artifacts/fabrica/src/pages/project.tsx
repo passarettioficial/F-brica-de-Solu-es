@@ -11,6 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
+import { downloadProjectPdf } from "@/lib/pdf-export";
+
+const ARTIFACT_LABELS: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const phase of PHASES as any[]) {
+    for (const a of (phase.artifacts ?? [])) map[a.key] = a.label;
+  }
+  return map;
+})();
 import { usePlan } from "@/hooks/usePlan";
 import { AppSidebar } from "@/components/app-sidebar";
 
@@ -770,6 +779,40 @@ export function ProjectPage() {
     toast({ title: "Download iniciado", description: "Markdown com todas as fases e artefatos do projeto." });
   }
 
+  const [exportingPdf, setExportingPdf] = useState(false);
+  async function exportProjectPdf() {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const res = await fetch(`${basePath}/api/projects/${projectId}/export.json`, { credentials: "include" });
+      if (!res.ok) throw new Error(`Falha ao carregar dados (${res.status})`);
+      const data = await res.json() as {
+        name: string;
+        briefing: string | null;
+        phases: Array<{ phaseNumber: number; status: string; artifacts: Array<{ artifactKey: string; content: string }> }>;
+      };
+      downloadProjectPdf({
+        projectName: data.name,
+        briefing: data.briefing,
+        phases: data.phases.map((p) => ({
+          phaseNumber: p.phaseNumber,
+          name: PHASES[p.phaseNumber - 1]?.name ?? `Fase ${p.phaseNumber}`,
+          status: p.status,
+          artifacts: p.artifacts.map((a) => ({
+            artifactKey: a.artifactKey,
+            label: ARTIFACT_LABELS[a.artifactKey] ?? a.artifactKey,
+            content: a.content,
+          })),
+        })),
+      });
+      toast({ title: "PDF gerado", description: "Documento completo do projeto baixado." });
+    } catch (e) {
+      toast({ title: "Erro ao gerar PDF", description: e instanceof Error ? e.message : "Tente novamente.", variant: "destructive" });
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
   function shareProject() {
     const shareUrl = `${window.location.origin}${basePath}/projects/${projectId}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -1071,10 +1114,24 @@ export function ProjectPage() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" size="sm" onClick={shareProject}>Copiar link</Button>
-                  <Button variant="outline" size="sm" onClick={exportProject} data-testid="button-export-project">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Baixar tudo (.md)
-                  </Button>
+                  {permissions.canDownload ? (
+                    <>
+                      <Button variant="outline" size="sm" onClick={exportProject} data-testid="button-export-project">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Baixar tudo (.md)
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={exportProjectPdf} disabled={exportingPdf} data-testid="button-export-project-pdf">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        {exportingPdf ? "Gerando…" : "Baixar PDF"}
+                      </Button>
+                    </>
+                  ) : (
+                    <Link href="/pricing">
+                      <Button variant="outline" size="sm" data-testid="button-export-upgrade">
+                        Exportar — plano Pro
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
