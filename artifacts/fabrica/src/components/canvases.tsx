@@ -1944,55 +1944,185 @@ const PRIO_STYLE: Record<string, string> = {
   P2: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
 };
 
-export function CasosTesteCanvas({ content }: { content: string }) {
-  const data = parseJsonBlock<CasosTesteData>(content);
-  if (!data?.casos?.length) return <Fallback content={content} />;
-  const counts = data.casos.reduce<Record<string, number>>((acc, c) => {
+type CasoTeste = NonNullable<CasosTesteData["casos"]>[number];
+
+export function CasosTesteCanvas({
+  content,
+  canEdit = false,
+  projectId,
+  phaseNumber,
+  artifactKey,
+  onUpdate,
+}: {
+  content: string;
+  canEdit?: boolean;
+  projectId?: number;
+  phaseNumber?: number;
+  artifactKey?: string;
+  onUpdate?: () => void;
+}) {
+  const parsed = parseJsonBlock<CasosTesteData>(content);
+  const initial = parsed?.casos ?? [];
+  const [items, setItems] = useState<CasoTeste[]>(initial);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [overPos, setOverPos] = useState<"before" | "after">("before");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const updateArtifact = useUpdateArtifact();
+
+  useEffect(() => {
+    if (!dirty) setItems(parsed?.casos ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
+
+  if (!parsed?.casos?.length) return <Fallback content={content} />;
+
+  const canDrag = canEdit && !!projectId && !!phaseNumber && !!artifactKey;
+  const counts = items.reduce<Record<string, number>>((acc, c) => {
     acc[c.prioridade] = (acc[c.prioridade] ?? 0) + 1; return acc;
   }, {});
+
+  function computePos(e: React.DragEvent): "before" | "after" {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    return e.clientY - rect.top < rect.height / 2 ? "before" : "after";
+  }
+  function onDragStart(e: React.DragEvent, idx: number) {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(idx)); } catch { /* noop */ }
+  }
+  function onDragOver(e: React.DragEvent, idx: number) {
+    if (dragIdx === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const pos = computePos(e);
+    if (overIdx !== idx) setOverIdx(idx);
+    if (overPos !== pos) setOverPos(pos);
+  }
+  function onDrop(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (dragIdx === null) return;
+    const pos = computePos(e);
+    let target = pos === "before" ? idx : idx + 1;
+    if (dragIdx < target) target -= 1;
+    if (target === dragIdx) { setDragIdx(null); setOverIdx(null); setOverPos("before"); return; }
+    const next = [...items];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(target, 0, moved);
+    setItems(next);
+    setDirty(true);
+    setDragIdx(null);
+    setOverIdx(null);
+    setOverPos("before");
+  }
+  function onDragEnd() { setDragIdx(null); setOverIdx(null); setOverPos("before"); }
+
+  function reset() { setItems(initial); setDirty(false); }
+
+  function save() {
+    if (!canDrag || saving) return;
+    setSaving(true);
+    const nextData: CasosTesteData = { ...parsed, casos: items };
+    const newContent = replaceJsonBlock(content, nextData as object);
+    updateArtifact.mutate(
+      { projectId: projectId!, phaseNumber: phaseNumber!, artifactKey: artifactKey!, data: { content: newContent, contentJson: null } },
+      {
+        onSuccess: () => {
+          toast({ title: "Casos reordenados", description: `${items.length} casos atualizados.` });
+          setDirty(false);
+          setSaving(false);
+          onUpdate?.();
+        },
+        onError: () => {
+          toast({ title: "Erro ao salvar", description: "Tente novamente.", variant: "destructive" });
+          setSaving(false);
+        },
+      }
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between flex-wrap gap-3">
-        <h4 className="font-serif text-base">{data.casos.length} casos de teste</h4>
-        <div className="flex gap-2">
+        <h4 className="font-serif text-base">{items.length} casos de teste</h4>
+        <div className="flex gap-2 items-center">
           {(["P0", "P1", "P2"] as const).map((p) => (
             <span key={p} className={`text-[11px] font-mono px-2 py-0.5 rounded border ${PRIO_STYLE[p]}`}>
               {p}: <strong>{counts[p] ?? 0}</strong>
             </span>
           ))}
+          {canDrag && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">Arraste para reordenar</span>}
         </div>
       </div>
       <div className="space-y-2">
-        {data.casos.map((c) => (
-          <details key={c.id} className="rounded-xl border border-border bg-card group">
-            <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
-              <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${PRIO_STYLE[c.prioridade] ?? PRIO_STYLE.P2}`}>{c.prioridade}</span>
-              <span className="font-mono text-[11px] text-muted-foreground">{c.id}</span>
-              <span className="flex-1 text-sm text-foreground">{c.titulo}</span>
-              {c.tipo && <span className="text-[10px] font-mono uppercase text-muted-foreground">{c.tipo}</span>}
-              <svg className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9" /></svg>
-            </summary>
-            <div className="px-4 pb-3 pt-1 border-t border-border space-y-2 text-sm">
-              {c.preconds && <div><span className="text-[10px] font-mono uppercase text-muted-foreground">Pré-condições · </span><span className="text-foreground">{c.preconds}</span></div>}
-              {!!c.steps?.length && (
-                <div>
-                  <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Steps</div>
-                  <ol className="list-decimal list-inside space-y-0.5 text-foreground">
-                    {c.steps.map((s, i) => <li key={i}>{s}</li>)}
-                  </ol>
+        {items.map((c, idx) => {
+          const isDragging = dragIdx === idx;
+          const isOver = overIdx === idx && dragIdx !== null && dragIdx !== idx;
+          return (
+            <div
+              key={c.id || `caso-${idx}`}
+              className={`relative transition-all ${isDragging ? "opacity-40" : ""}`}
+              draggable={canDrag}
+              onDragStart={canDrag ? (e) => onDragStart(e, idx) : undefined}
+              onDragOver={canDrag ? (e) => onDragOver(e, idx) : undefined}
+              onDrop={canDrag ? (e) => onDrop(e, idx) : undefined}
+              onDragEnd={canDrag ? onDragEnd : undefined}
+              data-testid={`caso-teste-row-${idx}`}
+            >
+              {isOver && overPos === "before" && <div className="absolute left-0 right-0 -top-1 h-0.5 bg-accent rounded" aria-hidden="true" />}
+              {isOver && overPos === "after" && <div className="absolute left-0 right-0 -bottom-1 h-0.5 bg-accent rounded" aria-hidden="true" />}
+              <details className={`rounded-xl border bg-card group ${canDrag ? "border-border hover:border-primary/40" : "border-border"}`}>
+                <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
+                  {canDrag && (
+                    <span
+                      className="cursor-grab active:cursor-grabbing text-muted-foreground select-none"
+                      aria-label="Arrastar caso"
+                      title="Arrastar para reordenar"
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+                    </span>
+                  )}
+                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${PRIO_STYLE[c.prioridade] ?? PRIO_STYLE.P2}`}>{c.prioridade}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">{c.id}</span>
+                  <span className="flex-1 text-sm text-foreground">{c.titulo}</span>
+                  {c.tipo && <span className="text-[10px] font-mono uppercase text-muted-foreground">{c.tipo}</span>}
+                  <svg className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9" /></svg>
+                </summary>
+                <div className="px-4 pb-3 pt-1 border-t border-border space-y-2 text-sm">
+                  {c.preconds && <div><span className="text-[10px] font-mono uppercase text-muted-foreground">Pré-condições · </span><span className="text-foreground">{c.preconds}</span></div>}
+                  {!!c.steps?.length && (
+                    <div>
+                      <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Steps</div>
+                      <ol className="list-decimal list-inside space-y-0.5 text-foreground">
+                        {c.steps.map((s, i) => <li key={i}>{s}</li>)}
+                      </ol>
+                    </div>
+                  )}
+                  {c.esperado && (
+                    <div className="rounded bg-green-500/5 border border-green-500/20 p-2">
+                      <span className="text-[10px] font-mono uppercase text-green-700 dark:text-green-400">Esperado · </span>
+                      <span className="text-foreground">{c.esperado}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              {c.esperado && (
-                <div className="rounded bg-green-500/5 border border-green-500/20 p-2">
-                  <span className="text-[10px] font-mono uppercase text-green-700 dark:text-green-400">Esperado · </span>
-                  <span className="text-foreground">{c.esperado}</span>
-                </div>
-              )}
+              </details>
             </div>
-          </details>
-        ))}
+          );
+        })}
       </div>
-      {data.distribuicao_alvo && <p className="text-[11px] text-muted-foreground italic">{data.distribuicao_alvo}</p>}
+      {canDrag && dirty && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground mr-auto">Alterações não salvas</span>
+          <Button variant="outline" size="sm" onClick={reset} disabled={saving} data-testid="button-casos-teste-reset">Desfazer</Button>
+          <Button size="sm" onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-casos-teste-save">
+            {saving ? "Salvando…" : "Salvar ordem"}
+          </Button>
+        </div>
+      )}
+      {parsed.distribuicao_alvo && <p className="text-[11px] text-muted-foreground italic">{parsed.distribuicao_alvo}</p>}
       <Attribution>Test prioritization (Kaner et al., 1999 · Crispin & Gregory, 2009). P0 bloqueia release.</Attribution>
     </div>
   );

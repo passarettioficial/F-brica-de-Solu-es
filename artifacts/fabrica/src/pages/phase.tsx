@@ -389,7 +389,16 @@ const ArtifactCard = memo(function ArtifactCard({
                   />
                 </ProtectWrap>
               ) : isCasosTeste ? (
-                <ProtectWrap protect={!canCopy}><CasosTesteCanvas content={artifact.content} /></ProtectWrap>
+                <ProtectWrap protect={!canCopy}>
+                  <CasosTesteCanvas
+                    content={artifact.content}
+                    canEdit={canCopy}
+                    projectId={projectId}
+                    phaseNumber={phaseNumber}
+                    artifactKey={artifact.artifactKey}
+                    onUpdate={onUpdate}
+                  />
+                </ProtectWrap>
               ) : isMetricasPos ? (
                 <ProtectWrap protect={!canCopy}><MetricasPosLaunchCanvas content={artifact.content} /></ProtectWrap>
               ) : isFailurePatterns ? (
