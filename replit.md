@@ -140,7 +140,7 @@ Superusers bypass all plan limits — `getPlanConfig` returns unlimited config w
 - `AiLimitBanner` — contextual alert at 70%+ AI usage, red at 100%, with upgrade CTA
 - `ActivationChecklist` — 6-step onboarding progress tracker for new users (hidden after 3 phases or dismissed). Stored dismissal in localStorage `fabrica_activation_dismissed`
 - Toast on project creation success/error
-- Example templates (SaaS, App, Marketplace) pre-fill name+briefing in new project dialog
+- Example templates (7 verticais — SaaS B2B, App Consumo, Marketplace, Fintech, Edtech, Healthtech, D2C, Creator) pre-fill name+briefing rico (problema, público, diferencial, modelo, compliance) em `dashboard.tsx` (`EXAMPLE_TEMPLATES`). EmptyState mostra os 4 primeiros, dialog mostra todos com tag por modelo (Recorrente/Mobile/Comissão/Regulado/Conteúdo/Produto/Comunidade) e botão "Limpar template"
 - OnboardingTour completion callback auto-opens new project dialog
 
 **Settings enhancements:**

@@ -22,10 +22,17 @@ import { ActivationChecklist } from "@/components/activation-checklist";
 import { AppSidebar } from "@/components/app-sidebar";
 
 const EXAMPLE_TEMPLATES = [
-  { id: "saas", label: "SaaS B2B", icon: "💼", name: "Plataforma de gestão para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e médias empresas gerenciarem projetos, clientes e receitas. Problema: PMEs perdem contratos por falta de acompanhamento. Público-alvo: donos de empresas de 5-50 funcionários. Diferencial: simplicidade e preço acessível (R$99/mês). Modelo: freemium com limite de projetos." },
-  { id: "app", label: "App de Consumo", icon: "📱", name: "App de saúde e hábitos", briefing: "Quero criar um app mobile para ajudar pessoas a criarem hábitos saudáveis de forma gamificada. Problema: as pessoas desistem das metas em menos de 30 dias. Público-alvo: adultos 25-40 anos que querem ser mais produtivos. Diferencial: social accountability — você só avança se um amigo confirmar. Modelo: assinatura anual R$199." },
-  { id: "marketplace", label: "Marketplace", icon: "🛒", name: "Marketplace de serviços criativos", briefing: "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de conteúdo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiáveis. Público-alvo: startups e agências de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissão de 15% por transação." },
+  { id: "saas", label: "SaaS B2B", icon: "💼", tag: "Recorrente", name: "Plataforma de gestão para PMEs", briefing: "Quero criar uma plataforma SaaS para pequenas e médias empresas gerenciarem projetos, clientes e receitas. Problema: PMEs perdem contratos por falta de acompanhamento. Público-alvo: donos de empresas de 5-50 funcionários. Diferencial: simplicidade e preço acessível (R$99/mês). Modelo: freemium com limite de projetos." },
+  { id: "app", label: "App de Consumo", icon: "📱", tag: "Mobile", name: "App de saúde e hábitos", briefing: "Quero criar um app mobile para ajudar pessoas a criarem hábitos saudáveis de forma gamificada. Problema: as pessoas desistem das metas em menos de 30 dias. Público-alvo: adultos 25-40 anos que querem ser mais produtivos. Diferencial: social accountability — você só avança se um amigo confirmar. Modelo: assinatura anual R$199." },
+  { id: "marketplace", label: "Marketplace", icon: "🛒", tag: "Comissão", name: "Marketplace de serviços criativos", briefing: "Quero criar um marketplace conectando freelancers criativos (designers, redatores, video-makers) a empresas que precisam de conteúdo sob demanda. Problema: empresas perdem semanas buscando fornecedores confiáveis. Público-alvo: startups e agências de marketing. Diferencial: garantia de entrega em 48h. Modelo: comissão de 15% por transação." },
+  { id: "fintech", label: "Fintech", icon: "🏦", tag: "Regulado", name: "Conta digital para autônomos", briefing: "Quero criar uma fintech focada em profissionais autônomos e MEIs no Brasil, com conta digital, emissão de notas fiscais e gestão de impostos. Problema: autônomos perdem dinheiro com bancos tradicionais e contadores caros. Público-alvo: freelancers, designers, devs, médicos autônomos faturando R$5k–50k/mês. Diferencial: cálculo automático de DAS, separação contas pessoa física/jurídica, integração com Pix. Modelo: R$29/mês + 1% sobre TPV. Compliance: BACEN, LGPD, lavagem de dinheiro." },
+  { id: "edtech", label: "Edtech", icon: "🎓", tag: "Conteúdo", name: "Plataforma de cursos para profissionais", briefing: "Quero criar uma edtech B2B2C que oferece trilhas curtas (4-8h) para profissionais de tecnologia se especializarem em IA aplicada. Problema: cursos genéricos não preparam para uso real no trabalho. Público-alvo: devs, PMs, designers em empresas de tecnologia. Diferencial: projetos avaliados por IA + mentor sênior, certificado verificável on-chain. Modelo: B2B (empresas pagam R$199/colaborador/mês) e B2C (R$79/mês individual)." },
+  { id: "healthtech", label: "Healthtech", icon: "🩺", tag: "Regulado", name: "Telemedicina para empresas", briefing: "Quero criar uma healthtech que oferece atendimento médico ilimitado por chat e vídeo como benefício corporativo. Problema: planos de saúde tradicionais são caros e subutilizados (média de 2-3 consultas/ano). Público-alvo: empresas de 20-500 funcionários que querem benefício de saúde mais acessível. Diferencial: triagem por IA antes da consulta, foco em saúde mental e clínica geral, integração com convênios. Modelo: R$39/colaborador/mês. Compliance: CFM, LGPD para dados sensíveis, ANS." },
+  { id: "d2c", label: "D2C / E-commerce", icon: "🛍️", tag: "Produto", name: "Marca D2C de bem-estar", briefing: "Quero criar uma marca direct-to-consumer de suplementos naturais com assinatura recorrente. Problema: consumidor não sabe quais suplementos tomar e esquece de reabastecer. Público-alvo: mulheres 28-45 anos preocupadas com energia, sono e imunidade. Diferencial: quiz personalizado com nutricionista, frascos mensais entregues automaticamente, fórmulas brasileiras com ANVISA. Modelo: assinatura R$149/mês com cancelamento livre. Canais: Instagram, TikTok, influencers nano." },
+  { id: "creator", label: "Creator / Infoproduto", icon: "🎙️", tag: "Comunidade", name: "Comunidade paga para criadores", briefing: "Quero criar uma plataforma onde criadores de conteúdo vendem acesso a comunidades pagas (estilo Patreon + Circle). Problema: criadores brasileiros perdem 30%+ em taxas internacionais e não têm Pix. Público-alvo: criadores 5k-200k seguidores que monetizam audiência. Diferencial: pagamento via Pix recorrente, app mobile próprio para a comunidade, ferramentas anti-pirataria. Modelo: 8% sobre receita do criador, sem mensalidade fixa." },
 ];
+
+const EMPTY_STATE_TEMPLATES = EXAMPLE_TEMPLATES.slice(0, 4);
 
 function MiniPipeline({ completedPhases, currentPhase }: { completedPhases: number; currentPhase: number }) {
   return (
@@ -199,8 +206,8 @@ function EmptyState({ onNew, onTemplate }: { onNew: () => void; onTemplate: (t: 
       </p>
 
       <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.18em] mb-3">Comece por um template</p>
-      <div className="grid grid-cols-3 gap-3 mb-7 max-w-sm w-full">
-        {EXAMPLE_TEMPLATES.map((t) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7 max-w-xl w-full">
+        {EMPTY_STATE_TEMPLATES.map((t) => (
           <button
             key={t.id}
             onClick={() => onTemplate(t)}
@@ -668,17 +675,36 @@ export function Dashboard() {
       </main>
 
       <Dialog open={showNew} onOpenChange={(open) => { setShowNew(open); if (!open) setSelectedTemplate(null); }}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle className="font-serif text-xl">Nova construcao</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-serif text-xl">Nova construção</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <Label className="text-xs font-mono text-muted-foreground mb-2 block uppercase tracking-wider">Template (opcional)</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs font-mono text-muted-foreground block uppercase tracking-wider">Template por vertical (opcional)</Label>
+                {selectedTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => { setName(""); setBriefing(""); setSelectedTemplate(null); }}
+                    className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  >
+                    Limpar template
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {EXAMPLE_TEMPLATES.map((t) => (
-                  <button key={t.id} onClick={() => { setName(t.name); setBriefing(t.briefing); setSelectedTemplate(t.id); }}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all ${selectedTemplate === t.id ? "border-primary bg-primary/5 text-primary" : "border-border bg-card hover:border-primary/30 text-foreground"}`}>
-                    <span className="text-xl">{t.icon}</span>
-                    <span className="text-xs font-medium leading-tight">{t.label}</span>
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => { setName(t.name); setBriefing(t.briefing); setSelectedTemplate(t.id); }}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all ${selectedTemplate === t.id ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border bg-card hover:border-primary/40 hover:bg-primary/[0.02]"}`}
+                    data-testid={`template-${t.id}`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-lg leading-none">{t.icon}</span>
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{t.tag}</span>
+                    </div>
+                    <span className={`text-xs font-semibold leading-tight ${selectedTemplate === t.id ? "text-primary" : "text-foreground"}`}>{t.label}</span>
                   </button>
                 ))}
               </div>
