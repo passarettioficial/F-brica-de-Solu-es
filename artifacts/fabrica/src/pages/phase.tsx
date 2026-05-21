@@ -19,6 +19,14 @@ import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ArtifactBody } from "@/components/artifact-body";
+import {
+  SeletorNichoCanvas,
+  MatrizCompetitivaCanvas,
+  CartaoPersonaCanvas,
+  MapaDecisaoCompraCanvas,
+  ValorQuantificadoCanvas,
+  LtvCacCanvas,
+} from "@/components/canvases";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -124,20 +132,26 @@ function ScorePotencial({ content }: { content: string }) {
 }
 
 const ARTIFACT_LABELS: Record<string, { label: string; description: string }> = {
+  SELETOR_NICHO_INICIAL: { label: "Seletor de Nicho Inicial", description: "Ranqueamento dos segmentos candidatos" },
   LEAN_CANVAS: { label: "Lean Canvas", description: "9 blocos do modelo de negócio" },
-  JTBD: { label: "Jobs to Be Done", description: "O que o cliente realmente quer realizar" },
+  JTBD: { label: "Tarefa do Cliente (JTBD)", description: "O que o cliente realmente quer realizar" },
   ANALISE_COMPETITIVA: { label: "Análise Competitiva", description: "5 concorrentes com tabela comparativa" },
+  MATRIZ_COMPETITIVA: { label: "Matriz Competitiva 2×2", description: "Posicionamento visual em 2 eixos das prioridades do cliente" },
   PADROES_MORTALIDADE: { label: "Padrões de Mortalidade", description: "Casos comparáveis e sinais de risco por segmento" },
-  SWOT: { label: "Análise SWOT", description: "Forças, fraquezas, oportunidades e ameaças" },
-  DIMENSIONAMENTO_MERCADO: { label: "TAM / SAM / SOM", description: "Tamanho real do mercado com metodologia" },
+  SWOT: { label: "Análise SWOT", description: "(legado) Forças, fraquezas, oportunidades e ameaças" },
+  DIMENSIONAMENTO_MERCADO: { label: "TAM / SAM / SOM", description: "Tamanho real do mercado bottom-up" },
   VALIDACAO_RAPIDA: { label: "Script de Validação", description: "10 perguntas de entrevista para validar a hipótese" },
   HIPOTESE_CENTRAL: { label: "Hipótese Central", description: "Aposta principal em 1 frase testável" },
   SCORE_POTENCIAL: { label: "Score de Potencial", description: "Avaliação 1-5 em 5 dimensões com recomendação" },
-  PRD: { label: "Product Requirements Document", description: "Escopo, funcionalidades e critérios de sucesso" },
-  PERSONAS: { label: "Personas", description: "3 personas detalhadas incluindo persona negativa" },
+  PRD: { label: "Product Requirements Document", description: "Escopo, núcleo do produto e critérios de sucesso" },
+  PERSONAS: { label: "Personas", description: "(legado) 3 personas detalhadas" },
+  CARTAO_PERSONA: { label: "Cartão de Persona", description: "Persona estruturada: bio, dia típico, gatilhos, watering holes" },
+  MAPA_DECISAO_COMPRA: { label: "Mapa de Decisão de Compra", description: "Quem usa, quem aprova, quem paga, quem veta" },
+  VALOR_QUANTIFICADO: { label: "Valor Quantificado", description: "Situação atual → possível → ganho em $ ou horas" },
   USER_STORIES: { label: "User Stories", description: "15 user stories com critérios de aceitação" },
   METRICAS_SUCESSO: { label: "Framework de Métricas", description: "North Star, inputs, guardrails e AARRR" },
-  HIPOTESE_PRICING: { label: "Estratégia de Pricing", description: "3 tiers com unit economics e willingness to pay" },
+  HIPOTESE_PRICING: { label: "Modelo de Precificação", description: "3 tiers com 3 perguntas-chave de pricing" },
+  LTV_CAC: { label: "Calculadora LTV ÷ CAC", description: "Unit economics com veredito de viabilidade" },
   BENCHMARKING: { label: "Benchmarking", description: "3 referências globais com o que copiar e evitar" },
   ROADMAP_3_MESES: { label: "Roadmap 3 Meses", description: "Plano trimestral com objetivos e entregas-chave" },
   ARQUITETURA: { label: "Arquitetura do Sistema", description: "Stack, componentes, diagramas e trade-offs" },
@@ -215,6 +229,12 @@ const ArtifactCard = memo(function ArtifactCard({
   const isLeanCanvas = phaseNumber === 1 && artifact.artifactKey === "LEAN_CANVAS";
   const isScorePotencial = phaseNumber === 1 && artifact.artifactKey === "SCORE_POTENCIAL";
   const isFailurePatterns = phaseNumber === 1 && artifact.artifactKey === "PADROES_MORTALIDADE";
+  const isSeletorNicho = phaseNumber === 1 && artifact.artifactKey === "SELETOR_NICHO_INICIAL";
+  const isMatrizComp = phaseNumber === 1 && artifact.artifactKey === "MATRIZ_COMPETITIVA";
+  const isCartaoPersona = phaseNumber === 2 && artifact.artifactKey === "CARTAO_PERSONA";
+  const isMapaDecisao = phaseNumber === 2 && artifact.artifactKey === "MAPA_DECISAO_COMPRA";
+  const isValorQuant = phaseNumber === 2 && artifact.artifactKey === "VALOR_QUANTIFICADO";
+  const isLtvCac = phaseNumber === 2 && artifact.artifactKey === "LTV_CAC";
   const meta = ARTIFACT_LABELS[artifact.artifactKey];
   const isEmpty = !artifact.content?.trim();
 
@@ -293,6 +313,18 @@ const ArtifactCard = memo(function ArtifactCard({
                 <ProtectWrap protect={!canCopy}><LeanCanvas content={artifact.content} /></ProtectWrap>
               ) : isScorePotencial ? (
                 <ProtectWrap protect={!canCopy}><ScorePotencial content={artifact.content} /></ProtectWrap>
+              ) : isSeletorNicho ? (
+                <ProtectWrap protect={!canCopy}><SeletorNichoCanvas content={artifact.content} /></ProtectWrap>
+              ) : isMatrizComp ? (
+                <ProtectWrap protect={!canCopy}><MatrizCompetitivaCanvas content={artifact.content} /></ProtectWrap>
+              ) : isCartaoPersona ? (
+                <ProtectWrap protect={!canCopy}><CartaoPersonaCanvas content={artifact.content} /></ProtectWrap>
+              ) : isMapaDecisao ? (
+                <ProtectWrap protect={!canCopy}><MapaDecisaoCompraCanvas content={artifact.content} /></ProtectWrap>
+              ) : isValorQuant ? (
+                <ProtectWrap protect={!canCopy}><ValorQuantificadoCanvas content={artifact.content} /></ProtectWrap>
+              ) : isLtvCac ? (
+                <ProtectWrap protect={!canCopy}><LtvCacCanvas content={artifact.content} /></ProtectWrap>
               ) : isFailurePatterns ? (
                 <div className="space-y-3">
                   <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
@@ -923,19 +955,54 @@ export function PhasePage() {
                 </div>
               </div>
             )}
-            {artifacts.map((artifact) => (
-              <ArtifactCard
-                key={artifact.id}
-                artifact={artifact}
-                phaseNumber={phaseNumber}
-                projectId={projectId}
-                canCopy={permissions.canCopy}
-                canDownload={permissions.canDownload}
-                onUpdate={invalidatePhase}
-                expanded={expandedIds.has(artifact.id)}
-                onToggleExpanded={() => toggleExpanded(artifact.id)}
-              />
-            ))}
+            {(() => {
+              const sections = (phaseDef as any)?.sections as { id: string; label: string; keys: string[] }[] | undefined;
+              const renderCard = (artifact: any) => (
+                <ArtifactCard
+                  key={artifact.id}
+                  artifact={artifact}
+                  phaseNumber={phaseNumber}
+                  projectId={projectId}
+                  canCopy={permissions.canCopy}
+                  canDownload={permissions.canDownload}
+                  onUpdate={invalidatePhase}
+                  expanded={expandedIds.has(artifact.id)}
+                  onToggleExpanded={() => toggleExpanded(artifact.id)}
+                />
+              );
+              if (!sections) return artifacts.map(renderCard);
+              const grouped = sections.map((s) => ({
+                ...s,
+                items: artifacts.filter((a) => s.keys.includes(a.artifactKey)),
+              }));
+              const claimed = new Set(sections.flatMap((s) => s.keys));
+              const orphans = artifacts.filter((a) => !claimed.has(a.artifactKey));
+              return (
+                <>
+                  {grouped.map((g) => (
+                    <div key={g.id} className="space-y-3">
+                      <div className="flex items-center gap-3 pt-2">
+                        <h3 className="font-serif text-base text-primary">{g.label}</h3>
+                        <div className="flex-1 h-px bg-primary/20" />
+                        <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+                          {g.items.filter((a) => a.content?.trim()).length}/{g.items.length}
+                        </span>
+                      </div>
+                      {g.items.map(renderCard)}
+                    </div>
+                  ))}
+                  {orphans.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 pt-2">
+                        <h3 className="font-serif text-sm text-muted-foreground">Outros entregáveis</h3>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                      {orphans.map(renderCard)}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
 

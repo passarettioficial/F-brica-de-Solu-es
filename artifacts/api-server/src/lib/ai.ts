@@ -10,11 +10,46 @@ export interface PhaseAIResult {
 const PHASE_NAMES = ["IDEIA", "PRD", "SEGURANÇA & LGPD", "SPEC", "IMPLEMENTAÇÃO", "TESTE", "DEPLOY"];
 
 const PHASE_PROMPTS: Record<number, string> = {
-  1: `Você é um especialista em validação de ideias de produto e estratégia de negócio. Analise o briefing e gere os seguintes artefatos em português brasileiro. Seja específico para o negócio descrito, não genérico.
+  1: `Você é um especialista em validação de ideias de produto e estratégia de negócio (Método FoundersFlow). Analise o briefing e gere os seguintes artefatos em português brasileiro. Seja específico para o negócio descrito, não genérico. **Sempre que pedir formato JSON, devolva o JSON dentro de bloco \`\`\`json ... \`\`\`.**
+
+### SELETOR_NICHO_INICIAL
+Identifique 5 a 8 segmentos candidatos a serem o "nicho inicial" (mercado de entrada). Para cada um, pontue de 1 a 5 nos 6 critérios. Formato JSON:
+\`\`\`json
+{
+  "segmentos": [
+    {
+      "nome": "ex: clínicas odontológicas SP com 2-5 dentistas",
+      "tamanho": N,
+      "intensidade_dor": N,
+      "alcance_canal": N,
+      "capacidade_pagar": N,
+      "sinergia_produto": N,
+      "urgencia": N,
+      "total": N,
+      "justificativa": "1-2 frases por que esse score"
+    }
+  ],
+  "criterios": {
+    "tamanho": "quantos potenciais clientes",
+    "intensidade_dor": "quão grave é o problema hoje",
+    "alcance_canal": "facilidade de chegar até eles",
+    "capacidade_pagar": "têm orçamento real",
+    "sinergia_produto": "encaixe com nossa solução",
+    "urgencia": "precisam resolver agora ou pode esperar"
+  },
+  "recomendacao": {
+    "segmento_escolhido": "nome do top 1",
+    "justificativa": "por que esse é o ponto de entrada certo",
+    "primeiros_passos": ["3-5 ações imediatas para começar a explorar esse nicho"]
+  }
+}
+\`\`\`
 
 ### LEAN_CANVAS
 Lean Canvas completo em formato JSON com os 9 blocos bem detalhados:
+\`\`\`json
 {"problema": "...", "segmentos_clientes": "...", "proposta_valor_unica": "...", "solucao": "...", "canais": "...", "fluxo_receita": "...", "estrutura_custos": "...", "metricas_chave": "...", "vantagem_injusta": "..."}
+\`\`\`
 
 ### JTBD
 Jobs to be Done — o que o cliente realmente está tentando realizar. Liste 5 jobs funcionais, 3 jobs emocionais e 2 jobs sociais no formato: "Quando [situação], quero [motivação], para [resultado esperado]."
@@ -22,9 +57,20 @@ Jobs to be Done — o que o cliente realmente está tentando realizar. Liste 5 j
 ### ANALISE_COMPETITIVA
 Mapeie 5 concorrentes diretos e indiretos com: nome, proposta de valor, modelo de preço estimado, pontos fortes, pontos fracos, e por que o cliente escolheria esta solução em vez deles. Inclua uma tabela comparativa.
 
-### SWOT
-Análise SWOT detalhada em formato JSON:
-{"forcas": [...], "fraquezas": [...], "oportunidades": [...], "ameacas": [...], "estrategias": {"SO": "...", "WO": "...", "ST": "...", "WT": "..."}}
+### MATRIZ_COMPETITIVA
+Posicionamento competitivo em matriz 2×2. Escolha os 2 eixos que melhor representam as PRIORIDADES DO CLIENTE neste mercado (ex: "preço × especialização", "facilidade × profundidade", "automação × personalização"). Plote os concorrentes + nossa solução. Formato JSON:
+\`\`\`json
+{
+  "eixo_x": {"label": "ex: Especialização (genérico → especialista)", "min_label": "Genérico", "max_label": "Especialista"},
+  "eixo_y": {"label": "ex: Preço (baixo → alto)", "min_label": "Baixo", "max_label": "Alto"},
+  "concorrentes": [
+    {"nome": "...", "x": N, "y": N, "observacao": "1 frase de contexto"}
+  ],
+  "nossa_posicao": {"x": N, "y": N, "justificativa": "por que esse é o quadrante certo"},
+  "quadrante_alvo": "ex: alto especialização + preço médio",
+  "vacuo_identificado": "qual quadrante está vazio ou mal servido e por que importa"
+}
+\`\`\`
 
 ### DIMENSIONAMENTO_MERCADO
 TAM / SAM / SOM com metodologia bottom-up E top-down:
@@ -60,25 +106,123 @@ Documento de Product Requirements completo:
 **Riscos e Mitigações**: [tabela]
 **Fora do Escopo**: [lista explícita]
 
-### PERSONAS
-3 personas detalhadas em formato JSON:
-{"primaria": {"nome": "...", "cargo": "...", "idade": N, "empresa": "...", "renda": "...", "dores": [...], "objetivos": [...], "ferramentas_atuais": [...], "comportamento_digital": "...", "citacao": "...", "disposicao_pagar": "..."}, "secundaria": {...}, "negativa": {"descricao": "quem NÃO é o cliente", "motivos": [...]}}
+### CARTAO_PERSONA
+Cartão de persona estruturado — UMA persona principal do nicho inicial (não 3). Formato JSON:
+\`\`\`json
+{
+  "nome_ficticio": "ex: Mariana, 34",
+  "cargo_papel": "ex: Sócia-fundadora de clínica odontológica",
+  "contexto": {
+    "empresa_segmento": "...",
+    "porte": "...",
+    "localizacao": "..."
+  },
+  "demografia": {"idade": N, "renda_aproximada": "...", "formacao": "..."},
+  "dia_tipico": ["3-5 bullets descrevendo um dia comum"],
+  "prioridades_top3": ["o que mais importa pra ela hoje"],
+  "dores_top3": ["dores específicas relacionadas ao nosso espaço"],
+  "objetivos_top3": ["o que ela quer alcançar nos próximos 12 meses"],
+  "gatilhos_de_compra": ["o que faz ela buscar uma solução AGORA"],
+  "objecoes_provaveis": ["3-5 objeções que vamos enfrentar"],
+  "fontes_informacao": ["onde ela aprende: comunidades, podcasts, newsletters, eventos"],
+  "watering_holes": ["lugares físicos/digitais onde ela está concentrada — para canais de aquisição"],
+  "ferramentas_atuais": ["o que ela usa hoje para resolver isso parcialmente"],
+  "citacao_representativa": "frase que ela diria que captura sua situação",
+  "disposicao_pagar": "faixa estimada em R$ e por quê"
+}
+\`\`\`
+
+### MAPA_DECISAO_COMPRA
+Mapa da decisão de compra — quem participa quando o cliente decide comprar. Crítico em B2B. Formato JSON:
+\`\`\`json
+{
+  "contexto_compra": "ex: venda B2B, ticket médio R$X, ciclo Y dias",
+  "papeis": {
+    "usuario_final": {"quem": "...", "interesse": "o que ele ganha", "influencia": "alta|media|baixa"},
+    "campeao_interno": {"quem": "...", "como_engajar": "..."},
+    "comprador_economico": {"quem": "quem assina o cheque", "criterio_decisao": "..."},
+    "influenciadores": [{"quem": "...", "tipo": "técnico|financeiro|operacional", "papel": "..."}],
+    "veto": {"quem": "quem pode matar a compra", "como_neutralizar": "..."}
+  },
+  "estrategia_por_papel": ["ações concretas para conquistar cada papel"],
+  "ciclo_venda_estimado": "X semanas/meses",
+  "principais_riscos": ["3 riscos do processo de compra"]
+}
+\`\`\`
+
+### VALOR_QUANTIFICADO
+Proposta de valor quantificada — situação atual vs. possível, com ganho mensurável. O canvas que mais convence cliente e investidor. Formato JSON:
+\`\`\`json
+{
+  "situacao_atual": {
+    "descricao": "como o cliente resolve isso hoje",
+    "tempo_gasto": "X horas/semana",
+    "custo_financeiro": "R$ Y/mês",
+    "custos_ocultos": ["frustração, erros, oportunidade perdida..."]
+  },
+  "situacao_possivel": {
+    "descricao": "como fica com nossa solução",
+    "tempo_gasto": "X horas/semana",
+    "custo_financeiro": "R$ Y/mês",
+    "novos_ganhos": ["o que ele passa a poder fazer"]
+  },
+  "ganho_liquido": {
+    "tempo_economizado": "X horas/semana",
+    "dinheiro_economizado": "R$ Y/mês",
+    "ganho_qualitativo": "ex: dorme melhor, escala sem contratar"
+  },
+  "payback_estimado": "em X semanas/meses o cliente recupera o investimento",
+  "premissas": ["3-5 premissas que sustentam os números"]
+}
+\`\`\`
 
 ### USER_STORIES
 15 user stories do MVP no formato "Como [persona], quero [ação], para [valor]" organizadas por épico. Para cada story: critérios de aceitação (Dado/Quando/Então), estimativa de esforço (P/M/G) e prioridade (1-5).
 
 ### METRICAS_SUCESSO
 Framework de métricas completo em formato JSON:
+\`\`\`json
 {"north_star": {"metrica": "...", "definicao": "...", "formula": "...", "meta_30d": "...", "meta_90d": "..."}, "l1_inputs": [...], "l2_guardrails": [...], "pirate_metrics": {"acquisition": "...", "activation": "...", "retention": "...", "revenue": "...", "referral": "..."}}
+\`\`\`
 
 ### HIPOTESE_PRICING
-Estratégia de precificação completa:
+Modelo de precificação completo:
 - Modelo recomendado e justificativa
 - 3 tiers com nomes, preços e funcionalidades por tier
+- 3 perguntas-chave respondidas: (a) valor entregue vs. capturado, (b) custo atual do cliente sem nós, (c) sensibilidade a preço dos decisores
 - Estratégia de go-to-market pricing (freemium, trial, etc.)
-- Análise de sensibilidade de preço (willingness to pay)
 - Comparação com concorrentes
-- Unit economics projetados: CAC, LTV, LTV/CAC esperado
+
+### LTV_CAC
+Calculadora de unit economics LTV ÷ CAC. Use premissas realistas baseadas no briefing e nos artefatos anteriores. Formato JSON:
+\`\`\`json
+{
+  "premissas": {
+    "ticket_medio_mensal": N,
+    "margem_bruta_pct": N,
+    "churn_mensal_pct": N,
+    "tempo_vida_estimado_meses": N
+  },
+  "ltv": {
+    "valor_calculado": N,
+    "formula": "ticket × margem ÷ churn",
+    "explicacao": "1-2 frases"
+  },
+  "cac": {
+    "valor_calculado": N,
+    "canais": [
+      {"canal": "ex: Google Ads", "custo_estimado_lead": N, "taxa_conversao_pct": N, "cac_canal": N},
+      {"canal": "ex: outbound", "custo_estimado_lead": N, "taxa_conversao_pct": N, "cac_canal": N}
+    ],
+    "explicacao": "1-2 frases"
+  },
+  "razao_ltv_cac": N,
+  "payback_meses": N,
+  "veredito": "SAUDAVEL | AJUSTAR | INVIAVEL",
+  "interpretacao": "se ≥3 saudável · 1-3 ajustar · <1 inviável — explicação contextual",
+  "acoes_recomendadas": ["3-5 ações concretas para melhorar a razão"]
+}
+\`\`\`
 
 ### BENCHMARKING
 Análise de benchmarks de 3 produtos de referência global:
@@ -581,8 +725,8 @@ INSTRUÇÕES DE FORMATAÇÃO:
 
 function parseArtifacts(fullResponse: string, phaseNumber: number): PhaseAIResult[] {
   const phaseArtifactKeys: Record<number, string[]> = {
-    1: ["LEAN_CANVAS", "JTBD", "ANALISE_COMPETITIVA", "SWOT", "DIMENSIONAMENTO_MERCADO", "VALIDACAO_RAPIDA", "HIPOTESE_CENTRAL", "SCORE_POTENCIAL"],
-    2: ["PRD", "PERSONAS", "USER_STORIES", "METRICAS_SUCESSO", "HIPOTESE_PRICING", "BENCHMARKING", "ROADMAP_3_MESES"],
+    1: ["SELETOR_NICHO_INICIAL", "LEAN_CANVAS", "JTBD", "ANALISE_COMPETITIVA", "MATRIZ_COMPETITIVA", "DIMENSIONAMENTO_MERCADO", "VALIDACAO_RAPIDA", "HIPOTESE_CENTRAL", "SCORE_POTENCIAL"],
+    2: ["PRD", "CARTAO_PERSONA", "MAPA_DECISAO_COMPRA", "VALOR_QUANTIFICADO", "USER_STORIES", "METRICAS_SUCESSO", "HIPOTESE_PRICING", "LTV_CAC", "BENCHMARKING", "ROADMAP_3_MESES"],
     3: ["DATA_MAP", "CLASSIFICACAO_DADOS", "PRIVACY_BY_DESIGN", "POLITICA_PRIVACIDADE", "THREAT_MODEL", "MATRIZ_RBAC", "OWASP_CHECKLIST", "PLANO_INCIDENTES"],
     4: ["ARQUITETURA", "MODELO_DADOS", "CONTRATOS_API", "SEGURANCA", "FLUXOS_UI", "ESCALABILIDADE", "ADR", "SETUP_DEVOPS"],
     5: ["MILESTONES", "SPRINT_1", "ESTRUTURA_PASTAS", "README", "GUIA_CONTRIBUICAO", "TECH_DEBT_LOG", "DEFINITION_OF_DONE"],
