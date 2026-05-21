@@ -25,6 +25,7 @@ import {
   CartaoPersonaCanvas,
   MapaDecisaoCompraCanvas,
   ValorQuantificadoCanvas,
+  EditableValorQuantificadoCanvas,
   LtvCacCanvas,
   EditableLtvCacCanvas,
   EditableScorePotencialCanvas,
@@ -319,7 +320,16 @@ const ArtifactCard = memo(function ArtifactCard({
               ) : isMapaDecisao ? (
                 <ProtectWrap protect={!canCopy}><MapaDecisaoCompraCanvas content={artifact.content} /></ProtectWrap>
               ) : isValorQuant ? (
-                <ProtectWrap protect={!canCopy}><ValorQuantificadoCanvas content={artifact.content} /></ProtectWrap>
+                <ProtectWrap protect={!canCopy}>
+                  <EditableValorQuantificadoCanvas
+                    content={artifact.content}
+                    projectId={projectId}
+                    phaseNumber={phaseNumber}
+                    artifactKey={artifact.artifactKey}
+                    canEdit={canCopy}
+                    onUpdate={onUpdate}
+                  />
+                </ProtectWrap>
               ) : isLtvCac ? (
                 <ProtectWrap protect={!canCopy}>
                   <EditableLtvCacCanvas

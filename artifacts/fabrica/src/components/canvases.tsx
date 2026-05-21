@@ -350,6 +350,226 @@ export function ValorQuantificadoCanvas({ content }: { content: string }) {
   );
 }
 
+// ───────────────────────── 4b. VALOR QUANTIFICADO EDITOR (interactive) ─────────────────────────
+type VqNumericData = VqData & {
+  situacao_atual?: VqData["situacao_atual"] & { horas_semana?: number; custo_mensal_brl?: number };
+  situacao_possivel?: VqData["situacao_possivel"] & { horas_semana?: number; custo_mensal_brl?: number };
+  ganho_liquido?: VqData["ganho_liquido"] & { horas_economizadas_semana?: number; dinheiro_economizado_mensal?: number };
+};
+
+function parseHoursFromStr(s?: string): number | null {
+  if (!s) return null;
+  const cleaned = s.replace(/(\d)\.(\d{3})(?!\d)/g, "$1$2").replace(",", ".");
+  const m = cleaned.match(/(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) : null;
+}
+function parseBrlFromStr(s?: string): number | null {
+  if (!s) return null;
+  const cleaned = s.replace(/r\$/gi, "").replace(/\./g, "").replace(",", ".").trim();
+  const m = cleaned.match(/(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) : null;
+}
+function fmtBRLmes(n: number): string {
+  return `R$ ${Math.round(n).toLocaleString("pt-BR")}/mês`;
+}
+function fmtHorasSemana(n: number): string {
+  const r = Math.round(n * 10) / 10;
+  return `${r} ${r === 1 ? "hora" : "horas"}/semana`;
+}
+
+export function EditableValorQuantificadoCanvas({
+  content, projectId, phaseNumber, artifactKey, canEdit, onUpdate,
+}: {
+  content: string;
+  projectId: number;
+  phaseNumber: number;
+  artifactKey: string;
+  canEdit: boolean;
+  onUpdate?: () => void;
+}) {
+  const original = parseJsonBlock<VqNumericData>(content);
+  const [editing, setEditing] = useState(false);
+
+  const initialAtualH = original?.situacao_atual?.horas_semana ?? parseHoursFromStr(original?.situacao_atual?.tempo_gasto) ?? 0;
+  const initialAtualC = original?.situacao_atual?.custo_mensal_brl ?? parseBrlFromStr(original?.situacao_atual?.custo_financeiro) ?? 0;
+  const initialPosH = original?.situacao_possivel?.horas_semana ?? parseHoursFromStr(original?.situacao_possivel?.tempo_gasto) ?? 0;
+  const initialPosC = original?.situacao_possivel?.custo_mensal_brl ?? parseBrlFromStr(original?.situacao_possivel?.custo_financeiro) ?? 0;
+
+  const [horasAtual, setHorasAtual] = useState<number>(clampNonNeg(initialAtualH));
+  const [custoAtual, setCustoAtual] = useState<number>(clampNonNeg(initialAtualC));
+  const [horasPos, setHorasPos] = useState<number>(clampNonNeg(initialPosH));
+  const [custoPos, setCustoPos] = useState<number>(clampNonNeg(initialPosC));
+
+  const updateArtifact = useUpdateArtifact();
+  const { toast } = useToast();
+
+  const live = useMemo(() => {
+    const ganhoHoras = Math.max(0, horasAtual - horasPos);
+    const ganhoCusto = Math.max(0, custoAtual - custoPos);
+    const ganhoHorasMes = ganhoHoras * 4.33;
+    const ganhoPct = custoAtual > 0 ? (ganhoCusto / custoAtual) * 100 : 0;
+    return { ganhoHoras, ganhoCusto, ganhoHorasMes, ganhoPct };
+  }, [horasAtual, custoAtual, horasPos, custoPos]);
+
+  if (!editing) {
+    return (
+      <div className="space-y-3">
+        <ValorQuantificadoCanvas content={content} />
+        {canEdit && (original?.situacao_atual || original?.situacao_possivel) && (
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)} data-testid="button-edit-valor-quantificado">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 mr-1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Editar números
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function cancel() {
+    setHorasAtual(clampNonNeg(initialAtualH));
+    setCustoAtual(clampNonNeg(initialAtualC));
+    setHorasPos(clampNonNeg(initialPosH));
+    setCustoPos(clampNonNeg(initialPosC));
+    setEditing(false);
+  }
+
+  function save() {
+    const hA = clampNonNeg(horasAtual);
+    const cA = clampNonNeg(custoAtual);
+    const hP = clampNonNeg(horasPos);
+    const cP = clampNonNeg(custoPos);
+    const ganhoHoras = Math.max(0, hA - hP);
+    const ganhoCusto = Math.max(0, cA - cP);
+
+    const next: VqNumericData = {
+      ...original,
+      situacao_atual: {
+        ...original?.situacao_atual,
+        horas_semana: hA,
+        custo_mensal_brl: cA,
+        tempo_gasto: fmtHorasSemana(hA),
+        custo_financeiro: fmtBRLmes(cA),
+      },
+      situacao_possivel: {
+        ...original?.situacao_possivel,
+        horas_semana: hP,
+        custo_mensal_brl: cP,
+        tempo_gasto: fmtHorasSemana(hP),
+        custo_financeiro: fmtBRLmes(cP),
+      },
+      ganho_liquido: {
+        ...original?.ganho_liquido,
+        horas_economizadas_semana: ganhoHoras,
+        dinheiro_economizado_mensal: ganhoCusto,
+        tempo_economizado: fmtHorasSemana(ganhoHoras),
+        dinheiro_economizado: fmtBRLmes(ganhoCusto),
+      },
+    };
+    const newContent = replaceJsonBlock(content, next as object);
+    updateArtifact.mutate(
+      { projectId, phaseNumber, artifactKey, data: { content: newContent, contentJson: null } },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Valor atualizado",
+            description: `Economia: ${fmtBRLmes(ganhoCusto)} · ${fmtHorasSemana(ganhoHoras)}`,
+          });
+          setEditing(false);
+          onUpdate?.();
+        },
+        onError: () => toast({ title: "Erro ao salvar", variant: "destructive" }),
+      }
+    );
+  }
+
+  const NumInput = ({ value, onChange, suffix, testId }: { value: number; onChange: (n: number) => void; suffix: string; testId: string }) => (
+    <div className="flex items-center gap-1.5">
+      <input
+        type="number"
+        min={0}
+        step="any"
+        inputMode="decimal"
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(e) => onChange(Number(e.target.value))}
+        data-testid={testId}
+        className="w-24 px-2 py-1 rounded-md border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+      />
+      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{suffix}</span>
+    </div>
+  );
+
+  const vereditoCor = live.ganhoPct >= 50
+    ? { bg: "bg-green-50 dark:bg-green-950/20", border: "border-green-300 dark:border-green-900/50", text: "text-green-700 dark:text-green-400", label: "Valor forte — vale comunicar" }
+    : live.ganhoPct >= 20
+    ? { bg: "bg-amber-50 dark:bg-amber-950/20", border: "border-amber-300 dark:border-amber-900/50", text: "text-amber-700 dark:text-amber-400", label: "Valor médio — refine o pitch" }
+    : { bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-300 dark:border-red-900/50", text: "text-red-700 dark:text-red-400", label: "Valor fraco — cliente não vai pagar" };
+
+  return (
+    <div className="space-y-4 rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-primary">Editor de valor · ganho recalculado ao vivo</div>
+        <div className="text-[10px] text-muted-foreground">Use os números reais do seu cliente</div>
+      </div>
+      <div className="grid md:grid-cols-2 gap-3">
+        <div className="rounded-lg border border-border bg-background p-3 space-y-2">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Situação atual (sem você)</div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-foreground">Tempo gasto</span>
+            <NumInput value={horasAtual} onChange={setHorasAtual} suffix="horas/semana" testId="input-horas-atual" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-foreground">Custo financeiro</span>
+            <NumInput value={custoAtual} onChange={setCustoAtual} suffix="R$/mês" testId="input-custo-atual" />
+          </div>
+        </div>
+        <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-primary">Situação possível (com você)</div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-foreground">Tempo gasto</span>
+            <NumInput value={horasPos} onChange={setHorasPos} suffix="horas/semana" testId="input-horas-possivel" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-foreground">Custo financeiro</span>
+            <NumInput value={custoPos} onChange={setCustoPos} suffix="R$/mês" testId="input-custo-possivel" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3 pt-3 border-t border-border/40">
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Tempo economizado</div>
+          <div className="text-2xl font-bold text-primary">{live.ganhoHoras.toFixed(1)}<span className="text-sm text-muted-foreground"> h/sem</span></div>
+          <div className="text-[10px] text-muted-foreground">≈ {live.ganhoHorasMes.toFixed(0)} h/mês</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Dinheiro economizado</div>
+          <div className="text-2xl font-bold text-primary">{fmtBRLmes(live.ganhoCusto)}</div>
+          <div className="text-[10px] text-muted-foreground">{custoAtual > 0 ? `${live.ganhoPct.toFixed(0)}% do gasto atual` : "—"}</div>
+        </div>
+        <div className={`rounded-lg border-2 px-3 py-2 ${vereditoCor.bg} ${vereditoCor.border} flex flex-col justify-center`}>
+          <div className="text-[10px] font-mono uppercase text-muted-foreground">Veredito</div>
+          <div className={`text-xs font-bold leading-tight ${vereditoCor.text}`}>{vereditoCor.label}</div>
+        </div>
+      </div>
+
+      <div className="text-xs text-muted-foreground">
+        {live.ganhoCusto > 0 && custoAtual > 0
+          ? `Esse é o número que o cliente repete em voz alta: "${fmtBRLmes(live.ganhoCusto)} de economia". Use no pitch.`
+          : "Sem economia mensurável — revise os números ou o ganho está no qualitativo (preencha no JSON original)."}
+      </div>
+
+      <div className="flex gap-2 justify-end pt-2 border-t border-border/40">
+        <Button variant="outline" size="sm" onClick={cancel} disabled={updateArtifact.isPending}>Cancelar</Button>
+        <Button size="sm" onClick={save} disabled={updateArtifact.isPending} data-testid="button-save-valor-quantificado">
+          {updateArtifact.isPending ? "Salvando…" : "Salvar valor"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ───────────────────────── 5. LTV ÷ CAC ─────────────────────────
 type LtvCacData = {
   premissas?: { ticket_medio_mensal?: number; margem_bruta_pct?: number; churn_mensal_pct?: number; tempo_vida_estimado_meses?: number };
