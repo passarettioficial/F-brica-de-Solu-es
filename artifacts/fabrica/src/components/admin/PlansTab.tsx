@@ -14,7 +14,7 @@ export function PlansTab() {
     api("/admin/settings").then(r => r.json()).then(d => {
       const s: Array<{ key: string; value: string }> = d.settings ?? [];
       const cfg = { ...DEFAULT_PLAN_PRICES };
-      for (const plan of ["basic", "pro", "advanced"] as const) {
+      for (const plan of ["founder", "studio"] as const) {
         const price = s.find(x => x.key === `plan_${plan}_price`)?.value;
         const aiLimit = s.find(x => x.key === `plan_${plan}_ai_limit`)?.value;
         const maxProj = s.find(x => x.key === `plan_${plan}_max_projects`)?.value;
@@ -56,17 +56,17 @@ export function PlansTab() {
       </p>
 
       <div className="grid gap-4">
-        {(["basic", "pro", "advanced"] as const).map(plan => (
+        {(["founder", "studio"] as const).map(plan => (
           <div key={plan} className="bg-card border border-card-border rounded-xl p-5">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-medium capitalize">{PLAN_LABELS[plan]}</h3>
-              {plan === "pro" && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">Mais popular</span>}
-              {plan === "advanced" && <span className="text-xs px-2 py-0.5 bg-foreground/10 text-foreground rounded-full">Premium</span>}
+              {plan === "founder" && <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full">Mais escolhido</span>}
+              {plan === "studio" && <span className="text-xs px-2 py-0.5 bg-foreground/10 text-foreground rounded-full">Premium</span>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs">Preço exibido</Label>
-                <Input value={planConfig[plan]?.price ?? ""} onChange={e => update(plan, "price", e.target.value)} placeholder="R$49" className="mt-1" />
+                <Input value={planConfig[plan]?.price ?? ""} onChange={e => update(plan, "price", e.target.value)} placeholder="R$197" className="mt-1" />
               </div>
               <div>
                 <Label className="text-xs">Limite de IA por dia</Label>
@@ -87,7 +87,7 @@ export function PlansTab() {
                 <label key={f.key} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={planConfig[plan]?.[f.key as keyof typeof planConfig.basic] as boolean ?? false}
+                    checked={planConfig[plan]?.[f.key as keyof typeof planConfig.founder] as boolean ?? false}
                     onChange={e => update(plan, f.key, e.target.checked)}
                     className="accent-primary"
                   />

@@ -23,7 +23,7 @@ router.post("/projects/:projectId/advisor", async (req, res): Promise<void> => {
 
   const plan = getPlanConfig(user.plan);
   if (!plan.hasAiAdvisor) {
-    res.status(403).json({ error: "O AI Advisor está disponível apenas no plano Avançado." });
+    res.status(403).json({ error: "O AI Advisor está disponível nos planos Founder e Studio." });
     return;
   }
 

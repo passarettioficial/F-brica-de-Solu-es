@@ -2,7 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
-import { stripe, PLANS, getPlanConfig, getOrCreateStripeCustomer, getPriceId, type PlanId } from "../lib/stripe";
+import { stripe, PLANS, getPlanConfig, getOrCreateStripeCustomer, getPriceId, normalizePlanId, type PlanId } from "../lib/stripe";
 import { ensureUser } from "../lib/auth";
 import { logger } from "../lib/logger";
 
@@ -19,65 +19,46 @@ function requireAuth(req: Request) {
 router.get("/billing/plans", async (_req: Request, res: Response): Promise<void> => {
   const plans = [
     {
-      id: "basic",
-      name: "Básico",
-      price: "R$49",
+      id: "founder",
+      name: "Founder",
+      price: "R$197",
       period: "/mês",
-      description: "Leia os artefatos gerados por IA diretamente na plataforma.",
-      highlight: false,
-      features: [
-        "5 execuções de IA por dia",
-        "Até 3 projetos simultâneos",
-        "Todos os artefatos de cada fase",
-        "Leitura na plataforma",
-        "Portões de qualidade por fase",
-      ],
-      limitations: [
-        "Sem cópia de conteúdo",
-        "Sem download de artefatos",
-        "Sem impressão",
-        "Sem AI Advisor",
-      ],
-    },
-    {
-      id: "pro",
-      name: "Pro",
-      price: "R$149",
-      period: "/mês",
-      description: "O plano completo para founders construindo produtos sérios.",
+      priceYearly: "R$1.970",
+      periodYearly: "/ano",
+      description: "O plano completo para founders sérios validando ou lançando um MVP.",
       highlight: true,
-      badge: "Mais popular",
+      badge: "Mais escolhido",
       features: [
-        "20 execuções de IA por dia",
-        "Até 10 projetos simultâneos",
-        "Todos os artefatos de cada fase",
-        "Cópia e edição de conteúdo",
-        "Download de artefatos em Markdown",
-        "Portões de qualidade por fase",
+        "30 execuções de IA por dia",
+        "Até 5 projetos ativos",
+        "Todos os artefatos das 7 fases",
+        "Cópia, download e impressão",
+        "🤖 AI Advisor — consultor de IA sobre seu produto",
+        "Análise estratégica, técnica e de go-to-market",
+        "Modelo GPT-4.1 prioritário",
+        "Suporte por e-mail",
       ],
-      limitations: [
-        "Sem AI Advisor",
-      ],
+      limitations: [],
     },
     {
-      id: "advanced",
-      name: "Avançado",
-      price: "R$349",
+      id: "studio",
+      name: "Studio",
+      price: "R$697",
       period: "/mês",
-      description: "Para founders que querem um parceiro de IA exclusivo para seu produto.",
+      priceYearly: "R$6.970",
+      periodYearly: "/ano",
+      description: "Para serial founders, consultores e pequenas equipes de produto.",
       highlight: false,
       badge: "Premium",
       features: [
-        "IA ilimitada por dia",
+        "IA praticamente ilimitada (999/dia)",
         "Projetos ilimitados",
-        "Todos os artefatos de cada fase",
-        "Cópia e edição de conteúdo",
-        "Download de artefatos em Markdown",
-        "Impressão habilitada",
-        "🤖 AI Advisor — chat com IA sobre seu produto",
-        "Contexto completo dos artefatos gerados",
-        "Perguntas estratégicas, técnicas e de negócio",
-        "Modelo GPT-4.1 prioritário",
+        "Até 3 seats incluídos",
+        "Tudo do Founder + exportação white-label",
+        "🤖 AI Advisor com prioridade",
+        "Suporte prioritário com SLA",
+        "Onboarding 1:1 com nosso time",
+        "Acesso antecipado a novidades",
       ],
       limitations: [],
     },
@@ -99,7 +80,7 @@ router.get("/billing/me", async (req: Request, res: Response): Promise<void> => 
   const plan = getPlanConfig(user.plan, user.isSuperuser);
 
   res.json({
-    plan: user.isSuperuser ? "advanced" : user.plan,
+    plan: user.isSuperuser ? "studio" : plan.id,
     planName: plan.name,
     isAdmin: user.isAdmin,
     isSuperuser: user.isSuperuser,
@@ -124,9 +105,10 @@ router.post("/billing/checkout", async (req: Request, res: Response): Promise<vo
 
   if (!stripe) { res.status(503).json({ error: "Pagamentos não configurados" }); return; }
 
-  const { planId } = req.body as { planId: PlanId };
+  const { planId, billingCycle } = req.body as { planId: PlanId; billingCycle?: "monthly" | "yearly" };
   const plan = PLANS[planId];
   if (!plan || planId === "free") { res.status(400).json({ error: "Plano inválido" }); return; }
+  const cycle = billingCycle === "yearly" ? "yearly" : "monthly";
 
   await ensureUser(userId);
 
@@ -145,7 +127,8 @@ router.post("/billing/checkout", async (req: Request, res: Response): Promise<vo
       .where(eq(usersTable.clerkId, userId));
   }
 
-  const priceId = await getPriceId(plan.lookupKey);
+  const lookupKey = cycle === "yearly" ? plan.lookupKeyYearly : plan.lookupKey;
+  const priceId = await getPriceId(lookupKey);
   if (!priceId) {
     res.status(503).json({ error: "Preço não configurado. Execute o setup do Stripe." });
     return;
@@ -157,9 +140,9 @@ router.post("/billing/checkout", async (req: Request, res: Response): Promise<vo
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${BASE_URL}/billing?success=1&plan=${planId}`,
     cancel_url: `${BASE_URL}/pricing?canceled=1`,
-    metadata: { clerkId: userId, planId },
+    metadata: { clerkId: userId, planId, billingCycle: cycle },
     subscription_data: {
-      metadata: { clerkId: userId, planId },
+      metadata: { clerkId: userId, planId, billingCycle: cycle },
     },
   });
 
@@ -213,7 +196,8 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
       case "checkout.session.completed": {
         const session = event.data.object as import("stripe").Stripe.Checkout.Session;
         const clerkId = session.metadata?.clerkId;
-        const planId = session.metadata?.planId as PlanId;
+        const rawPlanId = session.metadata?.planId;
+        const planId = rawPlanId ? normalizePlanId(rawPlanId) : null;
         const subscriptionId = session.subscription as string;
 
         if (clerkId && planId && subscriptionId) {
@@ -234,7 +218,8 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
       case "customer.subscription.updated": {
         const sub = event.data.object as import("stripe").Stripe.Subscription;
         const clerkId = sub.metadata?.clerkId;
-        const planId = sub.metadata?.planId as PlanId;
+        const rawPlanId = sub.metadata?.planId;
+        const planId = rawPlanId ? normalizePlanId(rawPlanId) : null;
 
         if (clerkId) {
           const updates: Record<string, unknown> = {

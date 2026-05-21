@@ -887,10 +887,10 @@ export function ProjectPage() {
                   </Button>
                 </Link>
               )}
-              {!permissions.hasAiAdvisor && permissions.plan !== "advanced" && (
+              {!permissions.hasAiAdvisor && permissions.plan !== "founder" && permissions.plan !== "studio" && (
                 <Link href="/pricing">
                   <span className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-                    🤖 AI Advisor — disponivel no plano Avancado →
+                    🤖 AI Advisor — disponível nos planos Founder e Studio →
                   </span>
                 </Link>
               )}

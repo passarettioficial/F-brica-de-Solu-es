@@ -36,7 +36,7 @@ router.get("/admin/stats", async (req: Request, res: Response): Promise<void> =>
       .groupBy(usersTable.plan);
 
     // Paid plans
-    const paidPlans = ["starter", "basic", "pro", "advanced"];
+    const paidPlans = ["starter", "basic", "pro", "advanced", "founder", "studio"];
     const paidUsers = planStats.filter(p => paidPlans.includes(p.plan)).reduce((s, p) => s + Number(p.count), 0);
 
     // New users last 30 days

@@ -1,26 +1,29 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+type BillingCycle = "monthly" | "yearly";
+
 const PLANS = [
   {
     id: "free",
-    name: "Grátis",
-    price: "R$0",
+    name: "Explorar",
+    priceMonthly: "R$0",
+    priceYearly: "R$0",
     period: "",
-    description: "Experimente o fluxo completo sem cartão de crédito.",
+    description: "Teste o produto sem cartão de crédito.",
     highlight: false,
     badge: null,
     features: [
-      "2 execuções de IA por dia",
+      "3 execuções de IA por dia",
       "1 projeto ativo",
       "Visualização dos artefatos na plataforma",
-      "Acesso às 7 fases",
+      "Acesso ao fluxo das 7 fases",
     ],
     limitations: [
       "Sem cópia de conteúdo",
@@ -30,97 +33,82 @@ const PLANS = [
     cta: "Começar grátis",
   },
   {
-    id: "basic",
-    name: "Básico",
-    price: "R$49",
+    id: "founder",
+    name: "Founder",
+    priceMonthly: "R$197",
+    priceYearly: "R$1.970",
+    yearlyMonthlyEquivalent: "R$164",
     period: "/mês",
-    description: "Leia os artefatos gerados por IA diretamente na plataforma.",
-    highlight: false,
-    badge: null,
-    features: [
-      "5 execuções de IA por dia",
-      "Até 3 projetos simultâneos",
-      "Todos os 7–8 artefatos por fase",
-      "Leitura na plataforma",
-      "Portões de qualidade por fase",
-    ],
-    limitations: [
-      "Sem cópia de conteúdo",
-      "Sem download de artefatos",
-      "Sem impressão",
-      "Sem AI Advisor",
-    ],
-    cta: "Assinar Básico",
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "R$149",
-    period: "/mês",
-    description: "O plano completo para founders construindo produtos sérios.",
+    periodYearly: "/ano",
+    description: "Plano completo para founders sérios validando ou lançando um MVP.",
     highlight: true,
-    badge: "Mais popular",
+    badge: "Mais escolhido",
     features: [
-      "20 execuções de IA por dia",
-      "Até 10 projetos simultâneos",
-      "Todos os 7–8 artefatos por fase",
-      "Cópia e edição de conteúdo",
-      "Download de artefatos em Markdown",
-      "Portões de qualidade por fase",
-      "Acesso antecipado a novidades",
+      "30 execuções de IA por dia",
+      "Até 5 projetos ativos",
+      "Todos os artefatos das 7 fases",
+      "Cópia, download e impressão",
+      "🤖 AI Advisor — consultor de IA sobre seu produto",
+      "Análise estratégica, técnica e de go-to-market",
+      "Modelo GPT-4.1 prioritário",
+      "Suporte por e-mail",
     ],
-    limitations: [
-      "Sem AI Advisor",
-    ],
-    cta: "Assinar Pro",
+    limitations: [],
+    cta: "Assinar Founder",
   },
   {
-    id: "advanced",
-    name: "Avançado",
-    price: "R$349",
+    id: "studio",
+    name: "Studio",
+    priceMonthly: "R$697",
+    priceYearly: "R$6.970",
+    yearlyMonthlyEquivalent: "R$581",
     period: "/mês",
-    description: "Para founders que querem um consultor de IA exclusivo para seu produto.",
+    periodYearly: "/ano",
+    description: "Para serial founders, consultores e pequenas equipes de produto.",
     highlight: false,
     badge: "Premium",
     features: [
-      "IA ilimitada por dia",
+      "IA praticamente ilimitada (999/dia)",
       "Projetos ilimitados",
-      "Todos os 7–8 artefatos por fase",
-      "Cópia, edição e impressão",
-      "Download de artefatos em Markdown",
-      "🤖 AI Advisor — chat com IA sobre seu produto",
-      "Respostas baseadas nos seus artefatos reais",
-      "Análise estratégica, técnica e de go-to-market",
-      "Modelo GPT-4.1 prioritário",
+      "Até 3 seats incluídos",
+      "Tudo do Founder + exportação white-label",
+      "🤖 AI Advisor com prioridade",
+      "Suporte prioritário com SLA",
+      "Onboarding 1:1 com nosso time",
+      "Acesso antecipado a novidades",
     ],
     limitations: [],
-    cta: "Assinar Avançado",
+    cta: "Assinar Studio",
   },
 ];
 
 const FAQ = [
   {
     q: "Posso começar no grátis e evoluir depois?",
-    a: "Sim. O fluxo foi desenhado para mostrar valor antes da conversão.",
+    a: "Sim. O plano Explorar te deixa sentir o produto antes da conversão, sem cartão de crédito.",
   },
   {
-    q: "O que diferencia o Pro do Avançado?",
-    a: "Pro libera edição, cópia e download; Avançado adiciona AI Advisor e uso ilimitado.",
+    q: "O que diferencia o Founder do Studio?",
+    a: "Founder é otimizado para solo founders validando um MVP. Studio é para serial founders, consultores e equipes — inclui projetos e seats múltiplos, IA praticamente ilimitada e onboarding 1:1.",
   },
   {
-    q: "Os artefatos são reutilizáveis?",
-    a: "Sim. Eles funcionam como base viva para briefing, decisão e colaboração do time.",
+    q: "Vale a pena pagar anual?",
+    a: "Sim. O plano anual sai por 10 meses (≈17% off) e inclui garantia de 14 dias.",
   },
   {
-    q: "O plano gratuito já mostra valor?",
-    a: "Sim. Ele permite começar o fluxo, ver a estrutura das fases e sentir o produto antes do upgrade.",
+    q: "Posso cancelar quando quiser?",
+    a: "Sim. Cancelamento e troca de plano são imediatos pelo portal seguro do Stripe.",
+  },
+  {
+    q: "Os artefatos são meus?",
+    a: "Sim. Tudo que a IA gera com base nos seus dados é seu — cópia, download e impressão estão habilitados nos planos pagos.",
   },
 ];
 
 export function PricingPage() {
   const { permissions } = usePlan();
   const [loading, setLoading] = useState<string | null>(null);
-  const [, navigate] = useLocation();
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
   async function handleSubscribe(planId: string) {
     setLoading(planId);
@@ -129,7 +117,7 @@ export function PricingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId, billingCycle: cycle }),
       });
       const data = await res.json() as { url?: string; error?: string };
       if (data.url) {
@@ -150,7 +138,7 @@ export function PricingPage() {
     <>
     <Helmet>
       <title>Planos e Preços — FoundersFlow</title>
-      <meta name="description" content="Compare os planos da FoundersFlow: grátis, Básico, Pro e Avançado. Escolha o plano ideal para validar sua ideia e lançar seu produto com IA em 7 fases estruturadas." />
+      <meta name="description" content="Explorar (grátis), Founder (R$197/mês) e Studio (R$697/mês). Escolha o plano ideal para validar e lançar seu produto com IA em 7 fases estruturadas. Plano anual com 17% de desconto." />
       <link rel="canonical" href="https://www.foundersflow.com.br/pricing" />
       <script type="application/ld+json">{JSON.stringify({
         "@context": "https://schema.org",
@@ -183,37 +171,55 @@ export function PricingPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-16">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.22em] mb-3">Planos</p>
           <h1 className="font-serif text-4xl text-foreground mb-4">
             Escolha o plano certo para você
           </h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Transforme ideias em produtos com IA.
+            Da ideia ao produto validado — com IA, em 7 fases.
           </p>
         </div>
 
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-4 mb-10">
-          <div className="glass-card rounded-2xl p-5">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Entrada</div>
-            <div className="text-base font-serif text-foreground">Comece grátis</div>
-          </div>
-          <div className="glass-card rounded-2xl p-5">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Básico</div>
-            <div className="text-base font-serif text-foreground">Leia na plataforma</div>
-          </div>
-          <div className="glass-card rounded-2xl p-5">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Expansão</div>
-            <div className="text-base font-serif text-foreground">Suba para Pro</div>
-          </div>
-          <div className="glass-card rounded-2xl p-5">
-            <div className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground mb-2">Premium</div>
-            <div className="text-base font-serif text-foreground">Adicione AI Advisor</div>
+        {/* Billing cycle toggle */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex items-center gap-1 p-1 rounded-full border border-card-border bg-card">
+            <button
+              type="button"
+              onClick={() => setCycle("monthly")}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+                cycle === "monthly"
+                  ? "bg-primary text-white"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => setCycle("yearly")}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${
+                cycle === "yearly"
+                  ? "bg-primary text-white"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Anual
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                cycle === "yearly" ? "bg-white/20 text-white" : "bg-accent/15 text-accent"
+              }`}>
+                2 meses grátis
+              </span>
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PLANS.map((plan) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {PLANS.map((plan) => {
+            const isYearly = cycle === "yearly" && plan.id !== "free";
+            const displayPrice = isYearly ? plan.priceYearly : plan.priceMonthly;
+            const displayPeriod = isYearly ? plan.periodYearly : plan.period;
+            return (
             <div
               key={plan.id}
               className={`relative rounded-2xl border p-7 flex flex-col ${
@@ -232,24 +238,32 @@ export function PricingPage() {
 
               <div className="mb-6">
                 <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">{plan.name}</div>
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="font-serif text-4xl text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm">{plan.period}</span>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="font-serif text-4xl text-foreground">{displayPrice}</span>
+                  <span className="text-muted-foreground text-sm">{displayPeriod}</span>
                 </div>
+                {isYearly && plan.yearlyMonthlyEquivalent && (
+                  <div className="text-xs text-accent font-medium mb-2">
+                    ≈ {plan.yearlyMonthlyEquivalent}/mês · economize 17%
+                  </div>
+                )}
+                {!isYearly && plan.id !== "free" && (
+                  <div className="text-xs text-muted-foreground mb-2">
+                    ou pague anual e economize 17%
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground leading-snug">{plan.description}</p>
               </div>
 
               <div className="flex-1 space-y-4 mb-8">
-                <div>
-                  <ul className="space-y-2">
-                    {plan.features.map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <span className="text-primary mt-0.5 flex-shrink-0">✓</span>
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <ul className="space-y-2">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                      <span className="text-primary mt-0.5 flex-shrink-0">✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
                 {plan.limitations.length > 0 && (
                   <div className="pt-2 border-t border-border">
                     <ul className="space-y-1.5">
@@ -283,12 +297,13 @@ export function PricingPage() {
                 </Button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="mt-12 text-center">
+        <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">
-            Pagamentos processados com segurança pela Stripe. Cancele a qualquer momento.
+            Garantia incondicional de 14 dias · Pagamentos processados pela Stripe · Cancele a qualquer momento
           </p>
         </div>
 
@@ -304,10 +319,10 @@ export function PricingPage() {
           </div>
         </section>
 
-        {/* Advanced plan differentiator callout */}
+        {/* AI Advisor differentiator callout */}
         <div className="mt-16">
           <div className="mb-4">
-            <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Plano avançado</h2>
+            <h2 className="text-xs font-mono uppercase tracking-[0.18em] text-muted-foreground">Diferencial dos planos pagos</h2>
           </div>
           <div className="glass-card rounded-2xl p-8">
             <div className="flex items-start gap-4">
@@ -315,7 +330,7 @@ export function PricingPage() {
               <div>
                 <h3 className="font-serif text-xl mb-2">O que é o AI Advisor?</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                  O AI Advisor é um consultor de IA exclusivo do plano Avançado. Diferente da geração de artefatos, ele lê todos os seus artefatos já gerados — seu Lean Canvas, PRD, arquitetura, personas — e responde perguntas específicas sobre o <em>seu</em> produto.
+                  O AI Advisor é um consultor de IA incluído nos planos Founder e Studio. Diferente da geração de artefatos, ele lê todos os seus artefatos já gerados — seu Lean Canvas, PRD, arquitetura, personas — e responde perguntas específicas sobre o <em>seu</em> produto.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[

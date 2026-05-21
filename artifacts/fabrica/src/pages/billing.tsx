@@ -7,10 +7,13 @@ import { AppSidebar } from "@/components/app-sidebar";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const PLAN_DETAILS: Record<string, { price: string; description: string }> = {
-  basic: { price: "R$49/mês", description: "Leitura de artefatos na plataforma" },
-  pro: { price: "R$149/mês", description: "Cópia, download e projetos ilimitados" },
-  advanced: { price: "R$349/mês", description: "AI Advisor + tudo do Pro" },
-  free: { price: "Grátis", description: "2 execuções de IA por dia" },
+  founder: { price: "R$197/mês", description: "Plano completo para founders sérios" },
+  studio: { price: "R$697/mês", description: "Para serial founders, consultores e equipes" },
+  free: { price: "Grátis", description: "3 execuções de IA por dia, 1 projeto" },
+  // legacy fallbacks
+  basic: { price: "R$49/mês", description: "Plano legado — migre para Founder" },
+  pro: { price: "R$149/mês", description: "Plano legado — migre para Founder" },
+  advanced: { price: "R$349/mês", description: "Plano legado — migre para Studio" },
 };
 
 const BILLING_BENEFITS = [
@@ -145,12 +148,12 @@ export function BillingPage() {
             <div className="flex items-start gap-3">
               <div className="text-2xl">🤖</div>
               <div>
-                <h3 className="font-medium mb-1">AI Advisor disponível no plano Avançado</h3>
+                <h3 className="font-medium mb-1">AI Advisor disponível a partir do plano Founder</h3>
                 <p className="text-sm text-muted-foreground mb-3">
                   Um consultor de IA que lê todos os seus artefatos e responde perguntas específicas sobre o seu produto.
                 </p>
                 <Link href="/pricing">
-                  <Button size="sm" variant="outline">Ver o plano Avançado</Button>
+                  <Button size="sm" variant="outline">Ver os planos</Button>
                 </Link>
               </div>
             </div>

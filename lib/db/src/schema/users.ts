@@ -8,7 +8,7 @@ export const usersTable = pgTable("users", {
   displayName: text("display_name"),
   dailyAiUsage: integer("daily_ai_usage").notNull().default(0),
   dailyAiResetDate: text("daily_ai_reset_date").notNull().default(""),
-  plan: text("plan").notNull().default("free"), // free | basic | pro | advanced
+  plan: text("plan").notNull().default("free"), // free | founder | studio
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeSubscriptionStatus: text("stripe_subscription_status"), // active | canceled | past_due | etc

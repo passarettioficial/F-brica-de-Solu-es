@@ -14,25 +14,24 @@ const stripe = new Stripe(secretKey, { apiVersion: "2026-04-22.dahlia" });
 
 const PRODUCTS = [
   {
-    name: "Fábrica de Soluções — Básico",
-    description: "Leia os artefatos gerados por IA na plataforma. Ideal para quem está explorando.",
-    lookupKey: "basic_monthly",
-    unitAmount: 4900, // R$49,00
-    metadata: { plan: "basic" },
+    name: "FoundersFlow — Founder",
+    description:
+      "Plano completo para founders sérios. 30 execuções de IA/dia, 5 projetos, AI Advisor, export e impressão.",
+    metadata: { plan: "founder" },
+    prices: [
+      { lookupKey: "founder_monthly", unitAmount: 19700, interval: "month" as const },
+      { lookupKey: "founder_yearly", unitAmount: 197000, interval: "year" as const },
+    ],
   },
   {
-    name: "Fábrica de Soluções — Pro",
-    description: "Copie e baixe todos os artefatos. O plano mais popular para founders ativos.",
-    lookupKey: "pro_monthly",
-    unitAmount: 14900, // R$149,00
-    metadata: { plan: "pro" },
-  },
-  {
-    name: "Fábrica de Soluções — Avançado",
-    description: "Tudo do Pro + AI Advisor exclusivo que analisa todos os seus artefatos e responde perguntas estratégicas sobre seu produto.",
-    lookupKey: "advanced_monthly",
-    unitAmount: 34900, // R$349,00
-    metadata: { plan: "advanced" },
+    name: "FoundersFlow — Studio",
+    description:
+      "Para serial founders, consultores e pequenas equipes. IA ilimitada, projetos ilimitados, 3 seats, white-label e suporte prioritário.",
+    metadata: { plan: "studio" },
+    prices: [
+      { lookupKey: "studio_monthly", unitAmount: 69700, interval: "month" as const },
+      { lookupKey: "studio_yearly", unitAmount: 697000, interval: "year" as const },
+    ],
   },
 ];
 
@@ -46,16 +45,17 @@ async function main() {
       metadata: p.metadata,
     });
 
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: p.unitAmount,
-      currency: "brl",
-      recurring: { interval: "month" },
-      lookup_key: p.lookupKey,
-      transfer_lookup_key: true,
-    });
-
-    console.log(`  ✓ Product: ${product.id} | Price: ${price.id} | Lookup: ${p.lookupKey}`);
+    for (const pr of p.prices) {
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: pr.unitAmount,
+        currency: "brl",
+        recurring: { interval: pr.interval },
+        lookup_key: pr.lookupKey,
+        transfer_lookup_key: true,
+      });
+      console.log(`  ✓ Price (${pr.interval}): ${price.id} | Lookup: ${pr.lookupKey}`);
+    }
   }
   console.log("\nSetup complete!");
 }

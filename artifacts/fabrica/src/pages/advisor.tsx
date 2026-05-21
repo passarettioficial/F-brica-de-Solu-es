@@ -148,10 +148,10 @@ export function AdvisorPage() {
           <div className="text-5xl mb-5">🤖</div>
           <h1 className="font-serif text-2xl mb-3">AI Advisor</h1>
           <p className="text-muted-foreground mb-6 leading-relaxed">
-            O AI Advisor lê todos os seus artefatos gerados e responde perguntas específicas sobre o seu produto. Disponível apenas no plano <strong>Avançado</strong>.
+            O AI Advisor lê todos os seus artefatos gerados e responde perguntas específicas sobre o seu produto. Disponível nos planos <strong>Founder</strong> e <strong>Studio</strong>.
           </p>
           <Link href="/pricing">
-            <Button className="bg-primary hover:bg-primary/90 text-white">Ver plano Avançado</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-white">Ver planos</Button>
           </Link>
         </div>
       </div>

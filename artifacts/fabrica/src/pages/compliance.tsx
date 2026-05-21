@@ -98,7 +98,7 @@ function DataMapTab() {
         <Table
           headers={["Dado", "Onde é armazenado", "Finalidade", "Base Legal (LGPD)", "Retenção"]}
           rows={[
-            ["Plano contratado (free/basic/pro/advanced)", "DB próprio (tabela users)", "Controle de acesso a funcionalidades e faturamento", <Badge color="blue">Execução de contrato — Art. 7º, V</Badge>, "Enquanto a conta existir + 5 anos"],
+            ["Plano contratado (free/founder/studio)", "DB próprio (tabela users)", "Controle de acesso a funcionalidades e faturamento", <Badge color="blue">Execução de contrato — Art. 7º, V</Badge>, "Enquanto a conta existir + 5 anos"],
             ["Contador de uso diário de IA (dailyAiUsage)", "DB próprio (tabela users)", "Enforçar limites do plano, prevenir abuso", <Badge color="green">Legítimo interesse — Art. 7º, IX</Badge>, "Resetado diariamente; histórico não mantido"],
             ["Fase atual do projeto (currentPhase)", "DB próprio (tabela projects)", "Salvar progresso e retomar onde parou", <Badge color="blue">Execução de contrato — Art. 7º, V</Badge>, "Enquanto o projeto existir"],
             ["Status dos gates de saída de cada fase", "DB próprio (tabela phases)", "Controlar avanço no pipeline de 7 fases", <Badge color="blue">Execução de contrato — Art. 7º, V</Badge>, "Enquanto o projeto existir"],

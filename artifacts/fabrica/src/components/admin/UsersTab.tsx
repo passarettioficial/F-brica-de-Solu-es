@@ -66,7 +66,7 @@ export function UsersTab() {
                   </td>
                   <td className="px-4 py-3">
                     <select className="text-xs border border-border rounded px-2 py-1 bg-background" value={u.plan} onChange={e => updateUser(u.clerkId, { plan: e.target.value })} disabled={saving === u.clerkId}>
-                      {["free", "basic", "pro", "advanced"].map(p => <option key={p} value={p}>{PLAN_LABELS[p]}</option>)}
+                      {["free", "founder", "studio", "basic", "pro", "advanced"].map(p => <option key={p} value={p}>{PLAN_LABELS[p]}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3">

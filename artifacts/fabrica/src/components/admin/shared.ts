@@ -9,16 +9,18 @@ export function api(path: string, options?: RequestInit) {
 }
 
 export const PLAN_LABELS: Record<string, string> = {
-  free: "Gratuito",
-  basic: "Básico",
-  pro: "Pro",
-  advanced: "Avançado",
+  free: "Explorar",
+  founder: "Founder",
+  studio: "Studio",
+  // legacy
+  basic: "Básico (legado)",
+  pro: "Pro (legado)",
+  advanced: "Avançado (legado)",
 };
 
 export const DEFAULT_PLAN_PRICES: Record<string, { price: string; aiLimit: number; maxProjects: number; canCopy: boolean; canDownload: boolean; canPrint: boolean; hasAiAdvisor: boolean }> = {
-  basic: { price: "R$49", aiLimit: 5, maxProjects: 3, canCopy: false, canDownload: false, canPrint: false, hasAiAdvisor: false },
-  pro: { price: "R$149", aiLimit: 20, maxProjects: 10, canCopy: true, canDownload: true, canPrint: false, hasAiAdvisor: false },
-  advanced: { price: "R$349", aiLimit: 999, maxProjects: 999, canCopy: true, canDownload: true, canPrint: true, hasAiAdvisor: true },
+  founder: { price: "R$197", aiLimit: 30, maxProjects: 5, canCopy: true, canDownload: true, canPrint: true, hasAiAdvisor: true },
+  studio: { price: "R$697", aiLimit: 999, maxProjects: 999, canCopy: true, canDownload: true, canPrint: true, hasAiAdvisor: true },
 };
 
 export const ALL_DELIVERABLES: Array<{ phase: number; phaseName: string; key: string; label: string }> = [

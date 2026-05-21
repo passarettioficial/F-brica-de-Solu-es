@@ -79,9 +79,21 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 
 ### Plans & Billing
 
-Plans: `free`, `starter`, `advanced`. Defined in `artifacts/api-server/src/lib/stripe.ts` via `getPlanConfig(plan, isSuperuser?)`.
+Plans: `free` (Explorar), `founder`, `studio`. Defined in `artifacts/api-server/src/lib/stripe.ts` via `getPlanConfig(plan, isSuperuser?)`.
+
+| Plan | Monthly | Yearly (≈17% off) | AI/day | Projects | Seats | AI Advisor |
+|---|---|---|---|---|---|---|
+| Explorar (free) | R$0 | — | 3 | 1 | 1 | ❌ |
+| Founder | R$197 | R$1.970 (≈R$164/mo) | 30 | 5 | 1 | ✅ |
+| Studio | R$697 | R$6.970 (≈R$581/mo) | 999 | ∞ | 3 | ✅ |
+
+Yearly Stripe lookup keys: `founder_yearly`, `studio_yearly`. Monthly: `founder_monthly`, `studio_monthly`. Set up via `npx tsx artifacts/api-server/src/scripts/setup-stripe.ts`.
+
+Legacy plan IDs (`basic`, `pro`, `advanced`, `starter`) are auto-mapped to new plans via `normalizePlanId()` in `lib/stripe.ts` for backward compatibility.
 
 Superusers bypass all plan limits — `getPlanConfig` returns unlimited config when `isSuperuser=true`.
+
+**Checkout API:** `POST /api/billing/checkout` accepts `{ planId, billingCycle: "monthly" | "yearly" }`. Default is monthly.
 
 ### Customer Service & UX Features
 
