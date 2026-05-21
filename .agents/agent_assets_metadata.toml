@@ -17,3 +17,9 @@ id = "dd17WE9wLyP0bLQlM0ens"
 uri = "file://.local/sprint2_aulet_mapping.md"
 type = "text"
 title = "Sprint 2 — Mapeamento Aulet ↔ Fábrica"
+
+[[outputs]]
+id = "O9AlPs00lH_Iqt3VJmf5s"
+uri = "file://.local/sprint2_metodo_foundersflow.md"
+type = "text"
+title = "Sprint 2 — Método FoundersFlow v1"
