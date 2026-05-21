@@ -11,3 +11,9 @@ id = "mbEpWqJiYgFHcVmTbjgKG"
 uri = "file://.local/outputs/FoundersFlow-Pitch-Deck.pptx"
 type = "slides"
 title = "FoundersFlow Pitch Deck — repricing aplicado (PPTX)"
+
+[[outputs]]
+id = "dd17WE9wLyP0bLQlM0ens"
+uri = "file://.local/sprint2_aulet_mapping.md"
+type = "text"
+title = "Sprint 2 — Mapeamento Aulet ↔ Fábrica"
