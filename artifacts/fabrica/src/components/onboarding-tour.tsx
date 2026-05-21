@@ -73,19 +73,21 @@ const STEPS = [
     tag: "Passo 3 de 4",
   },
   {
-    title: "Pronto para começar?",
+    title: "Comece em 10 segundos",
     description:
-      "Crie seu primeiro projeto agora. Leva menos de 2 minutos e você já terá seus primeiros artefatos gerados pela IA.",
+      "Abra o projeto demo (GestaoPro — SaaS B2B com Fases 1, 2 e 3 já completas) e explore o nível de profundidade que a IA entrega. Ou crie o seu do zero.",
     icon: "🚀",
     tag: "Passo 4 de 4",
+    isFinalChoice: true,
   },
 ];
 
 interface OnboardingTourProps {
   onComplete?: () => void;
+  onLoadDemo?: () => void;
 }
 
-export function OnboardingTour({ onComplete }: OnboardingTourProps) {
+export function OnboardingTour({ onComplete, onLoadDemo }: OnboardingTourProps) {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(false);
   const [profile, setProfile] = useState<Partial<FounderProfile>>({});
@@ -141,11 +143,22 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
     setVisible(false);
   }
 
+  function handleDemoChoice() {
+    localStorage.setItem(STORAGE_KEY, "1");
+    if (Object.keys(profile).length > 0) {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }
+    persistStage1(profile);
+    setVisible(false);
+    onLoadDemo?.();
+  }
+
   if (!visible) return null;
 
   const current = STEPS[step]!;
   const isLastStep = step === STEPS.length - 1;
   const isProfileStep = (current as { isProfile?: boolean }).isProfile === true;
+  const isFinalChoice = (current as { isFinalChoice?: boolean }).isFinalChoice === true;
   const profileComplete = isProfileStep
     ? Object.keys(profile).length >= PROFILE_QUESTIONS.length
     : true;
@@ -218,18 +231,43 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between">
-          <button onClick={handleSkip} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Pular
-          </button>
-          <Button
-            onClick={handleNext}
-            disabled={isProfileStep && !profileComplete}
-            className="bg-primary hover:bg-primary/90 text-white px-6 disabled:opacity-40"
-          >
-            {isLastStep ? "Criar meu projeto →" : "Próximo →"}
-          </Button>
-        </div>
+        {isFinalChoice && onLoadDemo ? (
+          <div className="space-y-2.5">
+            <Button
+              onClick={handleDemoChoice}
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+              data-testid="onboarding-load-demo"
+            >
+              Explorar projeto demo →
+            </Button>
+            <Button
+              onClick={handleNext}
+              variant="outline"
+              className="w-full border-primary/30 text-primary hover:bg-primary/5"
+              data-testid="onboarding-create-blank"
+            >
+              Criar do zero
+            </Button>
+            <div className="text-center pt-1">
+              <button onClick={handleSkip} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Pular por agora
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <button onClick={handleSkip} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Pular
+            </button>
+            <Button
+              onClick={handleNext}
+              disabled={isProfileStep && !profileComplete}
+              className="bg-primary hover:bg-primary/90 text-white px-6 disabled:opacity-40"
+            >
+              {isLastStep ? "Criar meu projeto →" : "Próximo →"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

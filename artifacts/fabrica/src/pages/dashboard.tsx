@@ -426,7 +426,7 @@ export function Dashboard() {
 
   return (
     <div className="app-shell">
-      <OnboardingTour onComplete={handleTourComplete} />
+      <OnboardingTour onComplete={handleTourComplete} onLoadDemo={loadDemoProject} />
       <ProgressiveProfile
         profileStage={profileStage}
         totalCompletedPhases={totalCompletedPhases}
