@@ -55,6 +55,14 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 - **Recomendação dinâmica:** `recommendedPlanId = requestedPlan ?? UPGRADE_COPY[reason].recommended` (default ai→founder, projects→founder, seats→studio). Card recomendado ganha borda accent + ring-2 + shadow-xl + badge laranja "Recomendado para você" (substitui o badge default), e auto-scrollIntoView center após 250ms.
 - **Banner topo:** `role=status aria-live=polite`, ícone ↑ accent, copy contextual, `data-testid="upgrade-banner-{reason}"`.
 
+### ⌘K Command Palette
+
+- **Componente:** `components/command-palette.tsx` montado globalmente em `App.tsx` ao lado de `PaywallModal`.
+- **Shortcut:** ⌘K (Mac) / Ctrl+K (Win/Linux) toggle. ESC fecha. ↑↓ navega, ↵ abre.
+- **Itens:** `STATIC_ITEMS` (Painel, Planos, Assinatura, Atendimento, Configurações, Privacidade, Admin, Admin Insights, atalhos de upgrade ai/projects); projetos via fetch lazy `${basePath}/api/projects` no primeiro open (cached em state); fases (7 por projeto) com link direto.
+- **Score:** substring match (10) > subsequence match (5) > 0. Agrupado por `group` mantendo `flatIdx` global para keyboard nav.
+- **A11y:** `role=dialog aria-modal=true`, body scroll lock, focus restore para previously focused element, backdrop click fecha.
+
 ### PDF Export Viral B2B (projeto completo)
 
 - **Cover branded:** banda primary blue 140pt + stripe accent, mark `FOUNDERSFLOW`, título 34pt, dots de progresso das 7 fases (blue=done / outlined=pending), meta block, CTA strip light blue rodapé com `foundersflow.com.br ›`.

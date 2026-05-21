@@ -32,6 +32,7 @@ import { FluxoContinuoPage } from "@/pages/fluxo-continuo";
 import { ProntoParaVenderPage } from "@/pages/pronto-para-vender";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { PaywallModal } from "@/components/paywall-modal";
+import { CommandPalette } from "@/components/command-palette";
 import { PublicSharePage } from "@/pages/public-share";
 
 const queryClient = new QueryClient();
@@ -247,6 +248,7 @@ function ClerkProviderWithRoutes() {
           <Toaster />
           <WhatsAppButton />
           <PaywallModal />
+          <CommandPalette />
         </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>
