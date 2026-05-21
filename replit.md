@@ -33,6 +33,14 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 AI-powered web app for founders. 7 sequential phases take a product from idea to validated deploy.
 
+### Demo Project (ativação imediata)
+
+- **Schema:** `projectsTable.isDemo boolean default false` + partial unique index `projects_one_active_demo_per_user ON (clerk_id) WHERE is_demo=true AND deleted_at IS NULL` (garante 1 demo ativo/user no nível DB).
+- **Seed:** `artifacts/api-server/src/lib/demoSeed.ts` — projeto "GestaoPro" (SaaS B2B PME) com Fases 1, 2 e 3 completas (status=completed, gates checked, currentPhase=4) e artefatos realistas: Fase 1 (LEAN_CANVAS JSON, JTBD, HIPOTESE_CENTRAL, SCORE_POTENCIAL JSON), Fase 2 (PRD, CARTAO_PERSONA JSON, METRICAS_SUCESSO), Fase 3 (DATA_MAP, THREAT_MODEL STRIDE, MATRIZ_RBAC).
+- **Route:** `POST /api/projects/demo` — idempotente (fast-path SELECT + race-safe via try/catch PG 23505), plan-limit aware (só conta se for criação nova), retorna 201 (new) ou 200 (existed) com `alreadyExisted` flag.
+- **Frontend:** `EmptyState` em `dashboard.tsx` ganha botão "Explorar projeto demo" ao lado de "Criar do zero", redireciona para Fase 1 após seed.
+- **Audit event:** `user.project.demo_seeded`.
+
 ### Share Público de Projeto (viral loop)
 
 - **Schema:** `projectsTable.shareId text unique nullable` + `sharedAt timestamp`.

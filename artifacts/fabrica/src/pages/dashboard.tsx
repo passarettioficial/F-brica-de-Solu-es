@@ -187,7 +187,7 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
   );
 }
 
-function EmptyState({ onNew, onTemplate }: { onNew: () => void; onTemplate: (t: typeof EXAMPLE_TEMPLATES[0]) => void }) {
+function EmptyState({ onNew, onTemplate, onDemo, demoLoading }: { onNew: () => void; onTemplate: (t: typeof EXAMPLE_TEMPLATES[0]) => void; onDemo: () => void; demoLoading: boolean }) {
   return (
     <div className="flex flex-col items-center py-16 text-center">
       <div className="relative mb-7">
@@ -219,10 +219,15 @@ function EmptyState({ onNew, onTemplate }: { onNew: () => void; onTemplate: (t: 
         ))}
       </div>
 
-      <Button onClick={onNew} className="bg-primary hover:bg-primary/90 text-white px-7 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">
-        Criar do zero →
-      </Button>
-      <p className="text-xs font-mono text-muted-foreground/60 mt-3 uppercase tracking-wider">Sem cartão de crédito</p>
+      <div className="flex flex-col sm:flex-row gap-2.5">
+        <Button onClick={onNew} className="bg-primary hover:bg-primary/90 text-white px-7 py-2.5 text-sm font-semibold" data-testid="button-new-project-empty">
+          Criar do zero →
+        </Button>
+        <Button onClick={onDemo} disabled={demoLoading} variant="outline" className="border-primary/30 text-primary hover:bg-primary/5 px-6 py-2.5 text-sm font-semibold" data-testid="button-load-demo">
+          {demoLoading ? "Carregando demo…" : "Explorar projeto demo"}
+        </Button>
+      </div>
+      <p className="text-xs font-mono text-muted-foreground/60 mt-3 uppercase tracking-wider">Sem cartão de crédito · Demo já com 3 fases prontas</p>
     </div>
   );
 }
@@ -355,6 +360,30 @@ export function Dashboard() {
       toast({ title: "Erro de conexão.", variant: "destructive" });
     } finally {
       setTrashActionId(null);
+    }
+  }
+
+  const [demoLoading, setDemoLoading] = useState(false);
+  async function loadDemoProject() {
+    if (demoLoading) return;
+    setDemoLoading(true);
+    try {
+      const res = await fetch(`${basePath}/api/projects/demo`, { method: "POST", credentials: "include" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Não foi possível carregar o demo", description: data?.error ?? "Tente novamente.", variant: "destructive" });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+      toast({
+        title: data?.alreadyExisted ? "Abrindo projeto demo…" : "Demo carregado!",
+        description: data?.alreadyExisted ? "Você já tinha um projeto demo — abrindo agora." : "GestaoPro com Fases 1, 2 e 3 já completas. Explore à vontade.",
+      });
+      setTimeout(() => setLocation(`/projects/${data.id}/phases/1`), 80);
+    } catch {
+      toast({ title: "Erro de conexão.", variant: "destructive" });
+    } finally {
+      setDemoLoading(false);
     }
   }
 
@@ -544,7 +573,7 @@ export function Dashboard() {
                   {[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-44" />)}
                 </div>
               ) : projects.length === 0 ? (
-                <EmptyState onNew={() => setShowNew(true)} onTemplate={applyTemplate} />
+                <EmptyState onNew={() => setShowNew(true)} onTemplate={applyTemplate} onDemo={loadDemoProject} demoLoading={demoLoading} />
               ) : filteredProjects.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground text-sm">
                   Nenhum projeto encontrado para "{searchQuery}"

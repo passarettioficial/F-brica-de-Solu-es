@@ -12,6 +12,7 @@ import { auditLog } from "../lib/audit";
 import { analyzeProjectCoherence, analyzeMarketPotential } from "../lib/ai";
 import { logEvent } from "../lib/events";
 import { createNotification } from "../lib/notifications";
+import { seedDemoProject } from "../lib/demoSeed";
 
 const router: IRouter = Router();
 
@@ -107,6 +108,43 @@ router.get("/projects", async (req, res): Promise<void> => {
     and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   res.json(projects);
+});
+
+// POST /projects/demo — seed pre-populated demo project (idempotent)
+router.post("/projects/demo", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  await ensureUser(userId);
+
+  // Plan limit check — only counts toward limit if a NEW demo is being created
+  const [userFull] = await db.select().from(usersTable).where(eq(usersTable.clerkId, userId));
+  const plan = getPlanConfig(userFull?.plan ?? "free", userFull?.isSuperuser ?? false);
+
+  const [{ count: existingDemoCount }] = await db.select({ count: count() }).from(projectsTable).where(
+    and(eq(projectsTable.clerkId, userId), eq(projectsTable.isDemo, true), isNull(projectsTable.deletedAt))
+  );
+
+  if (Number(existingDemoCount) === 0) {
+    const [{ count: projectCount }] = await db.select({ count: count() }).from(projectsTable).where(
+      and(eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+    );
+    if (Number(projectCount) >= plan.maxProjects) {
+      res.status(403).json({
+        error: `Limite de ${plan.maxProjects} projeto(s) atingido para o plano ${plan.name}. Apague um projeto para carregar o demo.`,
+        code: "PROJECT_LIMIT_REACHED",
+      });
+      return;
+    }
+  }
+
+  const { created, project } = await seedDemoProject(userId);
+  if (created) {
+    await auditLog({ eventType: "user.project.demo_seeded", actorClerkId: userId, meta: { projectId: project.id }, req });
+    void logEvent(userId, "project_created", { projectId: project.id, demo: true });
+  }
+  res.status(created ? 201 : 200).json({ ...project, alreadyExisted: !created });
 });
 
 // POST /projects

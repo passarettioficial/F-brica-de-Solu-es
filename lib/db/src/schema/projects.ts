@@ -1,4 +1,5 @@
-import { pgTable, text, serial, timestamp, integer, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -16,12 +17,16 @@ export const projectsTable = pgTable("projects", {
   marketPotentialUpdatedAt: timestamp("market_potential_updated_at", { withTimezone: true }),
   shareId: text("share_id").unique(),
   sharedAt: timestamp("shared_at", { withTimezone: true }),
+  isDemo: boolean("is_demo").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 }, (table) => [
   index("projects_clerk_id_idx").on(table.clerkId),
   index("projects_deleted_at_idx").on(table.deletedAt),
+  uniqueIndex("projects_one_active_demo_per_user")
+    .on(table.clerkId)
+    .where(sql`${table.isDemo} = true AND ${table.deletedAt} IS NULL`),
 ]);
 
 export const insertProjectSchema = createInsertSchema(projectsTable).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true });

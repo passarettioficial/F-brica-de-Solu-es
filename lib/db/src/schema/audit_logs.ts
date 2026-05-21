@@ -19,6 +19,7 @@ export type AuditEventType =
   | "user.project.restored"
   | "user.project.shared"
   | "user.project.unshared"
+  | "user.project.demo_seeded"
   | "user.project.exported"
   | "user.project.permanent_deleted"
   | "user.ai.used"
