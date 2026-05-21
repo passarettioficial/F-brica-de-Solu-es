@@ -38,9 +38,23 @@ export function UsersTab() {
     u.clerkId.toLowerCase().includes(search.toLowerCase())
   );
 
+  const exportCsv = (segment: string) => {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    window.open(`${base}/api/admin/users/export.csv?segment=${segment}`, "_blank");
+  };
+
   return (
     <div className="space-y-4">
-      <Input placeholder="Buscar por nome ou Clerk ID..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+      <div className="flex flex-wrap items-center gap-2">
+        <Input placeholder="Buscar por nome ou Clerk ID..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
+        <div className="flex items-center gap-1.5 ml-auto">
+          <span className="text-xs text-muted-foreground font-mono uppercase tracking-wider mr-1">Exportar CSV:</span>
+          <button onClick={() => exportCsv("all")} className="text-xs px-2.5 py-1.5 rounded border border-border bg-background hover:bg-muted/40 transition-colors">Todos</button>
+          <button onClick={() => exportCsv("paid")} className="text-xs px-2.5 py-1.5 rounded border border-border bg-background hover:bg-muted/40 transition-colors">Pagantes</button>
+          <button onClick={() => exportCsv("free")} className="text-xs px-2.5 py-1.5 rounded border border-border bg-background hover:bg-muted/40 transition-colors">Free</button>
+          <button onClick={() => exportCsv("active_sub")} className="text-xs px-2.5 py-1.5 rounded border border-border bg-background hover:bg-muted/40 transition-colors">Assinatura ativa</button>
+        </div>
+      </div>
 
       {loading ? (
         <div className="text-muted-foreground text-sm">Carregando...</div>

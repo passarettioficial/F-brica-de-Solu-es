@@ -15,6 +15,7 @@ export const usersTable = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   isSuperuser: boolean("is_superuser").notNull().default(false),
   founderProfile: jsonb("founder_profile"),
+  profileStage: integer("profile_stage").notNull().default(0),
   onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
   lgpdConsentAt: timestamp("lgpd_consent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

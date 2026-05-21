@@ -17,6 +17,7 @@ import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
 import { NotificationBell } from "@/components/notification-bell";
 import { OnboardingTour } from "@/components/onboarding-tour";
+import { ProgressiveProfile } from "@/components/progressive-profile";
 import { ActivationChecklist } from "@/components/activation-checklist";
 import { AppSidebar } from "@/components/app-sidebar";
 
@@ -275,6 +276,7 @@ export function Dashboard() {
     platform: { totalProjects: number; avgCoherenceScore: number | null; avgMarketPotentialScore: number | null; avgCurrentPhase: number | null; completedProjects: number };
     user: { totalProjects: number; avgCoherenceScore: number | null };
   } | null>(null);
+  const [profileStage, setProfileStage] = useState<number>(0);
   const benchmarksFetched = useRef(false);
 
   const { data: dashboard, isLoading } = useGetDashboard();
@@ -302,6 +304,13 @@ export function Dashboard() {
     fetch(`${basePath}/api/benchmarks`, { credentials: "include" })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setBenchmarks(data); })
+      .catch(() => undefined);
+  }, [basePath]);
+
+  useEffect(() => {
+    fetch(`${basePath}/api/users/me`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && typeof d.profileStage === "number") setProfileStage(d.profileStage); })
       .catch(() => undefined);
   }, [basePath]);
 
@@ -381,6 +390,12 @@ export function Dashboard() {
   return (
     <div className="app-shell">
       <OnboardingTour onComplete={handleTourComplete} />
+      <ProgressiveProfile
+        profileStage={profileStage}
+        totalCompletedPhases={totalCompletedPhases}
+        basePath={basePath}
+        onSaved={() => setProfileStage(s => Math.min(s + 1, 3))}
+      />
       <AppSidebar />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

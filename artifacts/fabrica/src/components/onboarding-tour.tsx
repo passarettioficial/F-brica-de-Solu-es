@@ -111,24 +111,33 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
     }
   }
 
+  function persistStage1(extraProfile?: Partial<FounderProfile>) {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const body = extraProfile && Object.keys(extraProfile).length > 0
+      ? { founderProfile: extraProfile, profileStage: 1 }
+      : { founderProfile: {}, profileStage: 1 };
+    fetch(`${base}/api/users/me/profile`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(body),
+    }).catch(() => undefined);
+  }
+
   function handleComplete() {
     localStorage.setItem(STORAGE_KEY, "1");
     if (Object.keys(profile).length > 0) {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      // Non-blocking save to API
-      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      fetch(`${base}/api/users/me/profile`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ founderProfile: profile }),
-      }).catch(() => undefined);
     }
+    persistStage1(profile);
     setVisible(false);
     onComplete?.();
   }
 
   function handleSkip() {
     localStorage.setItem(STORAGE_KEY, "1");
+    // Always advance stage so progressive prompts later still trigger
+    persistStage1(profile);
     setVisible(false);
   }
 

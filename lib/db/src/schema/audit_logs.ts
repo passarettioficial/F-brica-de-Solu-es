@@ -12,6 +12,7 @@ export type AuditEventType =
   | "admin.settings.updated"
   | "admin.plans.updated"
   | "admin.openai_budget.updated"
+  | "admin.users.exported"
   | "user.login"
   | "user.project.created"
   | "user.project.deleted"

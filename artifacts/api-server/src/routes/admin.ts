@@ -135,6 +135,90 @@ router.patch("/admin/openai-budget", async (req: Request, res: Response): Promis
   }
 });
 
+// ─── Users export (CSV) ──────────────────────────────────────────────────────
+
+const PROFILE_LABELS: Record<string, Record<string, string>> = {
+  estagio: { ideia: "Ideia", prototipo: "Protótipo", mvp: "MVP", tracao: "Tração" },
+  setor: { saas: "SaaS", marketplace: "Marketplace", fintech: "Fintech", healthtech: "Healthtech", edtech: "Edtech", outro: "Outro" },
+  equipe: { solo: "Solo", cofundadores: "Co-fundadores", time_pequeno: "Time pequeno", time_grande: "Time maior" },
+  cargo: { ceo: "CEO", cto: "CTO", solo_founder: "Solo founder", produto: "Produto", outro: "Outro" },
+  modeloNegocio: { b2b: "B2B", b2c: "B2C", b2b2c: "B2B2C", marketplace: "Marketplace", outro: "Outro" },
+  prazoLancamento: { ja_lancado: "Já lançado", ate_30d: "Próximos 30d", "30_90d": "30-90d", "90_180d": "90-180d", mais_180d: "180d+", indefinido: "Indefinido" },
+  faturamentoMensal: { zero: "R$ 0", ate_10k: "Até R$ 10k", "10k_50k": "R$ 10k-50k", "50k_200k": "R$ 50k-200k", mais_200k: "R$ 200k+" },
+  orcamentoFerramentas: { ate_100: "Até R$ 100", "100_500": "R$ 100-500", "500_2k": "R$ 500-2k", mais_2k: "R$ 2k+" },
+};
+
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  let s = String(v);
+  // CSV formula-injection mitigation: prefix dangerous leading chars with apostrophe
+  // (Excel/Sheets execute leading =, +, -, @, tab, CR as formulas).
+  if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+router.get("/admin/users/export.csv", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const segment = String(req.query.segment ?? "all");
+  try {
+    const rows = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
+    const filtered = rows.filter(u => {
+      if (segment === "all") return true;
+      if (segment === "paid") return ["founder", "studio", "basic", "pro", "advanced"].includes(u.plan);
+      if (segment === "free") return u.plan === "free";
+      if (segment === "active_sub") return u.stripeSubscriptionStatus === "active";
+      return true;
+    });
+
+    const headers = [
+      "clerk_id", "display_name", "plan", "subscription_status", "is_admin", "is_superuser",
+      "created_at", "profile_stage",
+      "estagio", "setor", "equipe", "cargo", "modelo_negocio", "prazo_lancamento",
+      "faturamento_mensal", "orcamento_ferramentas", "principal_desafio",
+    ];
+
+    const lines = [headers.join(",")];
+    for (const u of filtered) {
+      const p = (u.founderProfile as Record<string, string> | null) ?? {};
+      const label = (field: string, key: string | undefined) =>
+        key ? (PROFILE_LABELS[field]?.[key] ?? key) : "";
+      lines.push([
+        u.clerkId,
+        u.displayName ?? "",
+        u.plan,
+        u.stripeSubscriptionStatus ?? "",
+        u.isAdmin ? "true" : "false",
+        u.isSuperuser ? "true" : "false",
+        u.createdAt.toISOString(),
+        String(u.profileStage),
+        label("estagio", p.estagio),
+        label("setor", p.setor),
+        label("equipe", p.equipe),
+        label("cargo", p.cargo),
+        label("modeloNegocio", p.modeloNegocio),
+        label("prazoLancamento", p.prazoLancamento),
+        label("faturamentoMensal", p.faturamentoMensal),
+        label("orcamentoFerramentas", p.orcamentoFerramentas),
+        p.principalDesafio ?? "",
+      ].map(csvEscape).join(","));
+    }
+
+    await auditLog({ eventType: "admin.users.exported", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { segment, count: filtered.length }, req });
+
+    const filename = `users_${segment}_${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    // BOM for Excel UTF-8 detection
+    res.send("\uFEFF" + lines.join("\n"));
+  } catch (err) {
+    logger.error({ err }, "Admin users export error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 router.get("/admin/users", async (req: Request, res: Response): Promise<void> => {
