@@ -287,6 +287,8 @@
     background-color: var(--bg-base);
     color: var(--text-primary);
     min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.55;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-semibold tracking-tight;

@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
 import { usePlan } from "@/hooks/usePlan";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ArtifactBody } from "@/components/artifact-body";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -41,6 +42,20 @@ function parseJsonBlock<T = Record<string, unknown>>(content: string): T | null 
     if (t.startsWith("{")) return JSON.parse(t) as T;
   } catch { /* fallback to raw */ }
   return null;
+}
+
+function ProtectWrap({ protect, children }: { protect: boolean; children: React.ReactNode }) {
+  if (!protect) return <>{children}</>;
+  return (
+    <div
+      style={{ userSelect: "none", WebkitUserSelect: "none", pointerEvents: "none" }}
+      onCopy={(e) => e.preventDefault()}
+      onCut={(e) => e.preventDefault()}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {children}
+    </div>
+  );
 }
 
 function LeanCanvas({ content }: { content: string }) {
@@ -179,7 +194,8 @@ const ArtifactCard = memo(function ArtifactCard({
   canCopy,
   canDownload,
   onUpdate,
-  initialExpanded,
+  expanded,
+  onToggleExpanded,
 }: {
   artifact: { id: number; artifactKey: string; content: string; contentJson: string | null; downloadedAt?: string | null };
   phaseNumber: number;
@@ -187,9 +203,9 @@ const ArtifactCard = memo(function ArtifactCard({
   canCopy: boolean;
   canDownload: boolean;
   onUpdate: () => void;
-  initialExpanded?: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
 }) {
-  const [expanded, setExpanded] = useState(initialExpanded ?? false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(artifact.content);
   const [downloaded, setDownloaded] = useState(!!artifact.downloadedAt);
@@ -219,9 +235,9 @@ const ArtifactCard = memo(function ArtifactCard({
   }
 
   return (
-    <div className={`bg-card border rounded-xl overflow-hidden transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-card-border"}`}>
+    <div id={`artifact-anchor-${artifact.id}`} className={`scroll-mt-24 bg-card border rounded-xl overflow-hidden transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-card-border"}`}>
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={onToggleExpanded}
         aria-expanded={expanded}
         aria-controls={`artifact-content-${artifact.id}`}
         className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors text-left"
@@ -274,33 +290,21 @@ const ArtifactCard = memo(function ArtifactCard({
               {isEmpty ? (
                 <p className="text-sm text-muted-foreground italic">Este artefato não foi gerado ainda. Clique em "Gerar com IA" acima.</p>
               ) : isLeanCanvas ? (
-                <LeanCanvas content={artifact.content} />
+                <ProtectWrap protect={!canCopy}><LeanCanvas content={artifact.content} /></ProtectWrap>
               ) : isScorePotencial ? (
-                <ScorePotencial content={artifact.content} />
+                <ProtectWrap protect={!canCopy}><ScorePotencial content={artifact.content} /></ProtectWrap>
               ) : isFailurePatterns ? (
                 <div className="space-y-3">
                   <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
                     <p className="text-xs font-mono uppercase tracking-[0.2em] text-primary mb-2">Camada opcional</p>
-                    <p className="text-sm text-foreground leading-relaxed">
+                    <p className="text-[15px] text-foreground leading-relaxed">
                       Padrões de falha, casos comparáveis e sinais de risco para ajudar na decisão sem inflar a análise principal.
                     </p>
                   </div>
-                  <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{artifact.content}</div>
+                  <ArtifactBody content={artifact.content} protect={!canCopy} />
                 </div>
               ) : (
-                <div
-                  className="text-sm text-foreground whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto"
-                  style={!canCopy ? {
-                    userSelect: "none",
-                    WebkitUserSelect: "none",
-                    pointerEvents: "none",
-                  } : {}}
-                  onCopy={!canCopy ? (e) => e.preventDefault() : undefined}
-                  onCut={!canCopy ? (e) => e.preventDefault() : undefined}
-                  onContextMenu={!canCopy ? (e) => e.preventDefault() : undefined}
-                >
-                  {artifact.content}
-                </div>
+                <ArtifactBody content={artifact.content} protect={!canCopy} />
               )}
 
               {!isEmpty && (
@@ -479,6 +483,28 @@ export function PhasePage() {
   const [aiJustDone, setAiJustDone] = useState(false);
   const [aiWordCount, setAiWordCount] = useState(0);
   const [upgradeRequired, setUpgradeRequired] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const expandedInitRef = useRef(false);
+
+  function toggleExpanded(id: number) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function jumpToArtifact(id: number) {
+    setExpandedIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    requestAnimationFrame(() => {
+      document.getElementById(`artifact-anchor-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   const phaseDef = PHASES[phaseNumber - 1];
   const artifacts: any[] = (phase as any)?.artifacts ?? [];
@@ -496,6 +522,16 @@ export function PhasePage() {
   const totalCount = artifacts.length;
 
   const noPrint = !permissions.canPrint && permissions.plan !== "free";
+
+  // Initialize expand state once: open first 2 non-empty artifacts to give a "wow" view
+  // without mounting all heavy markdown trees at once.
+  useEffect(() => {
+    if (expandedInitRef.current) return;
+    const ready = artifacts.filter((a) => a.content?.trim());
+    if (ready.length === 0) return;
+    expandedInitRef.current = true;
+    setExpandedIds(new Set(ready.slice(0, 2).map((a) => a.id)));
+  }, [artifacts]);
 
   function handleGateChange(gateNum: 1 | 2 | 3, checked: boolean) {
     if (!phase) return;
@@ -840,6 +876,40 @@ export function PhasePage() {
               <h2 className="font-serif text-lg">Artefatos gerados</h2>
               <span className="text-xs text-muted-foreground">{generatedCount}/{totalCount} prontos</span>
             </div>
+
+            {/* Sticky TOC — jumps to and expands target artifact */}
+            {artifacts.filter(a => a.content?.trim()).length > 1 && (
+              <nav
+                aria-label="Índice de artefatos"
+                className="sticky top-2 z-20 bg-card/95 backdrop-blur border border-card-border rounded-xl p-3 shadow-sm"
+              >
+                <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
+                  Ir para
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {artifacts.map((a) => {
+                    const isReady = !!a.content?.trim();
+                    const meta = ARTIFACT_LABELS[a.artifactKey];
+                    const label = meta?.label ?? a.artifactKey;
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => jumpToArtifact(a.id)}
+                        className={`text-[12px] px-2.5 py-1 rounded-full border transition-colors ${
+                          isReady
+                            ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+                            : "border-border bg-muted/40 text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {isReady ? "" : "○ "}{label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </nav>
+            )}
+
             {artifactGroups.preenchidos?.length > 0 && (
               <div className="bg-card border border-card-border rounded-xl p-4">
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Entregas concluídas</div>
@@ -853,7 +923,7 @@ export function PhasePage() {
                 </div>
               </div>
             )}
-            {artifacts.map((artifact, index) => (
+            {artifacts.map((artifact) => (
               <ArtifactCard
                 key={artifact.id}
                 artifact={artifact}
@@ -862,7 +932,8 @@ export function PhasePage() {
                 canCopy={permissions.canCopy}
                 canDownload={permissions.canDownload}
                 onUpdate={invalidatePhase}
-                initialExpanded={aiJustDone && index < 2 && !!artifact.content?.trim()}
+                expanded={expandedIds.has(artifact.id)}
+                onToggleExpanded={() => toggleExpanded(artifact.id)}
               />
             ))}
           </div>
