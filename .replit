@@ -39,6 +39,7 @@ externalPort = 3000
 
 [userenv.shared]
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_aW50ZW5zZS15ZXRpLTMuY2xlcmsuYWNjb3VudHMuZGV2JA"
+APP_BASE_URL = "https://www.foundersflow.com.br"
 
 [nix]
 channel = "stable-25_05"
