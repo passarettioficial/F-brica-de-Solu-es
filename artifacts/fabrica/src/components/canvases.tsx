@@ -1929,6 +1929,205 @@ export function MilestonesCanvas({
   );
 }
 
+// ───────────────────────── 9b. User Stories (Fase 2) ─────────────────────────
+type UserStoriesData = {
+  stories?: {
+    id: string;
+    persona: string;
+    acao: string;
+    valor: string;
+    epico?: string;
+    esforco?: "P" | "M" | "G";
+    prioridade?: number;
+    aceitacao?: string[];
+  }[];
+};
+
+const ESFORCO_STYLE: Record<string, string> = {
+  P: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
+  M: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  G: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+};
+
+function prioStyle(p?: number): string {
+  if (!p) return "bg-secondary text-muted-foreground border-border";
+  if (p <= 2) return "bg-accent/15 text-accent-foreground dark:text-accent border-accent/40";
+  if (p === 3) return "bg-primary/10 text-primary border-primary/30";
+  return "bg-muted text-muted-foreground border-border";
+}
+
+type UserStory = NonNullable<UserStoriesData["stories"]>[number];
+
+export function UserStoriesCanvas({
+  content,
+  canEdit = false,
+  projectId,
+  phaseNumber,
+  artifactKey,
+  onUpdate,
+}: {
+  content: string;
+  canEdit?: boolean;
+  projectId?: number;
+  phaseNumber?: number;
+  artifactKey?: string;
+  onUpdate?: () => void;
+}) {
+  const parsed = parseJsonBlock<UserStoriesData>(content);
+  const initial = parsed?.stories ?? [];
+  const [items, setItems] = useState<UserStory[]>(initial);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [overPos, setOverPos] = useState<"before" | "after">("before");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const updateArtifact = useUpdateArtifact();
+
+  useEffect(() => {
+    if (!dirty) setItems(parsed?.stories ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
+
+  if (!parsed?.stories?.length) return <Fallback content={content} />;
+
+  const canDrag = canEdit && !!projectId && !!phaseNumber && !!artifactKey;
+
+  function computePos(e: React.DragEvent): "before" | "after" {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    return e.clientY - rect.top < rect.height / 2 ? "before" : "after";
+  }
+  function onDragStart(e: React.DragEvent, idx: number) {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(idx)); } catch { /* noop */ }
+  }
+  function onDragOver(e: React.DragEvent, idx: number) {
+    if (dragIdx === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const pos = computePos(e);
+    if (overIdx !== idx) setOverIdx(idx);
+    if (overPos !== pos) setOverPos(pos);
+  }
+  function onDrop(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (dragIdx === null) return;
+    const pos = computePos(e);
+    let target = pos === "before" ? idx : idx + 1;
+    if (dragIdx < target) target -= 1;
+    if (target === dragIdx) { setDragIdx(null); setOverIdx(null); setOverPos("before"); return; }
+    const next = [...items];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(target, 0, moved);
+    setItems(next);
+    setDirty(true);
+    setDragIdx(null);
+    setOverIdx(null);
+    setOverPos("before");
+  }
+  function onDragEnd() { setDragIdx(null); setOverIdx(null); setOverPos("before"); }
+
+  function reset() { setItems(initial); setDirty(false); }
+
+  function save() {
+    if (!canDrag || saving) return;
+    setSaving(true);
+    const nextData: UserStoriesData = { ...parsed, stories: items };
+    const newContent = replaceJsonBlock(content, nextData as object);
+    updateArtifact.mutate(
+      { projectId: projectId!, phaseNumber: phaseNumber!, artifactKey: artifactKey!, data: { content: newContent, contentJson: null } },
+      {
+        onSuccess: () => {
+          toast({ title: "Stories reordenadas", description: `${items.length} stories atualizadas.` });
+          setDirty(false);
+          setSaving(false);
+          onUpdate?.();
+        },
+        onError: () => {
+          toast({ title: "Erro ao salvar", description: "Tente novamente.", variant: "destructive" });
+          setSaving(false);
+        },
+      }
+    );
+  }
+
+  const epicos = Array.from(new Set(items.map((s) => s.epico).filter(Boolean))) as string[];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between flex-wrap gap-3">
+        <h4 className="font-serif text-base">{items.length} user stories{epicos.length > 0 && <span className="text-muted-foreground font-sans"> · {epicos.length} épicos</span>}</h4>
+        {canDrag && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">Arraste para repriorizar</span>}
+      </div>
+      <div className="space-y-2">
+        {items.map((s, idx) => {
+          const isDragging = dragIdx === idx;
+          const isOver = overIdx === idx && dragIdx !== null && dragIdx !== idx;
+          return (
+            <div
+              key={s.id || `story-${idx}`}
+              className={`relative transition-all ${isDragging ? "opacity-40" : ""}`}
+              draggable={canDrag}
+              onDragStart={canDrag ? (e) => onDragStart(e, idx) : undefined}
+              onDragOver={canDrag ? (e) => onDragOver(e, idx) : undefined}
+              onDrop={canDrag ? (e) => onDrop(e, idx) : undefined}
+              onDragEnd={canDrag ? onDragEnd : undefined}
+              data-testid={`user-story-row-${idx}`}
+            >
+              {isOver && overPos === "before" && <div className="absolute left-0 right-0 -top-1 h-0.5 bg-accent rounded" aria-hidden="true" />}
+              {isOver && overPos === "after" && <div className="absolute left-0 right-0 -bottom-1 h-0.5 bg-accent rounded" aria-hidden="true" />}
+              <details className={`rounded-xl border bg-card group ${canDrag ? "border-border hover:border-primary/40" : "border-border"}`}>
+                <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
+                  {canDrag && (
+                    <span className="cursor-grab active:cursor-grabbing text-muted-foreground select-none" aria-label="Arrastar story" title="Arrastar para reordenar" onClick={(e) => e.preventDefault()}>
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+                    </span>
+                  )}
+                  {s.prioridade != null && <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${prioStyle(s.prioridade)}`}>P{s.prioridade}</span>}
+                  <span className="font-mono text-[11px] text-muted-foreground">{s.id}</span>
+                  <span className="flex-1 text-sm text-foreground truncate">
+                    <span className="text-muted-foreground">Como </span><strong>{s.persona}</strong>
+                    <span className="text-muted-foreground">, quero </span>{s.acao}
+                  </span>
+                  {s.epico && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">{s.epico}</span>}
+                  {s.esforco && <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${ESFORCO_STYLE[s.esforco] ?? ESFORCO_STYLE.M}`}>{s.esforco}</span>}
+                  <svg className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9" /></svg>
+                </summary>
+                <div className="px-4 pb-3 pt-2 border-t border-border space-y-2 text-sm">
+                  <div className="text-foreground">
+                    <span className="text-muted-foreground">Como </span><strong>{s.persona}</strong>
+                    <span className="text-muted-foreground">, quero </span>{s.acao}
+                    <span className="text-muted-foreground">, para </span>{s.valor}
+                  </div>
+                  {!!s.aceitacao?.length && (
+                    <div className="rounded bg-secondary/40 p-2 mt-2">
+                      <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Critérios de aceitação</div>
+                      <ul className="space-y-1 text-foreground">
+                        {s.aceitacao.map((a, i) => <li key={i} className="flex items-start gap-2"><span className="text-primary mt-0.5">▸</span><span>{a}</span></li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </details>
+            </div>
+          );
+        })}
+      </div>
+      {canDrag && dirty && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground mr-auto">Alterações não salvas</span>
+          <Button variant="outline" size="sm" onClick={reset} disabled={saving} data-testid="button-user-stories-reset">Desfazer</Button>
+          <Button size="sm" onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-user-stories-save">
+            {saving ? "Salvando…" : "Salvar ordem"}
+          </Button>
+        </div>
+      )}
+      <Attribution>User stories como unidade de valor (Cohn, 2004 · Patton, 2014). Priorize por valor entregue, não por esforço.</Attribution>
+    </div>
+  );
+}
+
 // ───────────────────────── 10. Casos de Teste Críticos (Fase 6) ─────────────────────────
 type CasosTesteData = {
   casos?: {

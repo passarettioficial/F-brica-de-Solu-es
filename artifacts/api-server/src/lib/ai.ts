@@ -177,7 +177,32 @@ Proposta de valor quantificada — situação atual vs. possível, com ganho men
 \`\`\`
 
 ### USER_STORIES
-15 user stories do MVP no formato "Como [persona], quero [ação], para [valor]" organizadas por épico. Para cada story: critérios de aceitação (Dado/Quando/Então), estimativa de esforço (P/M/G) e prioridade (1-5).
+15 user stories do MVP organizadas por épico, em formato JSON estruturado:
+\`\`\`json
+{
+  "stories": [
+    {
+      "id": "US-01",
+      "epico": "Onboarding",
+      "persona": "founder solo",
+      "acao": "criar uma conta com Google em 1 clique",
+      "valor": "começar a usar sem fricção de cadastro",
+      "esforco": "P",
+      "prioridade": 1,
+      "aceitacao": [
+        "Dado que estou na landing, Quando clico em 'Entrar com Google', Então sou redirecionado e logado em menos de 5s",
+        "Dado que é meu primeiro login, Quando entro, Então vejo o onboarding tour"
+      ]
+    }
+  ]
+}
+\`\`\`
+Regras:
+- "id": "US-01" a "US-15" (sequencial, único)
+- "esforco": "P" (até 1 dia), "M" (2-3 dias) ou "G" (1 semana+)
+- "prioridade": 1 (must-have MVP) a 5 (nice-to-have pós-MVP)
+- "aceitacao": 1-3 critérios em formato Gherkin "Dado / Quando / Então"
+- Ordene as stories aproximadamente por prioridade (1 primeiro), agrupando por épico quando possível
 
 ### METRICAS_SUCESSO
 Framework de métricas completo em formato JSON:

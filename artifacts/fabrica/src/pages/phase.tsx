@@ -45,6 +45,7 @@ import {
   MatrizRbacCanvas,
   ModeloDadosCanvas,
   MilestonesCanvas,
+  UserStoriesCanvas,
   CasosTesteCanvas,
   MetricasPosLaunchCanvas,
 } from "@/components/canvases";
@@ -79,7 +80,7 @@ function ProtectWrap({ protect, children }: { protect: boolean; children: React.
   if (!protect) return <>{children}</>;
   return (
     <div
-      style={{ userSelect: "none", WebkitUserSelect: "none", pointerEvents: "none" }}
+      style={{ userSelect: "none", WebkitUserSelect: "none" }}
       onCopy={(e) => e.preventDefault()}
       onCut={(e) => e.preventDefault()}
       onContextMenu={(e) => e.preventDefault()}
@@ -222,6 +223,7 @@ const ArtifactCard = memo(function ArtifactCard({
   const isMatrizRbac = phaseNumber === 3 && artifact.artifactKey === "MATRIZ_RBAC";
   const isModeloDados = phaseNumber === 4 && artifact.artifactKey === "MODELO_DADOS";
   const isMilestones = phaseNumber === 5 && artifact.artifactKey === "MILESTONES";
+  const isUserStories = phaseNumber === 2 && artifact.artifactKey === "USER_STORIES";
   const isCasosTeste = phaseNumber === 6 && artifact.artifactKey === "CASOS_TESTE_CRITICOS";
   const isMetricasPos = phaseNumber === 7 && artifact.artifactKey === "METRICAS_POS_LAUNCH";
   const meta = ARTIFACT_LABELS[artifact.artifactKey];
@@ -377,6 +379,17 @@ const ArtifactCard = memo(function ArtifactCard({
                 <ProtectWrap protect={!canCopy}><MatrizRbacCanvas content={artifact.content} /></ProtectWrap>
               ) : isModeloDados ? (
                 <ProtectWrap protect={!canCopy}><ModeloDadosCanvas content={artifact.content} /></ProtectWrap>
+              ) : isUserStories ? (
+                <ProtectWrap protect={!canCopy}>
+                  <UserStoriesCanvas
+                    content={artifact.content}
+                    canEdit={canCopy}
+                    projectId={projectId}
+                    phaseNumber={phaseNumber}
+                    artifactKey={artifact.artifactKey}
+                    onUpdate={onUpdate}
+                  />
+                </ProtectWrap>
               ) : isMilestones ? (
                 <ProtectWrap protect={!canCopy}>
                   <MilestonesCanvas
