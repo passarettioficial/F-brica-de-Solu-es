@@ -813,13 +813,50 @@ export function ProjectPage() {
     }
   }
 
-  function shareProject() {
-    const shareUrl = `${window.location.origin}${basePath}/projects/${projectId}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      toast({ title: "Link copiado", description: "Compartilhe esse projeto com sua equipe." });
-    }).catch(() => {
+  const [shareId, setShareId] = useState<string | null>((project as any)?.shareId ?? null);
+  const [sharing, setSharing] = useState(false);
+  useEffect(() => { setShareId((project as any)?.shareId ?? null); }, [(project as any)?.shareId]);
+  const publicShareUrl = shareId ? `${window.location.origin}${basePath}/p/${shareId}` : null;
+
+  async function enableShare() {
+    setSharing(true);
+    try {
+      const r = await fetch(`${basePath}/api/projects/${projectId}/share`, { method: "POST", credentials: "include" });
+      if (!r.ok) throw new Error("falha");
+      const body = await r.json();
+      setShareId(body.shareId);
+      const url = `${window.location.origin}${basePath}/p/${body.shareId}`;
+      try { await navigator.clipboard.writeText(url); } catch { /* ignore */ }
+      toast({ title: "Link público criado", description: "Já copiado para a área de transferência." });
+    } catch {
+      toast({ title: "Erro ao gerar link público", variant: "destructive" });
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function copyShareLink() {
+    if (!publicShareUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicShareUrl);
+      toast({ title: "Link copiado" });
+    } catch {
       toast({ title: "Não foi possível copiar", variant: "destructive" });
-    });
+    }
+  }
+
+  async function revokeShare() {
+    setSharing(true);
+    try {
+      const r = await fetch(`${basePath}/api/projects/${projectId}/share`, { method: "DELETE", credentials: "include" });
+      if (!r.ok) throw new Error("falha");
+      setShareId(null);
+      toast({ title: "Link revogado", description: "Este projeto não está mais acessível publicamente." });
+    } catch {
+      toast({ title: "Erro ao revogar link", variant: "destructive" });
+    } finally {
+      setSharing(false);
+    }
   }
 
   function addCollaborator() {
@@ -1107,13 +1144,12 @@ export function ProjectPage() {
         {activeTab === "collaboration" && (
           <div className="space-y-4" role="tabpanel">
             <div className="bg-card border border-card-border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div>
                   <h3 className="font-serif text-lg">Compartilhar projeto</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Copie um link para revisao e contexto compartilhado.</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Gere um link público de leitura para mostrar a co-founders, mentores ou investidores. Sem login necessário.</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  <Button variant="outline" size="sm" onClick={shareProject}>Copiar link</Button>
                   {permissions.canDownload ? (
                     <>
                       <Button variant="outline" size="sm" onClick={exportProject} data-testid="button-export-project">
@@ -1133,6 +1169,40 @@ export function ProjectPage() {
                     </Link>
                   )}
                 </div>
+              </div>
+              <div className="mb-4 rounded-lg border border-card-border bg-secondary/30 p-4">
+                {shareId && publicShareUrl ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-xs text-primary font-mono uppercase tracking-wider">
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+                      Link público ativo
+                    </div>
+                    <div className="flex gap-2 items-stretch">
+                      <input
+                        readOnly
+                        value={publicShareUrl}
+                        onFocus={(e) => e.currentTarget.select()}
+                        className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm font-mono"
+                      />
+                      <Button size="sm" variant="outline" onClick={copyShareLink}>Copiar</Button>
+                      <Button size="sm" variant="outline" onClick={revokeShare} disabled={sharing} className="text-destructive hover:text-destructive">
+                        Revogar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Qualquer pessoa com o link vê o projeto em modo leitura. Revogue a qualquer momento.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="text-sm text-muted-foreground">
+                      Sem link público no momento. Gere um para compartilhar fora do app.
+                    </div>
+                    <Button size="sm" onClick={enableShare} disabled={sharing} className="bg-primary hover:bg-primary/90 text-white">
+                      {sharing ? "Gerando…" : "Gerar link público"}
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <input

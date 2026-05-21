@@ -9,6 +9,7 @@ import validationRouter from "./validation";
 import adminRouter from "./admin";
 import notificationsRouter from "./notifications";
 import supportRouter from "./support";
+import publicRouter from "./public";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(validationRouter);
 router.use(adminRouter);
 router.use(notificationsRouter);
 router.use(supportRouter);
+router.use(publicRouter);
 
 export default router;

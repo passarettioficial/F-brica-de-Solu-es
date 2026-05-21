@@ -33,6 +33,13 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 AI-powered web app for founders. 7 sequential phases take a product from idea to validated deploy.
 
+### Share Público de Projeto (viral loop)
+
+- **Schema:** `projectsTable.shareId text unique nullable` + `sharedAt timestamp`.
+- **Routes:** `POST /api/projects/:id/share` (auth, atomic — UPDATE com `share_id IS NULL` guard, gera 72-bit base64url), `DELETE /api/projects/:id/share` (revoke), `GET /api/public/projects/:shareId` (sem auth, retorna project + phases + artifacts, headers `X-Robots-Tag: noindex,noarchive,nosnippet` + `Cache-Control: private,no-store`).
+- **Frontend:** página `/p/:shareId` (`public-share.tsx`) renderiza header próprio com CTA "Criar meu plano"/"Começar grátis", tabs de fases, ArtifactBody markdown. Meta `robots noindex` no Helmet. UI de share em `project.tsx` aba Colaboração: gerar/copiar/revogar com status visual.
+- **Audit events:** `user.project.shared`, `user.project.unshared`.
+
 ### Editing & Export — User Stories / Casos de Teste / Milestones (Fase 2/5/6)
 
 - **Inline edit por clique nos badges** (paid plans + canEdit): badges de prioridade e esforço viram botões que ciclam ao clicar. UserStories prio 1→5, esforço P/M/G. CasosTeste prio P0/P1/P2. Free users veem `<span>` estático.

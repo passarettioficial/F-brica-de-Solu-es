@@ -14,6 +14,8 @@ export const projectsTable = pgTable("projects", {
   marketPotentialScore: integer("market_potential_score"),
   marketPotentialData: jsonb("market_potential_data"),
   marketPotentialUpdatedAt: timestamp("market_potential_updated_at", { withTimezone: true }),
+  shareId: text("share_id").unique(),
+  sharedAt: timestamp("shared_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

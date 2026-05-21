@@ -31,6 +31,7 @@ import { ClarezaImediataPage } from "@/pages/clareza-imediata";
 import { FluxoContinuoPage } from "@/pages/fluxo-continuo";
 import { ProntoParaVenderPage } from "@/pages/pronto-para-vender";
 import { WhatsAppButton } from "@/components/whatsapp-button";
+import { PublicSharePage } from "@/pages/public-share";
 
 const queryClient = new QueryClient();
 
@@ -180,6 +181,7 @@ function Router() {
       <Route path="/clareza-imediata" component={ClarezaImediataPage} />
       <Route path="/fluxo-continuo" component={FluxoContinuoPage} />
       <Route path="/pronto-para-vender" component={ProntoParaVenderPage} />
+      <Route path="/p/:shareId" component={PublicSharePage} />
       <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
