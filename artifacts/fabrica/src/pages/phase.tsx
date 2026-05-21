@@ -26,7 +26,13 @@ import {
   MapaDecisaoCompraCanvas,
   ValorQuantificadoCanvas,
   LtvCacCanvas,
+  MatrizRbacCanvas,
+  ModeloDadosCanvas,
+  MilestonesCanvas,
+  CasosTesteCanvas,
+  MetricasPosLaunchCanvas,
 } from "@/components/canvases";
+import { deriveGate } from "@/lib/gate-derivations";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -235,6 +241,11 @@ const ArtifactCard = memo(function ArtifactCard({
   const isMapaDecisao = phaseNumber === 2 && artifact.artifactKey === "MAPA_DECISAO_COMPRA";
   const isValorQuant = phaseNumber === 2 && artifact.artifactKey === "VALOR_QUANTIFICADO";
   const isLtvCac = phaseNumber === 2 && artifact.artifactKey === "LTV_CAC";
+  const isMatrizRbac = phaseNumber === 3 && artifact.artifactKey === "MATRIZ_RBAC";
+  const isModeloDados = phaseNumber === 4 && artifact.artifactKey === "MODELO_DADOS";
+  const isMilestones = phaseNumber === 5 && artifact.artifactKey === "MILESTONES";
+  const isCasosTeste = phaseNumber === 6 && artifact.artifactKey === "CASOS_TESTE_CRITICOS";
+  const isMetricasPos = phaseNumber === 7 && artifact.artifactKey === "METRICAS_POS_LAUNCH";
   const meta = ARTIFACT_LABELS[artifact.artifactKey];
   const isEmpty = !artifact.content?.trim();
 
@@ -325,6 +336,16 @@ const ArtifactCard = memo(function ArtifactCard({
                 <ProtectWrap protect={!canCopy}><ValorQuantificadoCanvas content={artifact.content} /></ProtectWrap>
               ) : isLtvCac ? (
                 <ProtectWrap protect={!canCopy}><LtvCacCanvas content={artifact.content} /></ProtectWrap>
+              ) : isMatrizRbac ? (
+                <ProtectWrap protect={!canCopy}><MatrizRbacCanvas content={artifact.content} /></ProtectWrap>
+              ) : isModeloDados ? (
+                <ProtectWrap protect={!canCopy}><ModeloDadosCanvas content={artifact.content} /></ProtectWrap>
+              ) : isMilestones ? (
+                <ProtectWrap protect={!canCopy}><MilestonesCanvas content={artifact.content} /></ProtectWrap>
+              ) : isCasosTeste ? (
+                <ProtectWrap protect={!canCopy}><CasosTesteCanvas content={artifact.content} /></ProtectWrap>
+              ) : isMetricasPos ? (
+                <ProtectWrap protect={!canCopy}><MetricasPosLaunchCanvas content={artifact.content} /></ProtectWrap>
               ) : isFailurePatterns ? (
                 <div className="space-y-3">
                   <div className="rounded-xl border border-primary/15 bg-primary/5 p-4">
@@ -1059,18 +1080,35 @@ export function PhasePage() {
               {phaseDef?.gates.map((gate, i) => {
                 const gateNum = (i + 1) as 1 | 2 | 3;
                 const checked = gateNum === 1 ? phase?.gate1Checked : gateNum === 2 ? phase?.gate2Checked : phase?.gate3Checked;
+                const derived = deriveGate(phaseNumber, gateNum, artifacts);
                 return (
-                  <label key={i} className="flex items-start gap-3 cursor-pointer group" data-testid={`gate-${gateNum}`}>
-                    <input
-                      type="checkbox"
-                      checked={!!checked}
-                      onChange={(e) => handleGateChange(gateNum, e.target.checked)}
-                      disabled={isCompleted}
-                      aria-label={gate}
-                      className="mt-0.5 w-4 h-4 accent-primary rounded flex-shrink-0"
-                    />
-                    <span className={`text-sm leading-snug transition-colors ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>{gate}</span>
-                  </label>
+                  <div key={i} data-testid={`gate-${gateNum}`}>
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={!!checked}
+                        onChange={(e) => handleGateChange(gateNum, e.target.checked)}
+                        disabled={isCompleted}
+                        aria-label={gate}
+                        className="mt-0.5 w-4 h-4 accent-primary rounded flex-shrink-0"
+                      />
+                      <span className={`text-sm leading-snug transition-colors ${checked ? "line-through text-muted-foreground" : "text-foreground"}`}>{gate}</span>
+                    </label>
+                    {derived.state !== "unknown" && (
+                      <div className="mt-1.5 ml-7">
+                        {derived.state === "pass" ? (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/30">
+                            <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                            <span>Detectado nos artefatos · {derived.message}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                            <span>⚠ {derived.message}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

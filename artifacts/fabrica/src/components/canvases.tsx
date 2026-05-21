@@ -552,3 +552,406 @@ export function MatrizCompetitivaCanvas({ content }: { content: string }) {
     </div>
   );
 }
+
+// ───────────────────────── 7. Matriz RBAC (Fase 3) ─────────────────────────
+type RbacData = {
+  papeis?: { nome: string; descricao?: string; usuarios_esperados?: string }[];
+  recursos?: { nome: string; operacoes: Record<string, string>; observacao?: string }[];
+  convencao?: string;
+  auth_flow?: string;
+  armadilhas_evitar?: string[];
+};
+
+function opCellColor(op: string): string {
+  const v = (op || "").trim();
+  if (v === "-" || v === "" || v.toLowerCase() === "sem acesso") return "bg-muted/40 text-muted-foreground";
+  if (v === "CRUD") return "bg-primary/15 text-primary font-bold";
+  if (v.includes("D")) return "bg-amber-500/15 text-amber-700 dark:text-amber-400 font-semibold";
+  if (v.includes("U") || v.includes("C")) return "bg-blue-500/15 text-blue-700 dark:text-blue-400 font-semibold";
+  if (v.includes("R")) return "bg-green-500/15 text-green-700 dark:text-green-400 font-medium";
+  return "bg-secondary text-foreground";
+}
+
+export function MatrizRbacCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<RbacData>(content);
+  if (!data?.papeis?.length || !data?.recursos?.length) return <Fallback content={content} />;
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <h4 className="font-serif text-base">Matriz de papéis × recursos</h4>
+        <span className="text-[10px] font-mono uppercase text-muted-foreground">{data.convencao ?? "C=Criar · R=Ler · U=Atualizar · D=Deletar"}</span>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-secondary/50">
+              <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wider">Recurso</th>
+              {data.papeis.map((p) => (
+                <th key={p.nome} className="px-2 py-2 text-center font-mono text-[11px]" title={p.descricao}>{p.nome}</th>
+              ))}
+              <th className="text-left px-3 py-2 text-[11px] text-muted-foreground">Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.recursos.map((r) => (
+              <tr key={r.nome} className="border-t border-border">
+                <td className="px-3 py-2 font-medium text-foreground">{r.nome}</td>
+                {data.papeis!.map((p) => {
+                  const op = r.operacoes?.[p.nome] ?? "-";
+                  return (
+                    <td key={p.nome} className="px-2 py-1.5 text-center">
+                      <span className={`inline-block min-w-[44px] px-2 py-1 rounded text-[12px] font-mono ${opCellColor(op)}`}>{op}</span>
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-2 text-[11px] text-muted-foreground">{r.observacao ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        {data.papeis.map((p) => (
+          <div key={p.nome} className="rounded-lg border border-border p-3 bg-secondary/30">
+            <div className="font-mono text-[11px] uppercase text-primary">{p.nome}</div>
+            <div className="text-foreground mt-0.5">{p.descricao}</div>
+            {p.usuarios_esperados && <div className="text-muted-foreground text-[11px] mt-1">{p.usuarios_esperados}</div>}
+          </div>
+        ))}
+      </div>
+      {data.auth_flow && (
+        <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+          <div className="text-[10px] font-mono uppercase text-primary mb-1">Fluxo de autenticação</div>
+          <p className="text-sm text-foreground whitespace-pre-wrap">{data.auth_flow}</p>
+        </div>
+      )}
+      {!!data.armadilhas_evitar?.length && (
+        <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3">
+          <div className="text-[10px] font-mono uppercase text-amber-700 dark:text-amber-400 mb-1">Armadilhas a evitar</div>
+          <ul className="text-sm space-y-1 list-disc list-inside text-foreground">
+            {data.armadilhas_evitar.map((a, i) => <li key={i}>{a}</li>)}
+          </ul>
+        </div>
+      )}
+      <Attribution>RBAC — padrão NIST RBAC (Sandhu et al., 1996). Princípio do menor privilégio + negação por padrão.</Attribution>
+    </div>
+  );
+}
+
+// ───────────────────────── 8. Modelo de Dados (Fase 4) ─────────────────────────
+type ModeloDadosData = {
+  entidades?: {
+    nome: string;
+    descricao?: string;
+    campos?: { nome: string; tipo: string; pk?: boolean; unique?: boolean; nullable?: boolean; default?: string; obs?: string }[];
+    indices?: string[];
+    relacoes?: string[];
+  }[];
+  estrategia_soft_delete?: string;
+  estrategia_auditoria?: string;
+  multi_tenancy?: string;
+  notas_migracao?: string;
+};
+
+export function ModeloDadosCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<ModeloDadosData>(content);
+  if (!data?.entidades?.length) return <Fallback content={content} />;
+  return (
+    <div className="space-y-4">
+      <h4 className="font-serif text-base">{data.entidades.length} entidades</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {data.entidades.map((e) => (
+          <div key={e.nome} className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
+              <div className="font-mono text-sm font-bold text-primary">{e.nome}</div>
+              {e.descricao && <div className="text-xs text-muted-foreground mt-0.5">{e.descricao}</div>}
+            </div>
+            <div className="divide-y divide-border">
+              {e.campos?.map((c) => (
+                <div key={c.nome} className="px-4 py-1.5 flex items-center gap-2 text-xs">
+                  <span className="font-mono font-medium text-foreground flex-1 truncate">{c.nome}</span>
+                  <span className="font-mono text-muted-foreground">{c.tipo}</span>
+                  <div className="flex gap-1">
+                    {c.pk && <span className="px-1.5 py-0.5 rounded bg-accent/20 text-accent-foreground text-[9px] font-bold">PK</span>}
+                    {c.unique && <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-700 dark:text-blue-400 text-[9px] font-bold">UQ</span>}
+                    {c.nullable === false && <span className="px-1.5 py-0.5 rounded bg-muted text-foreground text-[9px]">NN</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {(e.indices?.length || e.relacoes?.length) && (
+              <div className="bg-secondary/30 px-4 py-2 text-[11px] space-y-1">
+                {!!e.indices?.length && <div><span className="font-mono uppercase text-muted-foreground">Idx:</span> {e.indices.join(", ")}</div>}
+                {!!e.relacoes?.length && <div><span className="font-mono uppercase text-muted-foreground">Rel:</span> {e.relacoes.join(" · ")}</div>}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        {data.estrategia_soft_delete && (
+          <div className="rounded-lg border border-border p-3 bg-secondary/30">
+            <div className="font-mono text-[10px] uppercase text-muted-foreground mb-1">Soft-delete</div>
+            <div className="text-foreground">{data.estrategia_soft_delete}</div>
+          </div>
+        )}
+        {data.estrategia_auditoria && (
+          <div className="rounded-lg border border-border p-3 bg-secondary/30">
+            <div className="font-mono text-[10px] uppercase text-muted-foreground mb-1">Auditoria</div>
+            <div className="text-foreground">{data.estrategia_auditoria}</div>
+          </div>
+        )}
+        {data.multi_tenancy && (
+          <div className="rounded-lg border border-border p-3 bg-secondary/30">
+            <div className="font-mono text-[10px] uppercase text-muted-foreground mb-1">Multi-tenancy</div>
+            <div className="text-foreground">{data.multi_tenancy}</div>
+          </div>
+        )}
+        {data.notas_migracao && (
+          <div className="rounded-lg border border-border p-3 bg-secondary/30">
+            <div className="font-mono text-[10px] uppercase text-muted-foreground mb-1">Migração</div>
+            <div className="text-foreground">{data.notas_migracao}</div>
+          </div>
+        )}
+      </div>
+      <Attribution>Modelo entidade-relacionamento (Chen, 1976) + padrões evolutivos de schema (Fowler, 2018).</Attribution>
+    </div>
+  );
+}
+
+// ───────────────────────── 9. Milestones (Fase 5) ─────────────────────────
+type MilestonesData = {
+  milestones?: {
+    numero: number; nome: string; duracao?: string;
+    features?: string[]; criterio_aceitacao?: string; demo?: string;
+    risco?: "baixo" | "medio" | "alto"; dependencias?: (string | number)[];
+  }[];
+  duracao_total_estimada?: string;
+  marco_mvp?: string | number;
+};
+
+const RISK_STYLE: Record<string, string> = {
+  baixo: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
+  medio: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  alto: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+};
+
+export function MilestonesCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<MilestonesData>(content);
+  if (!data?.milestones?.length) return <Fallback content={content} />;
+  const mvp = data.marco_mvp != null ? String(data.marco_mvp) : null;
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <h4 className="font-serif text-base">{data.milestones.length} milestones</h4>
+        {data.duracao_total_estimada && <span className="text-xs text-muted-foreground">Duração total: <strong className="text-foreground">{data.duracao_total_estimada}</strong></span>}
+      </div>
+      <div className="relative">
+        <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-border" />
+        <div className="space-y-3">
+          {data.milestones.map((m) => {
+            const isMvp = mvp && String(m.numero) === mvp;
+            return (
+              <div key={m.numero} className="relative pl-12">
+                <div className={`absolute left-1 top-2 w-7 h-7 rounded-full flex items-center justify-center font-mono text-[11px] font-bold border-2 ${isMvp ? "bg-accent text-accent-foreground border-accent" : "bg-primary text-white border-primary"}`}>
+                  {m.numero}
+                </div>
+                <div className={`rounded-xl border p-4 ${isMvp ? "border-accent/40 bg-accent/5" : "border-border bg-card"}`}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h5 className="font-serif text-base text-foreground">{m.nome}</h5>
+                        {isMvp && <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-[10px] font-mono uppercase font-bold">MVP</span>}
+                      </div>
+                      {m.duracao && <div className="text-xs text-muted-foreground mt-0.5">{m.duracao}</div>}
+                    </div>
+                    {m.risco && (
+                      <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${RISK_STYLE[m.risco] ?? RISK_STYLE.medio}`}>
+                        risco {m.risco}
+                      </span>
+                    )}
+                  </div>
+                  {!!m.features?.length && (
+                    <ul className="text-sm space-y-0.5 mb-2">
+                      {m.features.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2 text-foreground"><span className="text-primary mt-0.5">▸</span><span>{f}</span></li>
+                      ))}
+                    </ul>
+                  )}
+                  {m.criterio_aceitacao && (
+                    <div className="text-xs bg-secondary/40 rounded p-2 mt-2">
+                      <span className="font-mono uppercase text-[10px] text-muted-foreground">Aceitação · </span>
+                      <span className="text-foreground">{m.criterio_aceitacao}</span>
+                    </div>
+                  )}
+                  {m.demo && <div className="text-[11px] text-muted-foreground mt-1.5">🎬 Demo: {m.demo}</div>}
+                  {!!m.dependencias?.length && <div className="text-[11px] text-muted-foreground mt-1">Depende de: {m.dependencias.join(", ")}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <Attribution>Milestone-based delivery (Brooks, 1995 · Cockburn, 2004). Cada marco deve ser um entregável demonstrável.</Attribution>
+    </div>
+  );
+}
+
+// ───────────────────────── 10. Casos de Teste Críticos (Fase 6) ─────────────────────────
+type CasosTesteData = {
+  casos?: {
+    id: string; titulo: string; prioridade: "P0" | "P1" | "P2";
+    tipo?: string; preconds?: string; steps?: string[]; esperado?: string;
+  }[];
+  distribuicao_alvo?: string;
+};
+
+const PRIO_STYLE: Record<string, string> = {
+  P0: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40",
+  P1: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40",
+  P2: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
+};
+
+export function CasosTesteCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<CasosTesteData>(content);
+  if (!data?.casos?.length) return <Fallback content={content} />;
+  const counts = data.casos.reduce<Record<string, number>>((acc, c) => {
+    acc[c.prioridade] = (acc[c.prioridade] ?? 0) + 1; return acc;
+  }, {});
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between flex-wrap gap-3">
+        <h4 className="font-serif text-base">{data.casos.length} casos de teste</h4>
+        <div className="flex gap-2">
+          {(["P0", "P1", "P2"] as const).map((p) => (
+            <span key={p} className={`text-[11px] font-mono px-2 py-0.5 rounded border ${PRIO_STYLE[p]}`}>
+              {p}: <strong>{counts[p] ?? 0}</strong>
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {data.casos.map((c) => (
+          <details key={c.id} className="rounded-xl border border-border bg-card group">
+            <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
+              <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${PRIO_STYLE[c.prioridade] ?? PRIO_STYLE.P2}`}>{c.prioridade}</span>
+              <span className="font-mono text-[11px] text-muted-foreground">{c.id}</span>
+              <span className="flex-1 text-sm text-foreground">{c.titulo}</span>
+              {c.tipo && <span className="text-[10px] font-mono uppercase text-muted-foreground">{c.tipo}</span>}
+              <svg className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9" /></svg>
+            </summary>
+            <div className="px-4 pb-3 pt-1 border-t border-border space-y-2 text-sm">
+              {c.preconds && <div><span className="text-[10px] font-mono uppercase text-muted-foreground">Pré-condições · </span><span className="text-foreground">{c.preconds}</span></div>}
+              {!!c.steps?.length && (
+                <div>
+                  <div className="text-[10px] font-mono uppercase text-muted-foreground mb-1">Steps</div>
+                  <ol className="list-decimal list-inside space-y-0.5 text-foreground">
+                    {c.steps.map((s, i) => <li key={i}>{s}</li>)}
+                  </ol>
+                </div>
+              )}
+              {c.esperado && (
+                <div className="rounded bg-green-500/5 border border-green-500/20 p-2">
+                  <span className="text-[10px] font-mono uppercase text-green-700 dark:text-green-400">Esperado · </span>
+                  <span className="text-foreground">{c.esperado}</span>
+                </div>
+              )}
+            </div>
+          </details>
+        ))}
+      </div>
+      {data.distribuicao_alvo && <p className="text-[11px] text-muted-foreground italic">{data.distribuicao_alvo}</p>}
+      <Attribution>Test prioritization (Kaner et al., 1999 · Crispin & Gregory, 2009). P0 bloqueia release.</Attribution>
+    </div>
+  );
+}
+
+// ───────────────────────── 11. Métricas Pós-Lançamento (Fase 7) ─────────────────────────
+type MetricasData = {
+  north_star?: { nome: string; meta_semana_4?: string };
+  semanas?: {
+    semana: number; foco?: string;
+    metricas?: Record<string, { meta?: string; como_medir?: string }>;
+    acoes_se_abaixo?: string;
+  }[];
+  criterios_product_market_fit?: string[];
+};
+
+const AARRR_LABELS: Record<string, string> = {
+  aquisicao: "Aquisição", ativacao: "Ativação", retencao: "Retenção", receita: "Receita", indicacao: "Indicação",
+};
+
+export function MetricasPosLaunchCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<MetricasData>(content);
+  if (!data?.semanas?.length) return <Fallback content={content} />;
+  return (
+    <div className="space-y-4">
+      {data.north_star && (
+        <div className="rounded-xl border-2 border-accent/40 bg-gradient-to-br from-accent/10 to-transparent p-4">
+          <div className="text-[10px] font-mono uppercase text-accent font-bold tracking-wider mb-1">⭐ North Star</div>
+          <div className="font-serif text-lg text-foreground">{data.north_star.nome}</div>
+          {data.north_star.meta_semana_4 && <div className="text-xs text-muted-foreground mt-0.5">Meta semana 4: <strong className="text-foreground">{data.north_star.meta_semana_4}</strong></div>}
+        </div>
+      )}
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-secondary/50">
+              <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wider">Semana</th>
+              {Object.values(AARRR_LABELS).map((l) => (
+                <th key={l} className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wider">{l}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.semanas.map((s) => (
+              <tr key={s.semana} className="border-t border-border align-top">
+                <td className="px-3 py-2">
+                  <div className="font-mono font-bold text-primary">S{s.semana}</div>
+                  {s.foco && <div className="text-[11px] text-muted-foreground mt-0.5 max-w-[120px]">{s.foco}</div>}
+                </td>
+                {Object.keys(AARRR_LABELS).map((key) => {
+                  const m = s.metricas?.[key];
+                  const isEmpty = !m?.meta || m.meta === "—" || m.meta === "-";
+                  return (
+                    <td key={key} className="px-3 py-2">
+                      {isEmpty ? (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      ) : (
+                        <div>
+                          <div className="text-foreground text-xs font-medium">{m!.meta}</div>
+                          {m!.como_medir && <div className="text-[10px] text-muted-foreground mt-0.5">{m!.como_medir}</div>}
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {data.semanas.some((s) => s.acoes_se_abaixo) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {data.semanas.filter((s) => s.acoes_se_abaixo).map((s) => (
+            <div key={s.semana} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+              <div className="font-mono text-[10px] uppercase text-amber-700 dark:text-amber-400">S{s.semana} · se abaixo</div>
+              <div className="text-foreground mt-0.5">{s.acoes_se_abaixo}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {!!data.criterios_product_market_fit?.length && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <div className="text-[10px] font-mono uppercase text-primary font-bold tracking-wider mb-2">Critérios de Product-Market Fit</div>
+          <ul className="space-y-1.5">
+            {data.criterios_product_market_fit.map((c, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground"><span className="text-primary mt-0.5">✓</span><span>{c}</span></li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <Attribution>AARRR funnel (Dave McClure, 2007) + North Star Metric (Sean Ellis). Critério "muito decepcionado" (Ellis &amp; Brown, 2017).</Attribution>
+    </div>
+  );
+}

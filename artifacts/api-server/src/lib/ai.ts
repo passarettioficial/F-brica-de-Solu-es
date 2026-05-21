@@ -338,30 +338,29 @@ Para cada feature crítica identificada no PRD (mínimo 4 features):
 {"riscos_criticos": [...], "riscos_altos": [...], "riscos_medios": [...], "controles_prioritarios": [...]}
 
 ### MATRIZ_RBAC
-Modelo de identidade e controle de acesso em formato JSON:
+Modelo de identidade e controle de acesso. Use a forma "matriz" — lista de papéis e lista de recursos com o nível de acesso de cada papel em cada recurso. Formato JSON:
+\`\`\`json
 {
   "papeis": [
-    {
-      "papel": "nome do papel",
-      "descricao": "...",
-      "usuarios_esperados": "N",
-      "permissoes": [
-        {"recurso": "...", "acoes": ["criar", "ler", "atualizar", "deletar"], "condicoes": "..."}
-      ]
-    }
+    {"nome": "ex: admin", "descricao": "...", "usuarios_esperados": "ex: 1-3 sócios"},
+    {"nome": "ex: usuario_pago", "descricao": "...", "usuarios_esperados": "ex: clientes"}
   ],
-  "recursos_protegidos": [...],
-  "politica_negacao_padrao": true,
-  "principio_minimo_privilegio": "como será aplicado"
+  "recursos": [
+    {"nome": "Projeto", "operacoes": {"admin": "CRUD", "usuario_pago": "CRU", "guest": "-"}, "observacao": "scoping por user_id"},
+    {"nome": "Billing", "operacoes": {"admin": "R", "usuario_pago": "R"}, "observacao": "apenas próprio billing"}
+  ],
+  "convencao": "C=Criar · R=Ler · U=Atualizar · D=Deletar · - = sem acesso",
+  "auth_flow": "1-2 parágrafos descrevendo: login, emissão de sessão, propagação de papel, refresh, logout",
+  "armadilhas_evitar": ["3-5 erros comuns de RBAC neste contexto"]
 }
+\`\`\`
 
-**Fluxo de autenticação recomendado:**
-- Protocolo: OAuth 2.0 + OIDC / JWT com rotação de refresh tokens
-- MFA: obrigatório para [papéis] / opcional para [papéis]
-- Sessão: expiração em [X] minutos, revogação em [cenários]
-- Provedor recomendado e justificativa para este produto
-
-**Diagrama de sequência de autenticação** (ASCII ou texto estruturado)
+**Depois do JSON, inclua um checklist de autenticação (lista curta, formato markdown):**
+- **Protocolo:** ex: OAuth 2.0 + OIDC com refresh token rotacionado, ou JWT curto com refresh
+- **MFA:** obrigatório para [papéis] / opcional para [papéis] — justifique
+- **Sessão:** expiração em [X] minutos · revogação em [cenários] · onde armazenar (cookie httpOnly / token)
+- **Provedor recomendado:** Clerk / Auth0 / Supabase Auth / próprio — justificativa de 1 linha
+- **Diagrama de sequência de login** em ASCII curto (4-6 passos: client → auth → callback → token → recurso)
 
 ### OWASP_CHECKLIST
 Checklist OWASP Top 10 2021 adaptado à stack e features deste produto:
@@ -437,12 +436,31 @@ Arquitetura completa do sistema:
 **Decisões de trade-off**: [o que foi priorizado e por quê]
 
 ### MODELO_DADOS
-Modelo de dados completo:
-- Tabela/coleção para cada entidade com: nome, campos, tipos, constraints, índices
-- Relacionamentos explícitos (1:1, 1:N, N:N)
-- Estratégia de soft delete e auditoria
-- Considerações de multi-tenancy (se aplicável)
-- Scripts SQL ou schema de exemplo para entidades principais
+Modelo de dados em formato JSON estruturado, seguido de notas sobre soft-delete, auditoria e multi-tenancy.
+
+\`\`\`json
+{
+  "entidades": [
+    {
+      "nome": "User",
+      "descricao": "1 linha — qual papel cumpre",
+      "campos": [
+        {"nome": "id", "tipo": "uuid", "pk": true, "obs": "gerado no insert"},
+        {"nome": "email", "tipo": "text", "unique": true, "nullable": false},
+        {"nome": "created_at", "tipo": "timestamptz", "default": "now()"}
+      ],
+      "indices": ["email", "created_at"],
+      "relacoes": ["1:N → Project (FK user_id)"]
+    }
+  ],
+  "estrategia_soft_delete": "ex: coluna deleted_at timestamptz nullable + filtro padrão",
+  "estrategia_auditoria": "ex: tabela audit_log + trigger / coluna updated_by",
+  "multi_tenancy": "ex: scoping por user_id, sem tenant_id porque produto é B2C",
+  "notas_migracao": "como aplicar mudanças sem downtime"
+}
+\`\`\`
+
+Mínimo 4 entidades cobrindo os fluxos principais do PRD.
 
 ### CONTRATOS_API
 Contratos de API principais (mínimo 8 endpoints críticos) no formato:
@@ -486,9 +504,28 @@ Infraestrutura e DevOps:
   5: `Você é um especialista em engenharia de software e gestão ágil. Com base no briefing e artefatos anteriores, gere os seguintes artefatos em português brasileiro.
 
 ### MILESTONES
-Plano de milestones detalhado em formato JSON:
-[{"numero": 1, "nome": "...", "descricao": "...", "duracao": "...", "features": [{"nome": "...", "descricao": "...", "criterio_conclusao": "..."}], "dependencias": [...], "riscos": [...], "entregavel_demo": "..."}, ...]
-Mínimo 5 milestones cobrindo todo o MVP.
+Plano de milestones em formato JSON. Cada milestone deve ter um entregável navegável que dê para mostrar a um usuário ou investidor.
+
+\`\`\`json
+{
+  "milestones": [
+    {
+      "numero": 1,
+      "nome": "ex: Auth + Onboarding",
+      "duracao": "1 semana",
+      "features": ["ex: Cadastro com Clerk", "ex: Tour de boas-vindas"],
+      "criterio_aceitacao": "Novo usuário consegue criar conta e ver tela vazia do dashboard",
+      "demo": "Gravação de tela 30s mostrando o fluxo",
+      "risco": "baixo",
+      "dependencias": []
+    }
+  ],
+  "duracao_total_estimada": "ex: 6 semanas",
+  "marco_mvp": "número do milestone que marca MVP entregável"
+}
+\`\`\`
+
+Mínimo 5 milestones cobrindo todo o MVP. Risco ∈ {baixo, medio, alto}.
 
 ### SPRINT_1
 Plano detalhado da Sprint 1 (primeira semana de desenvolvimento):
@@ -546,8 +583,26 @@ Plano de testes completo:
 - Integração com CI/CD
 
 ### CASOS_TESTE_CRITICOS
-20 casos de teste críticos priorizados para os fluxos principais:
-Para cada caso: ID, título, precondições, steps, resultado esperado, prioridade (P0/P1/P2), tipo (funcional/integração/E2E).
+20 casos de teste críticos em formato JSON, priorizados P0/P1/P2.
+
+\`\`\`json
+{
+  "casos": [
+    {
+      "id": "TC-01",
+      "titulo": "Usuário cria projeto com sucesso",
+      "prioridade": "P0",
+      "tipo": "funcional",
+      "preconds": "Usuário autenticado, plano free",
+      "steps": ["1. Abrir dashboard", "2. Clicar Novo Projeto", "3. Preencher nome", "4. Confirmar"],
+      "esperado": "Projeto aparece na lista e usuário é redirecionado para Fase 1"
+    }
+  ],
+  "distribuicao_alvo": "P0 cobre caminho crítico; P1 cobre fluxos secundários; P2 cobre edge cases"
+}
+\`\`\`
+
+Distribuição sugerida: 6-8 P0 (caminho crítico, bloqueia release), 6-8 P1 (alto valor), 4-6 P2 (edge cases). Tipo ∈ {funcional, integracao, e2e, performance, seguranca, acessibilidade}.
 
 ### CHECKLIST_QA
 Checklist completo em formato JSON:
@@ -604,8 +659,33 @@ Checklist de lançamento completo em formato JSON:
 {"tecnico": [...], "produto": [...], "marketing": [...], "legal_compliance": [...], "operacional": [...], "suporte": [...], "comunicacao": [...]}
 
 ### METRICAS_POS_LAUNCH
-Dashboard de métricas para as primeiras 4 semanas pós-lançamento em formato JSON:
-{"semana_1": {"foco": "...", "metricas": [...], "meta": "...", "acao_se_abaixo": "..."}, "semana_2": {...}, "semana_3": {...}, "semana_4": {...}, "criterios_product_market_fit": [...]}
+Dashboard pós-lançamento — 4 primeiras semanas com métricas AARRR + north star.
+
+\`\`\`json
+{
+  "north_star": {"nome": "ex: Projetos completos por semana", "meta_semana_4": "ex: 10"},
+  "semanas": [
+    {
+      "semana": 1,
+      "foco": "Aquisição inicial",
+      "metricas": {
+        "aquisicao": {"meta": "ex: 50 cadastros", "como_medir": "Clerk dashboard"},
+        "ativacao": {"meta": "ex: 30% completam Fase 1", "como_medir": "evento phase_complete"},
+        "retencao": {"meta": "—", "como_medir": "—"},
+        "receita": {"meta": "—", "como_medir": "—"},
+        "indicacao": {"meta": "—", "como_medir": "—"}
+      },
+      "acoes_se_abaixo": "ex: Postar em 3 comunidades de founders"
+    }
+  ],
+  "criterios_product_market_fit": [
+    "ex: ≥40% dos usuários ativos disseram que ficariam 'muito decepcionados' sem o produto",
+    "ex: retenção semana 4 ≥ 30%"
+  ]
+}
+\`\`\`
+
+Inclua as 4 semanas com metas progressivas.
 
 ### PLANO_CRESCIMENTO_90_DIAS
 Plano de crescimento para os primeiros 90 dias:
