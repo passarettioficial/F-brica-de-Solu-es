@@ -5,6 +5,7 @@ import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTa
 import { requireAdmin } from "../lib/adminAuth";
 import { logger } from "../lib/logger";
 import { auditLog } from "../lib/audit";
+import { getBudgetStatus, setBudget } from "../lib/openaiCost";
 
 const router: IRouter = Router();
 
@@ -93,6 +94,43 @@ router.get("/admin/stats", async (req: Request, res: Response): Promise<void> =>
     });
   } catch (err) {
     logger.error({ err }, "Admin stats error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// ─── OpenAI Budget ────────────────────────────────────────────────────────────
+
+router.get("/admin/openai-budget", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  try {
+    const status = await getBudgetStatus();
+    res.json(status);
+  } catch (err) {
+    logger.error({ err }, "Admin openai-budget GET error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.patch("/admin/openai-budget", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  const { budgetBrl, usdBrlRate } = req.body as { budgetBrl?: number; usdBrlRate?: number };
+  if (typeof budgetBrl !== "number" || !Number.isFinite(budgetBrl) || budgetBrl < 0) {
+    res.status(400).json({ error: "budgetBrl deve ser um número finito >= 0" });
+    return;
+  }
+  if (usdBrlRate !== undefined && (typeof usdBrlRate !== "number" || !Number.isFinite(usdBrlRate) || usdBrlRate <= 0)) {
+    res.status(400).json({ error: "usdBrlRate deve ser um número finito > 0" });
+    return;
+  }
+  try {
+    await setBudget(budgetBrl, usdBrlRate);
+    await auditLog({ eventType: "admin.openai_budget.updated", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { budgetBrl, usdBrlRate }, req });
+    const status = await getBudgetStatus();
+    res.json(status);
+  } catch (err) {
+    logger.error({ err }, "Admin openai-budget PATCH error");
     res.status(500).json({ error: "Erro interno" });
   }
 });

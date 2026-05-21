@@ -1,4 +1,5 @@
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { recordOpenAiCost } from "./openaiCost";
 
 export interface PhaseAIResult {
   artifactKey: string;
@@ -560,16 +561,20 @@ INSTRUÇÕES DE FORMATAÇÃO:
       { role: "user", content: userMessage },
     ],
     stream: true,
+    stream_options: { include_usage: true },
   });
 
   let fullResponse = "";
+  let lastUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
   for await (const chunk of stream) {
     const content = chunk.choices[0]?.delta?.content;
     if (content) {
       fullResponse += content;
       onProgress(content);
     }
+    if (chunk.usage) lastUsage = chunk.usage;
   }
+  void recordOpenAiCost("gpt-4.1", lastUsage);
 
   return parseArtifacts(fullResponse, phaseNumber);
 }
@@ -688,16 +693,20 @@ export async function generateInterviewScript(
       { role: "system", content: INTERVIEW_SCRIPT_PROMPT(phaseNumber, projectName, artifactContext) },
     ],
     stream: true,
+    stream_options: { include_usage: true },
   });
 
   let fullText = "";
+  let lastUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
   for await (const chunk of stream) {
     const content = chunk.choices[0]?.delta?.content;
     if (content) {
       fullText += content;
       onToken(content);
     }
+    if (chunk.usage) lastUsage = chunk.usage;
   }
+  void recordOpenAiCost("gpt-4.1", lastUsage);
   return fullText;
 }
 
@@ -755,16 +764,20 @@ export async function analyzeInterviewNotes(
       { role: "system", content: ANALYSIS_PROMPT(projectName, artifactContext, notes) },
     ],
     stream: true,
+    stream_options: { include_usage: true },
   });
 
   let fullText = "";
+  let lastUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
   for await (const chunk of stream) {
+    if (chunk.usage) lastUsage = chunk.usage;
     const content = chunk.choices[0]?.delta?.content;
     if (content) {
       fullText += content;
       onToken(content);
     }
   }
+  void recordOpenAiCost("gpt-4.1", lastUsage);
   return fullText;
 }
 
@@ -879,6 +892,7 @@ export async function analyzeMarketPotential(
     ],
     stream: false,
   });
+  void recordOpenAiCost("gpt-4.1", completion.usage ?? null);
 
   const raw = completion.choices[0]?.message?.content ?? "{}";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -900,6 +914,7 @@ export async function analyzeProjectCoherence(
     ],
     stream: false,
   });
+  void recordOpenAiCost("gpt-4.1", completion.usage ?? null);
 
   const raw = completion.choices[0]?.message?.content ?? "{}";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);

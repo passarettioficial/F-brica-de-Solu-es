@@ -3,6 +3,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { recordOpenAiCost } from "../lib/openaiCost";
 import { getPlanConfig } from "../lib/stripe";
 import { sanitizeBriefing } from "../lib/ai";
 
@@ -104,14 +105,18 @@ INSTRUÇÕES:
       max_completion_tokens: 2000,
       messages,
       stream: true,
+      stream_options: { include_usage: true },
     });
 
+    let lastUsage: { prompt_tokens?: number; completion_tokens?: number } | null = null;
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
       if (content) {
         res.write(`data: ${JSON.stringify({ type: "token", content })}\n\n`);
       }
+      if (chunk.usage) lastUsage = chunk.usage;
     }
+    void recordOpenAiCost("gpt-4.1", lastUsage);
 
     res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
     res.end();

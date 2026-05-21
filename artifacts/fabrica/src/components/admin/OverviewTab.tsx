@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api, PLAN_LABELS, type Stats } from "./shared";
 import { StatCard, Sparkline } from "./ui";
+import { OpenAiBudgetCard } from "./OpenAiBudgetCard";
 
 export function OverviewTab() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -18,6 +19,8 @@ export function OverviewTab() {
 
   return (
     <div className="space-y-6">
+      <OpenAiBudgetCard />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Usuários totais" value={stats.users} sub={`+${stats.newUsers30d} últimos 30d`} />
         <StatCard label="Projetos ativos" value={stats.projects} sub={`${stats.trashedProjects} na lixeira`} />

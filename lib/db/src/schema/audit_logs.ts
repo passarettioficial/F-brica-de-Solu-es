@@ -11,6 +11,7 @@ export type AuditEventType =
   | "admin.deliverable.toggled"
   | "admin.settings.updated"
   | "admin.plans.updated"
+  | "admin.openai_budget.updated"
   | "user.login"
   | "user.project.created"
   | "user.project.deleted"
