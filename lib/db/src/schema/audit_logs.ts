@@ -17,6 +17,7 @@ export type AuditEventType =
   | "user.project.created"
   | "user.project.deleted"
   | "user.project.restored"
+  | "user.project.exported"
   | "user.project.permanent_deleted"
   | "user.ai.used"
   | "user.payment.subscribed"

@@ -759,6 +759,17 @@ export function ProjectPage() {
     );
   }
 
+  function exportProject() {
+    const url = `${basePath}/api/projects/${projectId}/export.md`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast({ title: "Download iniciado", description: "Markdown com todas as fases e artefatos do projeto." });
+  }
+
   function shareProject() {
     const shareUrl = `${window.location.origin}${basePath}/projects/${projectId}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -1058,7 +1069,13 @@ export function ProjectPage() {
                   <h3 className="font-serif text-lg">Compartilhar projeto</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Copie um link para revisao e contexto compartilhado.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={shareProject}>Copiar link</Button>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant="outline" size="sm" onClick={shareProject}>Copiar link</Button>
+                  <Button variant="outline" size="sm" onClick={exportProject} data-testid="button-export-project">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Baixar tudo (.md)
+                  </Button>
+                </div>
               </div>
               <div className="flex gap-2">
                 <input

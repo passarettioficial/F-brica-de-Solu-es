@@ -305,6 +305,95 @@ router.get("/projects/:id/summary", async (req, res): Promise<void> => {
   });
 });
 
+const PHASE_NAMES: Record<number, string> = {
+  1: "IDEIA", 2: "PRD", 3: "SEGURANÇA & LGPD", 4: "SPEC",
+  5: "IMPLEMENTAÇÃO", 6: "TESTE", 7: "DEPLOY",
+};
+
+router.get("/projects/:id/export.md", async (req, res): Promise<void> => {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, id), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
+  const sorted = phases.sort((a, b) => a.phaseNumber - b.phaseNumber);
+  const phaseIds = sorted.map((p) => p.id);
+  const artifacts = phaseIds.length
+    ? await db.select().from(phaseArtifactsTable).where(inArray(phaseArtifactsTable.phaseId, phaseIds))
+    : [];
+  const byPhase = new Map<number, typeof artifacts>();
+  for (const a of artifacts) {
+    const arr = byPhase.get(a.phaseId) ?? [];
+    arr.push(a);
+    byPhase.set(a.phaseId, arr);
+  }
+
+  const completed = sorted.filter((p) => p.status === "completed").length;
+  const exportDate = new Date().toISOString().slice(0, 10);
+  const rawName = (project.name || "").replace(/[^a-z0-9\-_]+/gi, "-").toLowerCase().slice(0, 60).replace(/^-+|-+$/g, "");
+  const safeName = rawName || "projeto";
+  res.setHeader("Content-Type", "text/markdown; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="foundersflow-${safeName}-${exportDate}.md"`);
+
+  const MAX_BYTES = 10 * 1024 * 1024; // 10 MB hard cap
+  const MAX_ARTIFACT_CHARS = 200_000;  // ~200 KB per artifact
+  let bytesWritten = 0;
+  let truncated = false;
+  const writeChunk = (chunk: string): boolean => {
+    if (truncated) return false;
+    const buf = Buffer.byteLength(chunk, "utf8");
+    if (bytesWritten + buf > MAX_BYTES) {
+      truncated = true;
+      res.write(`\n\n> ⚠ Export truncado: limite de ${MAX_BYTES / 1024 / 1024} MB atingido.\n`);
+      return false;
+    }
+    bytesWritten += buf;
+    res.write(chunk);
+    return true;
+  };
+
+  writeChunk(`# ${project.name}\n\n`);
+  writeChunk(`> Export gerado em ${exportDate} via FoundersFlow — ${completed}/7 fases concluídas\n\n`);
+  if (project.briefing?.trim()) {
+    writeChunk(`## Briefing\n\n${project.briefing.trim()}\n\n`);
+  }
+
+  for (const phase of sorted) {
+    if (truncated) break;
+    const phaseArts = (byPhase.get(phase.id) ?? []).filter((a) => a.content?.trim());
+    if (phaseArts.length === 0) continue;
+    const statusEmoji = phase.status === "completed" ? "✅" : phase.status === "active" ? "🔵" : "⚪";
+    const gatesDone = [phase.gate1Checked, phase.gate2Checked, phase.gate3Checked].filter(Boolean).length;
+    writeChunk(`---\n\n## ${statusEmoji} Fase ${phase.phaseNumber} — ${PHASE_NAMES[phase.phaseNumber] ?? ""}\n\n`);
+    writeChunk(`*Status: ${phase.status} · Gates: ${gatesDone}/3*\n\n`);
+    for (const art of phaseArts) {
+      if (truncated) break;
+      let body = art.content.trim();
+      if (body.length > MAX_ARTIFACT_CHARS) {
+        body = body.slice(0, MAX_ARTIFACT_CHARS) + `\n\n> ⚠ Artefato truncado em ${MAX_ARTIFACT_CHARS} caracteres.`;
+      }
+      writeChunk(`### ${art.artifactKey}\n\n${body}\n\n`);
+    }
+  }
+
+  writeChunk(`---\n\n*Gerado por FoundersFlow · foundersflow.com.br*\n`);
+  res.end();
+
+  await auditLog({
+    eventType: "user.project.exported", actorClerkId: userId,
+    meta: { projectId: id, format: "markdown", artifacts: artifacts.length }, req,
+  }).catch(() => { /* fire and forget */ });
+});
+
 // GET /benchmarks — platform aggregate metrics for cross-project comparison
 router.get("/benchmarks", async (req, res): Promise<void> => {
   const auth = getAuth(req);
