@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TabButton } from "@/components/admin/ui";
 import { api } from "@/components/admin/shared";
 import { OverviewTab } from "@/components/admin/OverviewTab";
+import { InsightsTab } from "@/components/admin/InsightsTab";
 import { AuditTab } from "@/components/admin/AuditTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { CouponsTab } from "@/components/admin/CouponsTab";
@@ -12,10 +13,11 @@ import { DeliverablesTab } from "@/components/admin/DeliverablesTab";
 import { ThemeTab } from "@/components/admin/ThemeTab";
 import { SettingsTab } from "@/components/admin/SettingsTab";
 
-type Tab = "overview" | "users" | "coupons" | "plans" | "deliverables" | "theme" | "settings" | "audit";
+type Tab = "overview" | "insights" | "users" | "coupons" | "plans" | "deliverables" | "theme" | "settings" | "audit";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Visão geral" },
+  { id: "insights", label: "Insights" },
   { id: "users", label: "Usuários" },
   { id: "coupons", label: "Cupons" },
   { id: "plans", label: "Planos & Preços" },
@@ -85,6 +87,7 @@ export function AdminPage() {
 
         <main className="flex-1 overflow-y-auto px-6 py-8 max-w-6xl w-full mx-auto">
           {tab === "overview" && <OverviewTab />}
+          {tab === "insights" && <InsightsTab />}
           {tab === "users" && <UsersTab />}
           {tab === "coupons" && <CouponsTab />}
           {tab === "plans" && <PlansTab />}

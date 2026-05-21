@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, desc, count, sql, gte, and, isNull } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable } from "@workspace/db";
+import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable, phasesTable, phaseArtifactsTable } from "@workspace/db";
 import { requireAdmin } from "../lib/adminAuth";
 import { logger } from "../lib/logger";
 import { auditLog } from "../lib/audit";
@@ -94,6 +94,172 @@ router.get("/admin/stats", async (req: Request, res: Response): Promise<void> =>
     });
   } catch (err) {
     logger.error({ err }, "Admin stats error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// ─── Insights (funnel, stuck phases, top deliverables, active users) ─────────
+
+const PHASE_NAMES = [
+  "Ideia", "PRD", "Segurança & LGPD", "Spec", "Implementação", "Teste", "Deploy",
+];
+
+router.get("/admin/insights", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  try {
+    // Total active projects (not trashed)
+    const [totalActive] = await db
+      .select({ count: count() })
+      .from(projectsTable)
+      .where(isNull(projectsTable.deletedAt));
+    const totalProjects = Number(totalActive?.count ?? 0);
+
+    // Funnel: project count by currentPhase (where they are now)
+    const funnelRows = await db
+      .select({ phase: projectsTable.currentPhase, count: count() })
+      .from(projectsTable)
+      .where(isNull(projectsTable.deletedAt))
+      .groupBy(projectsTable.currentPhase);
+    const funnelByPhase = Array.from({ length: 7 }, (_, i) => {
+      const row = funnelRows.find((r) => Number(r.phase) === i + 1);
+      const c = Number(row?.count ?? 0);
+      return {
+        phase: i + 1,
+        name: PHASE_NAMES[i] ?? `Fase ${i + 1}`,
+        count: c,
+        pct: totalProjects > 0 ? (c / totalProjects) * 100 : 0,
+      };
+    });
+
+    // Completion rate per phase: count phases with status='completed' per phaseNumber
+    const completedRows = await db.execute(sql`
+      SELECT p.phase_number AS phase, COUNT(*)::int AS completed
+      FROM ${phasesTable} p
+      INNER JOIN ${projectsTable} pr ON pr.id = p.project_id
+      WHERE pr.deleted_at IS NULL AND p.status = 'completed'
+      GROUP BY p.phase_number
+      ORDER BY p.phase_number ASC
+    `);
+    const completionByPhase = Array.from({ length: 7 }, (_, i) => {
+      const r = (completedRows.rows as Array<{ phase: number; completed: number }>).find((x) => Number(x.phase) === i + 1);
+      const c = Number(r?.completed ?? 0);
+      return {
+        phase: i + 1,
+        name: PHASE_NAMES[i] ?? `Fase ${i + 1}`,
+        completed: c,
+        rate: totalProjects > 0 ? (c / totalProjects) * 100 : 0,
+      };
+    });
+
+    // Stuck: avg days since updatedAt for ACTIVE phases per phaseNumber
+    const stuckRows = await db.execute(sql`
+      SELECT p.phase_number AS phase,
+             COUNT(*)::int AS active_count,
+             AVG(EXTRACT(EPOCH FROM (NOW() - p.updated_at)) / 86400)::float AS avg_days_stuck,
+             MAX(EXTRACT(EPOCH FROM (NOW() - p.updated_at)) / 86400)::float AS max_days_stuck
+      FROM ${phasesTable} p
+      INNER JOIN ${projectsTable} pr ON pr.id = p.project_id
+      WHERE pr.deleted_at IS NULL AND p.status = 'active'
+      GROUP BY p.phase_number
+      ORDER BY p.phase_number ASC
+    `);
+    const stuckByPhase = Array.from({ length: 7 }, (_, i) => {
+      const r = (stuckRows.rows as Array<{ phase: number; active_count: number; avg_days_stuck: number; max_days_stuck: number }>)
+        .find((x) => Number(x.phase) === i + 1);
+      return {
+        phase: i + 1,
+        name: PHASE_NAMES[i] ?? `Fase ${i + 1}`,
+        activeCount: Number(r?.active_count ?? 0),
+        avgDaysStuck: r ? Math.round(Number(r.avg_days_stuck) * 10) / 10 : 0,
+        maxDaysStuck: r ? Math.round(Number(r.max_days_stuck) * 10) / 10 : 0,
+      };
+    });
+
+    // Top deliverables: most generated artifact keys
+    const topDeliverables = await db.execute(sql`
+      SELECT artifact_key AS key, COUNT(*)::int AS count
+      FROM ${phaseArtifactsTable}
+      WHERE content <> ''
+      GROUP BY artifact_key
+      ORDER BY count DESC
+      LIMIT 12
+    `);
+
+    // Active users (DAU/WAU/MAU) based on audit logs
+    const [dau] = await db.execute(sql`
+      SELECT COUNT(DISTINCT actor_clerk_id)::int AS c
+      FROM ${auditLogsTable}
+      WHERE created_at >= NOW() - INTERVAL '1 day' AND actor_clerk_id IS NOT NULL
+    `).then((r) => r.rows as Array<{ c: number }>);
+    const [wau] = await db.execute(sql`
+      SELECT COUNT(DISTINCT actor_clerk_id)::int AS c
+      FROM ${auditLogsTable}
+      WHERE created_at >= NOW() - INTERVAL '7 days' AND actor_clerk_id IS NOT NULL
+    `).then((r) => r.rows as Array<{ c: number }>);
+    const [mau] = await db.execute(sql`
+      SELECT COUNT(DISTINCT actor_clerk_id)::int AS c
+      FROM ${auditLogsTable}
+      WHERE created_at >= NOW() - INTERVAL '30 days' AND actor_clerk_id IS NOT NULL
+    `).then((r) => r.rows as Array<{ c: number }>);
+
+    // Conversion funnel: signup → first project → phase 1 completed → phase 2 active+
+    const [usersTotal] = await db.select({ count: count() }).from(usersTable);
+    const [usersWithProject] = await db.execute(sql`
+      SELECT COUNT(DISTINCT clerk_id)::int AS c
+      FROM ${projectsTable}
+      WHERE deleted_at IS NULL
+    `).then((r) => r.rows as Array<{ c: number }>);
+    const [usersPastPhase1] = await db.execute(sql`
+      SELECT COUNT(DISTINCT pr.clerk_id)::int AS c
+      FROM ${projectsTable} pr
+      INNER JOIN ${phasesTable} p ON p.project_id = pr.id
+      WHERE pr.deleted_at IS NULL AND p.phase_number = 1 AND p.status = 'completed'
+    `).then((r) => r.rows as Array<{ c: number }>);
+    const [usersPastPhase3] = await db.execute(sql`
+      SELECT COUNT(DISTINCT pr.clerk_id)::int AS c
+      FROM ${projectsTable} pr
+      INNER JOIN ${phasesTable} p ON p.project_id = pr.id
+      WHERE pr.deleted_at IS NULL AND p.phase_number = 3 AND p.status = 'completed'
+    `).then((r) => r.rows as Array<{ c: number }>);
+    const [usersDeployed] = await db.execute(sql`
+      SELECT COUNT(DISTINCT pr.clerk_id)::int AS c
+      FROM ${projectsTable} pr
+      INNER JOIN ${phasesTable} p ON p.project_id = pr.id
+      WHERE pr.deleted_at IS NULL AND p.phase_number = 7 AND p.status = 'completed'
+    `).then((r) => r.rows as Array<{ c: number }>);
+
+    const totalUsers = Number(usersTotal?.count ?? 0);
+    const conversionFunnel = [
+      { step: "Cadastrou", count: totalUsers, pct: 100 },
+      { step: "Criou projeto", count: Number(usersWithProject?.c ?? 0), pct: totalUsers > 0 ? (Number(usersWithProject?.c ?? 0) / totalUsers) * 100 : 0 },
+      { step: "Completou Fase 1", count: Number(usersPastPhase1?.c ?? 0), pct: totalUsers > 0 ? (Number(usersPastPhase1?.c ?? 0) / totalUsers) * 100 : 0 },
+      { step: "Completou Fase 3 (Segurança)", count: Number(usersPastPhase3?.c ?? 0), pct: totalUsers > 0 ? (Number(usersPastPhase3?.c ?? 0) / totalUsers) * 100 : 0 },
+      { step: "Deploy validado (Fase 7)", count: Number(usersDeployed?.c ?? 0), pct: totalUsers > 0 ? (Number(usersDeployed?.c ?? 0) / totalUsers) * 100 : 0 },
+    ];
+
+    // Bottleneck: phase with highest avgDaysStuck * activeCount (impact metric)
+    const bottleneck = [...stuckByPhase]
+      .map((s) => ({ ...s, impact: s.avgDaysStuck * s.activeCount }))
+      .sort((a, b) => b.impact - a.impact)[0];
+
+    res.json({
+      totalProjects,
+      funnelByPhase,
+      completionByPhase,
+      stuckByPhase,
+      topDeliverables: topDeliverables.rows,
+      activeUsers: {
+        dau: Number(dau?.c ?? 0),
+        wau: Number(wau?.c ?? 0),
+        mau: Number(mau?.c ?? 0),
+      },
+      conversionFunnel,
+      bottleneck: bottleneck && bottleneck.activeCount > 0 ? bottleneck : null,
+    });
+  } catch (err) {
+    logger.error({ err }, "Admin insights error");
     res.status(500).json({ error: "Erro interno" });
   }
 });

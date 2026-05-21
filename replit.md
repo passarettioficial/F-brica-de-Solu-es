@@ -172,12 +172,13 @@ Full admin panel at `/admin`, restricted to users with `isAdmin=true` or `isSupe
 
 **Tabs:**
 1. **Visão Geral** — stats: total users, projects, AI runs, revenue
-2. **Usuários** — search, list, patch `isAdmin`/`isSuperuser`, change plan
-3. **Cupons** — CRUD for discount coupons (flat or percent, per-user or global limits)
-4. **Planos & Preços** — edit plan names, prices, feature flags per plan
-5. **Entregáveis** — enable/disable individual AI deliverables per phase
-6. **Tema** — HSL color sliders + branding text saved to `settingsTable`
-7. **Configurações** — free-form key-value settings store
+2. **Insights** — funnel por fase atual, taxa de conclusão por fase, tempo parado em fase ativa (avg dias, threshold 7d vira accent laranja), funil de conversão (cadastro → projeto → F1 → F3 → F7), DAU/WAU/MAU + stickiness, top 12 entregáveis gerados, callout do "Gargalo principal" (fase com maior impact = avgDaysStuck × activeCount). Endpoint `GET /admin/insights` (admin-gated). Frontend: `components/admin/InsightsTab.tsx`.
+3. **Usuários** — search, list, patch `isAdmin`/`isSuperuser`, change plan
+4. **Cupons** — CRUD for discount coupons (flat or percent, per-user or global limits)
+5. **Planos & Preços** — edit plan names, prices, feature flags per plan
+6. **Entregáveis** — enable/disable individual AI deliverables per phase
+7. **Tema** — HSL color sliders + branding text saved to `settingsTable`
+8. **Configurações** — free-form key-value settings store
 
 **Granting admin access:**
 - Set env var `ADMIN_CLERK_IDS=clerk_user_id1,clerk_user_id2` to auto-grant admin on next login
