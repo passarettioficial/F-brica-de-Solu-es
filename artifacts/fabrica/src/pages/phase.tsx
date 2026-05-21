@@ -8,10 +8,20 @@ import {
   useUpdatePhaseGates,
   useCompletePhase,
   useUpdateArtifact,
+  useListArtifactVersions,
+  useRestoreArtifactVersion,
   getGetPhaseQueryKey,
   getGetProjectQueryKey,
   getGetDashboardQueryKey,
+  getListArtifactVersionsQueryKey,
 } from "@workspace/api-client-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -192,6 +202,7 @@ const ArtifactCard = memo(function ArtifactCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(artifact.content);
   const [downloaded, setDownloaded] = useState(!!artifact.downloadedAt);
+  const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
   const updateArtifact = useUpdateArtifact();
 
@@ -392,9 +403,14 @@ const ArtifactCard = memo(function ArtifactCard({
                       </span>
                     </Link>
                   ) : (
-                    <Button variant="outline" size="sm" className="text-xs" onClick={() => { setEditing(true); setDraft(artifact.content); }}>
-                      Editar
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="text-xs" onClick={() => { setEditing(true); setDraft(artifact.content); }}>
+                        Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary" onClick={() => setShowHistory(true)} data-testid="button-history">
+                        Histórico
+                      </Button>
+                    </div>
                   )}
                   {canDownload ? (
                     <Button
@@ -429,9 +445,171 @@ const ArtifactCard = memo(function ArtifactCard({
           )}
         </div>
       )}
+      {showHistory && (
+        <ArtifactHistoryDialog
+          projectId={projectId}
+          phaseNumber={phaseNumber}
+          artifactKey={artifact.artifactKey}
+          open={showHistory}
+          onOpenChange={setShowHistory}
+          onRestored={onUpdate}
+          canRestore={canCopy}
+        />
+      )}
     </div>
   );
 });
+
+function ArtifactHistoryDialog({
+  projectId,
+  phaseNumber,
+  artifactKey,
+  open,
+  onOpenChange,
+  onRestored,
+  canRestore,
+}: {
+  projectId: number;
+  phaseNumber: number;
+  artifactKey: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onRestored: () => void;
+  canRestore: boolean;
+}) {
+  const { data: versions, isLoading } = useListArtifactVersions(projectId, phaseNumber, artifactKey, {
+    query: {
+      enabled: open,
+      queryKey: getListArtifactVersionsQueryKey(projectId, phaseNumber, artifactKey),
+    },
+  });
+  const restore = useRestoreArtifactVersion();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+
+  const sourceLabel = (s: string) =>
+    s === "ai_regen" ? "Antes de regenerar com IA" :
+    s === "manual_edit" ? "Antes de edição manual" :
+    s === "restore" ? "Antes de restaurar" :
+    s;
+
+  const sourceTone = (s: string) =>
+    s === "ai_regen" ? "bg-primary/10 text-primary border-primary/30" :
+    s === "manual_edit" ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30" :
+    "bg-muted text-muted-foreground border-border";
+
+  const fmtDate = (d: string | Date) => {
+    const dt = typeof d === "string" ? new Date(d) : d;
+    return dt.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
+  function handleRestore(versionId: number) {
+    restore.mutate(
+      { projectId, phaseNumber, artifactKey, versionId },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListArtifactVersionsQueryKey(projectId, phaseNumber, artifactKey) });
+          toast({ title: "Versão restaurada", description: "A versão atual foi salva no histórico antes da restauração." });
+          onRestored();
+          setConfirmId(null);
+          onOpenChange(false);
+        },
+        onError: (e: unknown) => {
+          const msg = e instanceof Error ? e.message : "Tente novamente.";
+          toast({ title: "Erro ao restaurar", description: msg, variant: "destructive" });
+        },
+      }
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Histórico de versões</DialogTitle>
+          <DialogDescription>
+            Snapshots automáticos antes de cada regeneração ou edição. Até 20 versões por artefato.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto -mx-6 px-6">
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground py-8 text-center">Carregando…</div>
+          ) : !versions || versions.length === 0 ? (
+            <div className="text-sm text-muted-foreground py-8 text-center">
+              Nenhuma versão anterior. Snapshots são criados quando você regenera ou edita o artefato.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {versions.map((v: any) => (
+                <li key={v.id} className="rounded-lg border border-border bg-card">
+                  <div className="flex items-center justify-between gap-3 p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-full border ${sourceTone(v.source)}`}>
+                          {sourceLabel(v.source)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{fmtDate(v.createdAt)}</span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-1 truncate">
+                        {(v.content as string).replace(/```[\s\S]*?```/g, "[bloco]").replace(/\s+/g, " ").trim().slice(0, 120)}…
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
+                        data-testid={`button-preview-${v.id}`}
+                      >
+                        {expandedId === v.id ? "Esconder" : "Ver"}
+                      </Button>
+                      {canRestore && (
+                        confirmId === v.id ? (
+                          <>
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => setConfirmId(null)} disabled={restore.isPending}>
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="text-xs bg-primary hover:bg-primary/90 text-white"
+                              onClick={() => handleRestore(v.id)}
+                              disabled={restore.isPending}
+                              data-testid={`button-confirm-restore-${v.id}`}
+                            >
+                              {restore.isPending ? "Restaurando…" : "Confirmar"}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => setConfirmId(v.id)}
+                            data-testid={`button-restore-${v.id}`}
+                          >
+                            Restaurar
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                  {expandedId === v.id && (
+                    <pre className="px-3 pb-3 text-[11px] font-mono whitespace-pre-wrap text-foreground/80 max-h-60 overflow-y-auto border-t border-border/50 pt-2">
+                      {v.content}
+                    </pre>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function GenerationLoadingState({ artifactCount, text, projectName }: { artifactCount: number; text: string; projectName?: string }) {
   const lines = text.split("\n").filter(Boolean);

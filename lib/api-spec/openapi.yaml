@@ -304,6 +304,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/Artifact"
 
+  /projects/{projectId}/phases/{phaseNumber}/artifacts/{artifactKey}/versions:
+    get:
+      operationId: listArtifactVersions
+      tags: [artifacts]
+      summary: List previous versions of an artifact (metadata only)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: artifactKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of versions, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArtifactVersion"
+
+  /projects/{projectId}/phases/{phaseNumber}/artifacts/{artifactKey}/versions/{versionId}/restore:
+    post:
+      operationId: restoreArtifactVersion
+      tags: [artifacts]
+      summary: Restore an artifact to a previous version (snapshots current first)
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phaseNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: artifactKey
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored artifact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artifact"
+
   /projects/{projectId}/phases/{phaseNumber}/execute:
     post:
       operationId: executePhaseWithAI
@@ -529,6 +594,36 @@ components:
         - contentJson
         - createdAt
         - updatedAt
+
+    ArtifactVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+        phaseId:
+          type: integer
+        artifactKey:
+          type: string
+        content:
+          type: string
+        contentJson:
+          type: ["string", "null"]
+        source:
+          type: string
+        createdByClerkId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - phaseId
+        - artifactKey
+        - content
+        - contentJson
+        - source
+        - createdByClerkId
+        - createdAt
 
     ProjectSummary:
       type: object

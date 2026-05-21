@@ -18,6 +18,7 @@ import type {
 
 import type {
   Artifact,
+  ArtifactVersion,
   CreateProjectBody,
   DashboardData,
   HealthStatus,
@@ -1216,6 +1217,254 @@ export const useUpdateArtifact = <
   TContext
 > => {
   return useMutation(getUpdateArtifactMutationOptions(options));
+};
+
+/**
+ * @summary List previous versions of an artifact (metadata only)
+ */
+export const getListArtifactVersionsUrl = (
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+) => {
+  return `/api/projects/${projectId}/phases/${phaseNumber}/artifacts/${artifactKey}/versions`;
+};
+
+export const listArtifactVersions = async (
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+  options?: RequestInit,
+): Promise<ArtifactVersion[]> => {
+  return customFetch<ArtifactVersion[]>(
+    getListArtifactVersionsUrl(projectId, phaseNumber, artifactKey),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListArtifactVersionsQueryKey = (
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+) => {
+  return [
+    `/api/projects/${projectId}/phases/${phaseNumber}/artifacts/${artifactKey}/versions`,
+  ] as const;
+};
+
+export const getListArtifactVersionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listArtifactVersions>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listArtifactVersions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListArtifactVersionsQueryKey(projectId, phaseNumber, artifactKey);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listArtifactVersions>>
+  > = ({ signal }) =>
+    listArtifactVersions(projectId, phaseNumber, artifactKey, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(projectId && phaseNumber && artifactKey),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listArtifactVersions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListArtifactVersionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listArtifactVersions>>
+>;
+export type ListArtifactVersionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List previous versions of an artifact (metadata only)
+ */
+
+export function useListArtifactVersions<
+  TData = Awaited<ReturnType<typeof listArtifactVersions>>,
+  TError = ErrorType<unknown>,
+>(
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listArtifactVersions>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListArtifactVersionsQueryOptions(
+    projectId,
+    phaseNumber,
+    artifactKey,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Restore an artifact to a previous version (snapshots current first)
+ */
+export const getRestoreArtifactVersionUrl = (
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+  versionId: number,
+) => {
+  return `/api/projects/${projectId}/phases/${phaseNumber}/artifacts/${artifactKey}/versions/${versionId}/restore`;
+};
+
+export const restoreArtifactVersion = async (
+  projectId: number,
+  phaseNumber: number,
+  artifactKey: string,
+  versionId: number,
+  options?: RequestInit,
+): Promise<Artifact> => {
+  return customFetch<Artifact>(
+    getRestoreArtifactVersionUrl(
+      projectId,
+      phaseNumber,
+      artifactKey,
+      versionId,
+    ),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRestoreArtifactVersionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreArtifactVersion>>,
+    TError,
+    {
+      projectId: number;
+      phaseNumber: number;
+      artifactKey: string;
+      versionId: number;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof restoreArtifactVersion>>,
+  TError,
+  {
+    projectId: number;
+    phaseNumber: number;
+    artifactKey: string;
+    versionId: number;
+  },
+  TContext
+> => {
+  const mutationKey = ["restoreArtifactVersion"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof restoreArtifactVersion>>,
+    {
+      projectId: number;
+      phaseNumber: number;
+      artifactKey: string;
+      versionId: number;
+    }
+  > = (props) => {
+    const { projectId, phaseNumber, artifactKey, versionId } = props ?? {};
+
+    return restoreArtifactVersion(
+      projectId,
+      phaseNumber,
+      artifactKey,
+      versionId,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RestoreArtifactVersionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof restoreArtifactVersion>>
+>;
+
+export type RestoreArtifactVersionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Restore an artifact to a previous version (snapshots current first)
+ */
+export const useRestoreArtifactVersion = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreArtifactVersion>>,
+    TError,
+    {
+      projectId: number;
+      phaseNumber: number;
+      artifactKey: string;
+      versionId: number;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof restoreArtifactVersion>>,
+  TError,
+  {
+    projectId: number;
+    phaseNumber: number;
+    artifactKey: string;
+    versionId: number;
+  },
+  TContext
+> => {
+  return useMutation(getRestoreArtifactVersionMutationOptions(options));
 };
 
 /**

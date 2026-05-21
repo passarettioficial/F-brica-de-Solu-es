@@ -85,6 +85,19 @@ export interface PhaseDetail {
   updatedAt: string;
 }
 
+export interface ArtifactVersion {
+  id: number;
+  phaseId: number;
+  artifactKey: string;
+  content: string;
+  /** @nullable */
+  contentJson: string | null;
+  source: string;
+  /** @nullable */
+  createdByClerkId: string | null;
+  createdAt: string;
+}
+
 export type ProjectSummaryPhaseStatusesItem =
   (typeof ProjectSummaryPhaseStatusesItem)[keyof typeof ProjectSummaryPhaseStatusesItem];
 

@@ -263,6 +263,49 @@ export const UpdateArtifactResponse = zod.object({
 });
 
 /**
+ * @summary List previous versions of an artifact (metadata only)
+ */
+export const ListArtifactVersionsParams = zod.object({
+  projectId: zod.coerce.number(),
+  phaseNumber: zod.coerce.number(),
+  artifactKey: zod.coerce.string(),
+});
+
+export const ListArtifactVersionsResponseItem = zod.object({
+  id: zod.number(),
+  phaseId: zod.number(),
+  artifactKey: zod.string(),
+  content: zod.string(),
+  contentJson: zod.string().nullable(),
+  source: zod.string(),
+  createdByClerkId: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+});
+export const ListArtifactVersionsResponse = zod.array(
+  ListArtifactVersionsResponseItem,
+);
+
+/**
+ * @summary Restore an artifact to a previous version (snapshots current first)
+ */
+export const RestoreArtifactVersionParams = zod.object({
+  projectId: zod.coerce.number(),
+  phaseNumber: zod.coerce.number(),
+  artifactKey: zod.coerce.string(),
+  versionId: zod.coerce.number(),
+});
+
+export const RestoreArtifactVersionResponse = zod.object({
+  id: zod.number(),
+  phaseId: zod.number(),
+  artifactKey: zod.string(),
+  content: zod.string(),
+  contentJson: zod.string().nullable(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
  * @summary Execute a phase with AI to generate artifacts (SSE streaming)
  */
 export const ExecutePhaseWithAIParams = zod.object({

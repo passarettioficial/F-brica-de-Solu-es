@@ -2,6 +2,7 @@ export * from "./projects";
 export * from "./market_validations";
 export * from "./phases";
 export * from "./phase_artifacts";
+export * from "./artifact_versions";
 export * from "./users";
 export * from "./coupons";
 export * from "./settings";

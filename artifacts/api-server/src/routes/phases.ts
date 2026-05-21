@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
+import { db, projectsTable, phasesTable, phaseArtifactsTable, artifactVersionsTable, usersTable } from "@workspace/db";
 import {
   UpdatePhaseGatesBody,
   UpdateArtifactBody,
@@ -12,6 +12,7 @@ import { checkAndIncrementAiUsage } from "../lib/auth";
 import { auditLog } from "../lib/audit";
 import { createNotification } from "../lib/notifications";
 import { getPlanConfig } from "../lib/stripe";
+import { snapshotArtifact, snapshotAllPhaseArtifacts } from "../lib/artifact-versions";
 
 const router: IRouter = Router();
 
@@ -190,10 +191,95 @@ router.patch("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey", 
   );
   if (!phase) { res.status(404).json({ error: "Phase not found" }); return; }
 
-  const [artifact] = await db.update(phaseArtifactsTable)
-    .set({ content: parsed.data.content, contentJson: parsed.data.contentJson ?? null, updatedAt: new Date() })
-    .where(and(eq(phaseArtifactsTable.phaseId, phase.id), eq(phaseArtifactsTable.artifactKey, artifactKey)))
-    .returning();
+  const artifact = await db.transaction(async (tx) => {
+    await snapshotArtifact(tx, phase.id, artifactKey, "manual_edit", userId);
+    const [row] = await tx.update(phaseArtifactsTable)
+      .set({ content: parsed.data.content, contentJson: parsed.data.contentJson ?? null, updatedAt: new Date() })
+      .where(and(eq(phaseArtifactsTable.phaseId, phase.id), eq(phaseArtifactsTable.artifactKey, artifactKey)))
+      .returning();
+    return row;
+  });
+
+  if (!artifact) { res.status(404).json({ error: "Artifact not found" }); return; }
+  res.json(artifact);
+});
+
+// GET /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/versions
+router.get("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/versions", async (req, res): Promise<void> => {
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const projectId = parseInt(Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId, 10);
+  const phaseNumber = parseInt(Array.isArray(req.params.phaseNumber) ? req.params.phaseNumber[0] : req.params.phaseNumber, 10);
+  const artifactKey = Array.isArray(req.params.artifactKey) ? req.params.artifactKey[0] : req.params.artifactKey;
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const [phase] = await db.select().from(phasesTable).where(
+    and(eq(phasesTable.projectId, projectId), eq(phasesTable.phaseNumber, phaseNumber))
+  );
+  if (!phase) { res.status(404).json({ error: "Phase not found" }); return; }
+
+  const rows = await db
+    .select()
+    .from(artifactVersionsTable)
+    .where(and(eq(artifactVersionsTable.phaseId, phase.id), eq(artifactVersionsTable.artifactKey, artifactKey)))
+    .orderBy(desc(artifactVersionsTable.createdAt));
+
+  res.json(rows);
+});
+
+// POST /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/versions/:versionId/restore
+router.post("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/versions/:versionId/restore", async (req, res): Promise<void> => {
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const projectId = parseInt(Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId, 10);
+  const phaseNumber = parseInt(Array.isArray(req.params.phaseNumber) ? req.params.phaseNumber[0] : req.params.phaseNumber, 10);
+  const artifactKey = Array.isArray(req.params.artifactKey) ? req.params.artifactKey[0] : req.params.artifactKey;
+  const versionId = parseInt(Array.isArray(req.params.versionId) ? req.params.versionId[0] : req.params.versionId, 10);
+  if (isNaN(versionId)) { res.status(400).json({ error: "Invalid versionId" }); return; }
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable)
+    .where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  if (!planCfg.canCopy) {
+    res.status(402).json({ error: "Restaurar versões requer um plano pago.", requiresUpgrade: true, code: "EDIT_REQUIRES_PAID_PLAN" });
+    return;
+  }
+
+  const [phase] = await db.select().from(phasesTable).where(
+    and(eq(phasesTable.projectId, projectId), eq(phasesTable.phaseNumber, phaseNumber))
+  );
+  if (!phase) { res.status(404).json({ error: "Phase not found" }); return; }
+
+  const [version] = await db.select().from(artifactVersionsTable).where(
+    and(
+      eq(artifactVersionsTable.id, versionId),
+      eq(artifactVersionsTable.phaseId, phase.id),
+      eq(artifactVersionsTable.artifactKey, artifactKey),
+    )
+  );
+  if (!version) { res.status(404).json({ error: "Version not found" }); return; }
+
+  const artifact = await db.transaction(async (tx) => {
+    await snapshotArtifact(tx, phase.id, artifactKey, "restore", userId);
+    const [row] = await tx.update(phaseArtifactsTable)
+      .set({ content: version.content, contentJson: version.contentJson ?? null, updatedAt: new Date() })
+      .where(and(eq(phaseArtifactsTable.phaseId, phase.id), eq(phaseArtifactsTable.artifactKey, artifactKey)))
+      .returning();
+    return row;
+  });
 
   if (!artifact) { res.status(404).json({ error: "Artifact not found" }); return; }
   res.json(artifact);
@@ -324,8 +410,9 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
       founderProfile ?? undefined
     );
 
-    // Atomic upsert: delete + insert in a single transaction
+    // Atomic upsert: snapshot existing + delete + insert in a single transaction
     await db.transaction(async (tx) => {
+      await snapshotAllPhaseArtifacts(tx, phase.id, "ai_regen", userId);
       await tx.delete(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
       if (results.length > 0) {
         await tx.insert(phaseArtifactsTable).values(
