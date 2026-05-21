@@ -48,6 +48,14 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 - **Frontend:** página `/p/:shareId` (`public-share.tsx`) renderiza header próprio com CTA "Criar meu plano"/"Começar grátis", tabs de fases, ArtifactBody markdown. Meta `robots noindex` no Helmet. UI de share em `project.tsx` aba Colaboração: gerar/copiar/revogar com status visual.
 - **Audit events:** `user.project.shared`, `user.project.unshared`.
 
+### PDF Export Viral B2B (projeto completo)
+
+- **Cover branded:** banda primary blue 140pt + stripe accent, mark `FOUNDERSFLOW`, título 34pt, dots de progresso das 7 fases (blue=done / outlined=pending), meta block, CTA strip light blue rodapé com `foundersflow.com.br ›`.
+- **Watermark:** texto `FOUNDERSFLOW` diagonal -28°, opacity 0.05 via `GState`, centro de toda página de conteúdo. Roteado pelo helper privado `newContentPage()` (DRY — qualquer `addPage()` interno via ele). Cover e back-cover gerenciam próprio bleed.
+- **Footer atualizado:** projeto (esq) · `foundersflow.com.br` em primary blue centralizado · page num (dir).
+- **Back cover viral:** página full-bleed primary blue, headline `Quer levar o seu produto da ideia ao lançamento?` (2ª linha accent orange), 3 bullets de feature, CTA orange box `Comece grátis em foundersflow.com.br`, exibe `shareUrl` público se existir (`/p/:shareId`).
+- **`downloadProjectPdf({shareUrl?})`** — `project.tsx` injeta `${origin}${basePath}/p/${shareId}` quando share está ativo.
+
 ### Editing & Export — User Stories / Casos de Teste / Milestones (Fase 2/5/6)
 
 - **Inline edit por clique nos badges** (paid plans + canEdit): badges de prioridade e esforço viram botões que ciclam ao clicar. UserStories prio 1→5, esforço P/M/G. CasosTeste prio P0/P1/P2. Free users veem `<span>` estático.

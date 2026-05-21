@@ -46,6 +46,7 @@ class PdfRenderer {
     this.doc = new jsPDF({ unit: "pt", format: "a4" });
     this.projectName = projectName;
     this.pageTitle = pageTitle;
+    this.drawWatermark();
     this.drawHeaderFooter();
   }
 
@@ -65,21 +66,44 @@ class PdfRenderer {
     const right = this.pageTitle.length > 60 ? this.pageTitle.slice(0, 57) + "..." : this.pageTitle;
     d.text(right, PAGE_W - MARGIN_X, 32, { align: "right" });
 
-    // Footer
+    // Footer — viral attribution always visible
     d.setDrawColor(RULE);
     d.line(MARGIN_X, PAGE_H - 36, PAGE_W - MARGIN_X, PAGE_H - 36);
     d.setFontSize(8);
     d.setTextColor(MUTED);
     d.text(this.projectName, MARGIN_X, PAGE_H - 22);
+    d.setFont("helvetica", "bold");
+    d.setTextColor(PRIMARY);
+    d.text("foundersflow.com.br", PAGE_W / 2, PAGE_H - 22, { align: "center" });
+    d.setFont("helvetica", "normal");
+    d.setTextColor(MUTED);
     d.text(`${this.pageNum}`, PAGE_W - MARGIN_X, PAGE_H - 22, { align: "right" });
+  }
+
+  private drawWatermark() {
+    const d = this.doc;
+    // Diagonal subtle watermark — light grey, behind content
+    const dd = d as unknown as { saveGraphicsState: () => void; restoreGraphicsState: () => void; setGState: (g: unknown) => void; GState: (opts: { opacity: number }) => unknown };
+    dd.saveGraphicsState();
+    dd.setGState(dd.GState({ opacity: 0.05 }));
+    d.setFont("helvetica", "bold");
+    d.setFontSize(64);
+    d.setTextColor(PRIMARY);
+    d.text("FOUNDERSFLOW", PAGE_W / 2, PAGE_H / 2 + 20, { align: "center", angle: -28 });
+    dd.restoreGraphicsState();
+  }
+
+  private newContentPage() {
+    this.doc.addPage();
+    this.pageNum += 1;
+    this.y = MARGIN_TOP;
+    this.drawWatermark();
+    this.drawHeaderFooter();
   }
 
   ensure(spaceNeeded: number) {
     if (this.y + spaceNeeded > PAGE_H - MARGIN_BOTTOM) {
-      this.doc.addPage();
-      this.pageNum += 1;
-      this.y = MARGIN_TOP;
-      this.drawHeaderFooter();
+      this.newContentPage();
     }
   }
 
@@ -185,18 +209,12 @@ class PdfRenderer {
         this.ensure(PAGE_H);
         // Force new page for remainder if we couldn't fit one row
         if (PAGE_H - MARGIN_BOTTOM - this.y < lineH + padY * 2) {
-          this.doc.addPage();
-          this.pageNum += 1;
-          this.y = MARGIN_TOP;
-          this.drawHeaderFooter();
+          this.newContentPage();
         }
       }
       // Safety: avoid infinite loop on absurdly tall pages
       if (rows === maxRowsPerPage && idx < wrappedAll.length) {
-        this.doc.addPage();
-        this.pageNum += 1;
-        this.y = MARGIN_TOP;
-        this.drawHeaderFooter();
+        this.newContentPage();
       }
     }
     this.setBody();
@@ -254,10 +272,7 @@ class PdfRenderer {
 
   private cardOpen(totalH: number, accentColor?: string): { innerX: number; innerW: number; startY: number } {
     if (this.y + totalH > PAGE_H - MARGIN_BOTTOM) {
-      this.doc.addPage();
-      this.pageNum += 1;
-      this.y = MARGIN_TOP;
-      this.drawHeaderFooter();
+      this.newContentPage();
     }
     this.doc.setDrawColor(RULE);
     this.doc.setLineWidth(0.5);
@@ -708,13 +723,38 @@ class PdfRenderer {
     this.setBody();
   }
 
-  drawCover(title: string, subtitle: string, meta: Array<{ label: string; value: string }>) {
+  drawCover(title: string, subtitle: string, meta: Array<{ label: string; value: string }>, opts?: { completedPhases?: number; totalPhases?: number }) {
     const d = this.doc;
-    const cy = PAGE_H * 0.32;
+
+    // Full-bleed primary band at top (140pt tall)
+    d.setFillColor(PRIMARY);
+    d.rect(0, 0, PAGE_W, 140, "F");
+    // Accent stripe
+    d.setFillColor(ACCENT);
+    d.rect(0, 140, PAGE_W, 4, "F");
+
+    // Brand mark on band
     d.setFont("helvetica", "bold");
+    d.setFontSize(11);
+    d.setTextColor("#FFFFFF");
+    d.text("FOUNDERSFLOW", MARGIN_X, 50);
+    d.setFont("helvetica", "normal");
     d.setFontSize(9);
-    d.setTextColor(PRIMARY);
-    d.text("FOUNDERSFLOW · EXPORT", MARGIN_X, cy - 40);
+    d.setTextColor("#EEF1FB");
+    d.text("Documentação completa de produto", MARGIN_X, 66);
+
+    // Right side — date pill
+    d.setFont("helvetica", "normal");
+    d.setFontSize(9);
+    d.setTextColor("#EEF1FB");
+    d.text(new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }), PAGE_W - MARGIN_X, 50, { align: "right" });
+
+    // Title block
+    const cy = 220;
+    d.setFont("helvetica", "bold");
+    d.setFontSize(11);
+    d.setTextColor(MUTED);
+    d.text("PROJETO", MARGIN_X, cy - 32);
     d.setFont("helvetica", "bold");
     d.setFontSize(34);
     d.setTextColor(FG);
@@ -727,7 +767,7 @@ class PdfRenderer {
     d.setDrawColor(ACCENT);
     d.setLineWidth(3);
     d.line(MARGIN_X, yy + 4, MARGIN_X + 60, yy + 4);
-    yy += 24;
+    yy += 28;
     d.setFont("helvetica", "normal");
     d.setFontSize(12);
     d.setTextColor(MUTED);
@@ -737,6 +777,49 @@ class PdfRenderer {
       yy += 16;
     }
     yy += 30;
+
+    // Phase progress dots
+    if (opts?.totalPhases) {
+      const total = opts.totalPhases;
+      const done = Math.max(0, Math.min(total, opts.completedPhases ?? 0));
+      d.setFont("helvetica", "bold");
+      d.setFontSize(9);
+      d.setTextColor(MUTED);
+      d.text("PROGRESSO DAS FASES", MARGIN_X, yy);
+      yy += 14;
+      const dotR = 10;
+      const gap = 14;
+      const totalW = total * (dotR * 2) + (total - 1) * gap;
+      let dx = MARGIN_X;
+      for (let i = 0; i < total; i++) {
+        const cx = dx + dotR;
+        if (i < done) {
+          d.setFillColor(PRIMARY);
+          d.circle(cx, yy + dotR, dotR, "F");
+          d.setTextColor("#FFFFFF");
+        } else {
+          d.setFillColor("#F3F4F8");
+          d.circle(cx, yy + dotR, dotR, "F");
+          d.setDrawColor(RULE);
+          d.setLineWidth(0.8);
+          d.circle(cx, yy + dotR, dotR, "S");
+          d.setTextColor(MUTED);
+        }
+        d.setFont("helvetica", "bold");
+        d.setFontSize(9);
+        d.text(String(i + 1), cx, yy + dotR + 3, { align: "center" });
+        dx += dotR * 2 + gap;
+      }
+      // Label to the right of dots
+      d.setFont("helvetica", "normal");
+      d.setFontSize(10);
+      d.setTextColor(FG);
+      d.text(`${done} de ${total} concluídas`, dx + 8, yy + dotR + 3);
+      void totalW;
+      yy += dotR * 2 + 24;
+    }
+
+    // Meta block
     for (const m of meta) {
       d.setFont("helvetica", "bold");
       d.setFontSize(9);
@@ -748,10 +831,124 @@ class PdfRenderer {
       d.text(m.value, MARGIN_X + 160, yy);
       yy += 18;
     }
+
+    // Bottom CTA strip
+    const stripY = PAGE_H - 90;
+    d.setFillColor("#EEF1FB");
+    d.rect(0, stripY, PAGE_W, 90, "F");
+    d.setFont("helvetica", "bold");
+    d.setFontSize(13);
+    d.setTextColor(PRIMARY);
+    d.text("Criado com FoundersFlow", MARGIN_X, stripY + 32);
+    d.setFont("helvetica", "normal");
+    d.setFontSize(10);
+    d.setTextColor(FG);
+    d.text("A plataforma de IA que leva produtos da ideia ao lançamento em 7 fases.", MARGIN_X, stripY + 52);
+    d.setFont("helvetica", "bold");
+    d.setFontSize(11);
+    d.setTextColor(ACCENT);
+    d.text("foundersflow.com.br ›", PAGE_W - MARGIN_X, stripY + 52, { align: "right" });
+
     this.doc.addPage();
     this.pageNum += 1;
     this.y = MARGIN_TOP;
+    this.drawWatermark();
     this.drawHeaderFooter();
+  }
+
+  drawBackCover(opts: { projectName: string; shareUrl?: string | null }) {
+    const d = this.doc;
+    // Start fresh page
+    d.addPage();
+    this.pageNum += 1;
+    this.y = MARGIN_TOP;
+    // Suppress regular header/footer — full-bleed brand page
+    // Full primary background
+    d.setFillColor(PRIMARY);
+    d.rect(0, 0, PAGE_W, PAGE_H, "F");
+    // Accent corner stripe
+    d.setFillColor(ACCENT);
+    d.rect(0, 0, 6, PAGE_H, "F");
+
+    // Mark
+    d.setFont("helvetica", "bold");
+    d.setFontSize(11);
+    d.setTextColor("#EEF1FB");
+    d.text("FOUNDERSFLOW", MARGIN_X, 60);
+
+    // Big headline
+    let yy = PAGE_H * 0.38;
+    d.setFont("helvetica", "bold");
+    d.setFontSize(38);
+    d.setTextColor("#FFFFFF");
+    const head1 = d.splitTextToSize("Quer levar o seu produto", CONTENT_W);
+    for (const ln of head1) { d.text(ln, MARGIN_X, yy); yy += 42; }
+    d.setTextColor(ACCENT);
+    const head2 = d.splitTextToSize("da ideia ao lançamento?", CONTENT_W);
+    for (const ln of head2) { d.text(ln, MARGIN_X, yy); yy += 42; }
+
+    // Accent rule
+    d.setDrawColor(ACCENT);
+    d.setLineWidth(4);
+    d.line(MARGIN_X, yy + 6, MARGIN_X + 80, yy + 6);
+    yy += 36;
+
+    // Body
+    d.setFont("helvetica", "normal");
+    d.setFontSize(13);
+    d.setTextColor("#EEF1FB");
+    const body = [
+      "Este documento foi gerado em minutos pela FoundersFlow:",
+      "7 fases sequenciais com IA — da validação ao deploy validado.",
+    ];
+    for (const ln of body) { d.text(ln, MARGIN_X, yy); yy += 22; }
+    yy += 16;
+
+    // Feature bullets
+    d.setFont("helvetica", "bold");
+    d.setFontSize(11);
+    d.setTextColor("#FFFFFF");
+    const bullets = [
+      "Lean Canvas, PRD, RBAC, Threat Model — tudo pronto",
+      "Compliance LGPD desde o dia 1",
+      "Validação com entrevistas reais, não com achismo",
+    ];
+    for (const b of bullets) {
+      d.setTextColor(ACCENT);
+      d.text("›", MARGIN_X, yy);
+      d.setTextColor("#FFFFFF");
+      d.text(b, MARGIN_X + 16, yy);
+      yy += 20;
+    }
+
+    // CTA box at bottom
+    const ctaY = PAGE_H - 160;
+    d.setFillColor(ACCENT);
+    d.rect(MARGIN_X, ctaY, CONTENT_W, 70, "F");
+    d.setFont("helvetica", "bold");
+    d.setFontSize(18);
+    d.setTextColor("#FFFFFF");
+    d.text("Comece grátis em foundersflow.com.br", PAGE_W / 2, ctaY + 32, { align: "center" });
+    d.setFont("helvetica", "normal");
+    d.setFontSize(10);
+    d.text("Sem cartão · 3 execuções de IA por dia no plano Explorar", PAGE_W / 2, ctaY + 52, { align: "center" });
+
+    // Share link reference (if exists)
+    if (opts.shareUrl) {
+      d.setFont("helvetica", "normal");
+      d.setFontSize(9);
+      d.setTextColor("#EEF1FB");
+      d.text("Versão pública deste plano:", MARGIN_X, PAGE_H - 60);
+      d.setFont("helvetica", "bold");
+      d.setTextColor("#FFFFFF");
+      const url = opts.shareUrl.length > 80 ? opts.shareUrl.slice(0, 77) + "..." : opts.shareUrl;
+      d.text(url, MARGIN_X, PAGE_H - 46);
+    } else {
+      d.setFont("helvetica", "normal");
+      d.setFontSize(9);
+      d.setTextColor("#EEF1FB");
+      d.text(`Projeto: ${opts.projectName}`, MARGIN_X, PAGE_H - 46);
+    }
   }
 
   save(filename: string) {
@@ -793,6 +990,7 @@ export function downloadArtifactPdf(opts: {
 export function downloadProjectPdf(opts: {
   projectName: string;
   briefing?: string | null;
+  shareUrl?: string | null;
   phases: Array<{
     phaseNumber: number;
     name: string;
@@ -801,12 +999,18 @@ export function downloadProjectPdf(opts: {
   }>;
 }) {
   const completed = opts.phases.filter((p) => p.status === "completed").length;
+  const total = opts.phases.length || 7;
   const r = new PdfRenderer(opts.projectName, opts.projectName);
-  r.drawCover(opts.projectName, "Documentação completa das 7 fases — gerada pela plataforma.", [
-    { label: "Data", value: new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) },
-    { label: "Fases concluídas", value: `${completed} de 7` },
-    { label: "Gerado por", value: "FoundersFlow" },
-  ]);
+  r.drawCover(
+    opts.projectName,
+    "Documentação completa das 7 fases — da validação ao lançamento.",
+    [
+      { label: "Fases concluídas", value: `${completed} de ${total}` },
+      { label: "Entregáveis incluídos", value: String(opts.phases.reduce((acc, p) => acc + p.artifacts.filter((a) => a.content?.trim()).length, 0)) },
+      { label: "Gerado por", value: "FoundersFlow · foundersflow.com.br" },
+    ],
+    { completedPhases: completed, totalPhases: total },
+  );
 
   if (opts.briefing?.trim()) {
     r.drawHeading("Briefing", 2);
@@ -828,8 +1032,7 @@ export function downloadProjectPdf(opts: {
     }
   }
 
-  r.gap(20);
-  r.rule();
-  r.drawParagraph("Gerado por FoundersFlow · foundersflow.com.br");
+  // Viral back cover — always present
+  r.drawBackCover({ projectName: opts.projectName, shareUrl: opts.shareUrl ?? null });
   r.save(`foundersflow-${safeFilename(opts.projectName)}-${todayISO()}.pdf`);
 }

@@ -802,9 +802,11 @@ export function ProjectPage() {
         briefing: string | null;
         phases: Array<{ phaseNumber: number; status: string; artifacts: Array<{ artifactKey: string; content: string }> }>;
       };
+      const sUrl = shareId ? `${window.location.origin}${basePath}/p/${shareId}` : null;
       downloadProjectPdf({
         projectName: data.name,
         briefing: data.briefing,
+        shareUrl: sUrl,
         phases: data.phases.map((p) => ({
           phaseNumber: p.phaseNumber,
           name: PHASES[p.phaseNumber - 1]?.name ?? `Fase ${p.phaseNumber}`,
