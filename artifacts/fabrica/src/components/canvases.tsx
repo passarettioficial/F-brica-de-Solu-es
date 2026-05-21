@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArtifactBody } from "./artifact-body";
 import { Button } from "@/components/ui/button";
 import { useUpdateArtifact } from "@workspace/api-client-react";
@@ -1711,34 +1711,182 @@ const RISK_STYLE: Record<string, string> = {
   alto: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
 };
 
-export function MilestonesCanvas({ content }: { content: string }) {
-  const data = parseJsonBlock<MilestonesData>(content);
-  if (!data?.milestones?.length) return <Fallback content={content} />;
-  const mvp = data.marco_mvp != null ? String(data.marco_mvp) : null;
+type Milestone = NonNullable<MilestonesData["milestones"]>[number];
+
+function renumberMilestones(arr: Milestone[], oldMvp: string | number | undefined):
+  { milestones: Milestone[]; marco_mvp: string | number | undefined } {
+  const remap = new Map<number, number>();
+  arr.forEach((m, i) => { remap.set(m.numero, i + 1); });
+  const next = arr.map((m, i) => ({
+    ...m,
+    numero: i + 1,
+    dependencias: m.dependencias?.map((d) => {
+      if (typeof d === "number") return remap.get(d) ?? d;
+      const asNum = Number(d);
+      if (Number.isFinite(asNum) && remap.has(asNum)) return remap.get(asNum)!;
+      return d;
+    }),
+  }));
+  let nextMvp = oldMvp;
+  if (oldMvp != null) {
+    const asNum = Number(oldMvp);
+    if (Number.isFinite(asNum) && remap.has(asNum)) nextMvp = remap.get(asNum);
+  }
+  return { milestones: next, marco_mvp: nextMvp };
+}
+
+export function MilestonesCanvas({
+  content,
+  canEdit = false,
+  projectId,
+  phaseNumber,
+  artifactKey,
+  onUpdate,
+}: {
+  content: string;
+  canEdit?: boolean;
+  projectId?: number;
+  phaseNumber?: number;
+  artifactKey?: string;
+  onUpdate?: () => void;
+}) {
+  const parsed = parseJsonBlock<MilestonesData>(content);
+  const initial = parsed?.milestones ?? [];
+  const [items, setItems] = useState<Milestone[]>(initial);
+  const [marcoMvp, setMarcoMvp] = useState<string | number | undefined>(parsed?.marco_mvp);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [overPos, setOverPos] = useState<"before" | "after">("before");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const updateArtifact = useUpdateArtifact();
+
+  useEffect(() => {
+    if (!dirty) {
+      setItems(parsed?.milestones ?? []);
+      setMarcoMvp(parsed?.marco_mvp);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
+
+  if (!parsed?.milestones?.length) return <Fallback content={content} />;
+
+  const canDrag = canEdit && !!projectId && !!phaseNumber && !!artifactKey;
+  const mvp = marcoMvp != null ? String(marcoMvp) : null;
+
+  function onDragStart(e: React.DragEvent, idx: number) {
+    setDragIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", String(idx)); } catch { /* noop */ }
+  }
+  function computePos(e: React.DragEvent): "before" | "after" {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    return e.clientY - rect.top < rect.height / 2 ? "before" : "after";
+  }
+  function onDragOver(e: React.DragEvent, idx: number) {
+    if (dragIdx === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const pos = computePos(e);
+    if (overIdx !== idx) setOverIdx(idx);
+    if (overPos !== pos) setOverPos(pos);
+  }
+  function onDrop(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (dragIdx === null) return;
+    const pos = computePos(e);
+    let target = pos === "before" ? idx : idx + 1;
+    if (dragIdx < target) target -= 1; // account for removal shifting indices
+    if (target === dragIdx) { setDragIdx(null); setOverIdx(null); return; }
+    const next = [...items];
+    const [moved] = next.splice(dragIdx, 1);
+    next.splice(target, 0, moved);
+    const { milestones, marco_mvp } = renumberMilestones(next, marcoMvp);
+    setItems(milestones);
+    setMarcoMvp(marco_mvp);
+    setDirty(true);
+    setDragIdx(null);
+    setOverIdx(null);
+    setOverPos("before");
+  }
+  function onDragEnd() { setDragIdx(null); setOverIdx(null); setOverPos("before"); }
+
+  function reset() {
+    setItems(initial);
+    setMarcoMvp(parsed?.marco_mvp);
+    setDirty(false);
+  }
+
+  function save() {
+    if (!canDrag || saving) return;
+    setSaving(true);
+    const nextData: MilestonesData = { ...parsed, milestones: items, marco_mvp: marcoMvp };
+    const newContent = replaceJsonBlock(content, nextData as object);
+    updateArtifact.mutate(
+      { projectId: projectId!, phaseNumber: phaseNumber!, artifactKey: artifactKey!, data: { content: newContent, contentJson: null } },
+      {
+        onSuccess: () => {
+          toast({ title: "Milestones reordenados", description: `${items.length} marcos atualizados.` });
+          setDirty(false);
+          setSaving(false);
+          onUpdate?.();
+        },
+        onError: () => {
+          toast({ title: "Erro ao salvar", description: "Tente novamente.", variant: "destructive" });
+          setSaving(false);
+        },
+      }
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between flex-wrap gap-2">
-        <h4 className="font-serif text-base">{data.milestones.length} milestones</h4>
-        {data.duracao_total_estimada && <span className="text-xs text-muted-foreground">Duração total: <strong className="text-foreground">{data.duracao_total_estimada}</strong></span>}
+        <h4 className="font-serif text-base">{items.length} milestones</h4>
+        <div className="flex items-center gap-3">
+          {parsed.duracao_total_estimada && <span className="text-xs text-muted-foreground">Duração total: <strong className="text-foreground">{parsed.duracao_total_estimada}</strong></span>}
+          {canDrag && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">Arraste para reordenar</span>}
+        </div>
       </div>
       <div className="relative">
         <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-border" />
         <div className="space-y-3">
-          {data.milestones.map((m) => {
+          {items.map((m, idx) => {
             const isMvp = mvp && String(m.numero) === mvp;
+            const isDragging = dragIdx === idx;
+            const isOver = overIdx === idx && dragIdx !== null && dragIdx !== idx;
             return (
-              <div key={m.numero} className="relative pl-12">
+              <div
+                key={`${m.numero}-${idx}`}
+                className={`relative pl-12 transition-all ${isDragging ? "opacity-40" : ""} ${isOver ? "translate-y-0.5" : ""}`}
+                draggable={canDrag}
+                onDragStart={canDrag ? (e) => onDragStart(e, idx) : undefined}
+                onDragOver={canDrag ? (e) => onDragOver(e, idx) : undefined}
+                onDrop={canDrag ? (e) => onDrop(e, idx) : undefined}
+                onDragEnd={canDrag ? onDragEnd : undefined}
+                data-testid={`milestone-row-${idx}`}
+              >
+                {isOver && overPos === "before" && <div className="absolute left-12 right-0 -top-1.5 h-0.5 bg-accent rounded" aria-hidden="true" />}
+                {isOver && overPos === "after" && <div className="absolute left-12 right-0 -bottom-1.5 h-0.5 bg-accent rounded" aria-hidden="true" />}
                 <div className={`absolute left-1 top-2 w-7 h-7 rounded-full flex items-center justify-center font-mono text-[11px] font-bold border-2 ${isMvp ? "bg-accent text-accent-foreground border-accent" : "bg-primary text-white border-primary"}`}>
                   {m.numero}
                 </div>
-                <div className={`rounded-xl border p-4 ${isMvp ? "border-accent/40 bg-accent/5" : "border-border bg-card"}`}>
+                <div className={`rounded-xl border p-4 ${isMvp ? "border-accent/40 bg-accent/5" : "border-border bg-card"} ${canDrag ? "hover:border-primary/40" : ""}`}>
                   <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h5 className="font-serif text-base text-foreground">{m.nome}</h5>
-                        {isMvp && <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-[10px] font-mono uppercase font-bold">MVP</span>}
+                    <div className="flex-1 min-w-0 flex items-start gap-2">
+                      {canDrag && (
+                        <span className="cursor-grab active:cursor-grabbing text-muted-foreground mt-1 select-none" aria-label="Arrastar milestone" title="Arrastar para reordenar">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
+                        </span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h5 className="font-serif text-base text-foreground">{m.nome}</h5>
+                          {isMvp && <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-[10px] font-mono uppercase font-bold">MVP</span>}
+                        </div>
+                        {m.duracao && <div className="text-xs text-muted-foreground mt-0.5">{m.duracao}</div>}
                       </div>
-                      {m.duracao && <div className="text-xs text-muted-foreground mt-0.5">{m.duracao}</div>}
                     </div>
                     {m.risco && (
                       <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${RISK_STYLE[m.risco] ?? RISK_STYLE.medio}`}>
@@ -1759,7 +1907,7 @@ export function MilestonesCanvas({ content }: { content: string }) {
                       <span className="text-foreground">{m.criterio_aceitacao}</span>
                     </div>
                   )}
-                  {m.demo && <div className="text-[11px] text-muted-foreground mt-1.5">🎬 Demo: {m.demo}</div>}
+                  {m.demo && <div className="text-[11px] text-muted-foreground mt-1.5">Demo: {m.demo}</div>}
                   {!!m.dependencias?.length && <div className="text-[11px] text-muted-foreground mt-1">Depende de: {m.dependencias.join(", ")}</div>}
                 </div>
               </div>
@@ -1767,6 +1915,15 @@ export function MilestonesCanvas({ content }: { content: string }) {
           })}
         </div>
       </div>
+      {canDrag && dirty && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+          <span className="text-xs text-muted-foreground mr-auto">Alterações não salvas</span>
+          <Button variant="outline" size="sm" onClick={reset} disabled={saving} data-testid="button-milestones-reset">Desfazer</Button>
+          <Button size="sm" onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-milestones-save">
+            {saving ? "Salvando…" : "Salvar ordem"}
+          </Button>
+        </div>
+      )}
       <Attribution>Milestone-based delivery (Brooks, 1995 · Cockburn, 2004). Cada marco deve ser um entregável demonstrável.</Attribution>
     </div>
   );
