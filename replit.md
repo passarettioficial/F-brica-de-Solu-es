@@ -33,6 +33,13 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 AI-powered web app for founders. 7 sequential phases take a product from idea to validated deploy.
 
+### Editing & Export — User Stories / Casos de Teste / Milestones (Fase 2/5/6)
+
+- **Inline edit por clique nos badges** (paid plans + canEdit): badges de prioridade e esforço viram botões que ciclam ao clicar. UserStories prio 1→5, esforço P/M/G. CasosTeste prio P0/P1/P2. Free users veem `<span>` estático.
+- **Drag-reorder** com pointer-aware before/after (midpoint do row), renumeração automática + remap de `dependencias`/`marco_mvp`, useEffect resync.
+- **Filtro por épico + prioridade** em `UserStoriesCanvas`: chip bar acima da lista. `displayItems` preserva idx original via `{s, idx}` mapping. `dragEnabled = canDrag && !filterActive` (grip mostra `cursor-not-allowed` quando filtrando). Chip selecionado permanece visível mesmo se nenhum item atual o usa (evita filtro fantasma).
+- **PDF export estruturado** (`lib/pdf-export.ts`): blocos ```json detectados via `tryDrawStructured()` com `.some()` schema check. Renderiza cards com pré-medição de altura (`measureLines`), `cardOpen(totalH)` faz page-break preventivo. Badges com paleta dark+texto branco (sem verde — substituído por primary blue). Reserva dinâmica de largura direita em milestones.
+
 ### Visual Design Language (brandbook sprint — aplicado)
 
 **Paleta do Brandbook:**

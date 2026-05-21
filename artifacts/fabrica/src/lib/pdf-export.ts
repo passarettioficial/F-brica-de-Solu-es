@@ -222,6 +222,332 @@ class PdfRenderer {
     this.setBody();
   }
 
+  tryDrawStructured(jsonText: string): boolean {
+    let data: any;
+    try { data = JSON.parse(jsonText); } catch { return false; }
+    if (!data || typeof data !== "object") return false;
+    if (Array.isArray(data.stories) && data.stories.some((s: any) => s && (s.persona || s.acao || s.id))) {
+      this.drawUserStoriesTable(data.stories.filter((s: any) => s && typeof s === "object"));
+      return true;
+    }
+    if (Array.isArray(data.casos) && data.casos.some((c: any) => c && (c.titulo || c.id))) {
+      this.drawCasosTesteTable(data.casos.filter((c: any) => c && typeof c === "object"), data.distribuicao_alvo);
+      return true;
+    }
+    if (Array.isArray(data.milestones) && data.milestones.some((m: any) => m && (m.nome || m.numero != null))) {
+      this.drawMilestonesTable(data.milestones.filter((m: any) => m && typeof m === "object"), data.duracao_total_estimada, data.marco_mvp);
+      return true;
+    }
+    return false;
+  }
+
+  private drawBadge(text: string, x: number, y: number, bg: string): number {
+    this.doc.setFont("helvetica", "bold");
+    this.doc.setFontSize(8.5);
+    const w = this.doc.getTextWidth(text) + 8;
+    this.doc.setFillColor(bg);
+    this.doc.roundedRect(x, y - 9, w, 12, 2, 2, "F");
+    this.doc.setTextColor("#FFFFFF");
+    this.doc.text(text, x + 4, y);
+    return w;
+  }
+
+  private cardOpen(totalH: number, accentColor?: string): { innerX: number; innerW: number; startY: number } {
+    if (this.y + totalH > PAGE_H - MARGIN_BOTTOM) {
+      this.doc.addPage();
+      this.pageNum += 1;
+      this.y = MARGIN_TOP;
+      this.drawHeaderFooter();
+    }
+    this.doc.setDrawColor(RULE);
+    this.doc.setLineWidth(0.5);
+    this.doc.roundedRect(MARGIN_X, this.y, CONTENT_W, totalH, 4, 4, "S");
+    if (accentColor) {
+      this.doc.setFillColor(accentColor);
+      this.doc.rect(MARGIN_X, this.y, 3, totalH, "F");
+    }
+    return { innerX: MARGIN_X + 12, innerW: CONTENT_W - 24, startY: this.y + 10 };
+  }
+
+  private cardClose(totalH: number) {
+    this.y += totalH + 6;
+    this.setBody();
+  }
+
+  private wrapText(text: string, w: number, fontSize: number, font: "helvetica" | "courier" = "helvetica", style: "normal" | "bold" | "italic" = "normal"): { lines: string[]; lineH: number } {
+    this.doc.setFont(font, style);
+    this.doc.setFontSize(fontSize);
+    const lines = this.doc.splitTextToSize(stripMd(text), w) as string[];
+    return { lines, lineH: fontSize + 2 };
+  }
+
+  private measureLines(text: string, w: number, fontSize: number, font: "helvetica" | "courier" = "helvetica", style: "normal" | "bold" | "italic" = "normal"): number {
+    this.doc.setFont(font, style);
+    this.doc.setFontSize(fontSize);
+    return (this.doc.splitTextToSize(stripMd(text), w) as string[]).length;
+  }
+
+  drawUserStoriesTable(stories: Array<any>) {
+    this.drawHeading(`${stories.length} user stories`, 3);
+    const padX = 12;
+    const innerW = CONTENT_W - padX * 2;
+    for (const s of stories) {
+      const prio = typeof s.prioridade === "number" ? s.prioridade : undefined;
+      const prioColor = prio && prio <= 2 ? "#C2410C" : prio === 3 ? PRIMARY : "#475569";
+      // Measure
+      const storyLine = `Como ${s.persona || "?"}, quero ${s.acao || "?"}, para ${s.valor || "?"}`;
+      const storyLines = this.measureLines(storyLine, innerW, 10.5);
+      const hasAcc = Array.isArray(s.aceitacao) && s.aceitacao.length > 0;
+      const accLines = hasAcc ? s.aceitacao.reduce((acc: number, a: any) => acc + this.measureLines(String(a), innerW - 12, 9.5), 0) : 0;
+      const totalH = 10 + 12 + storyLines * 12.5 + (hasAcc ? 4 + 10 + accLines * 11.5 : 0) + 10;
+      const { innerX, innerW: iW, startY } = this.cardOpen(totalH, prioColor);
+      let yy = startY;
+      // Header row: id + epico + badges right
+      this.doc.setFont("courier", "normal");
+      this.doc.setFontSize(8.5);
+      this.doc.setTextColor(MUTED);
+      this.doc.text(String(s.id || ""), innerX, yy);
+      let rx = innerX + iW;
+      if (s.esforco) {
+        const bw = this.doc.getTextWidth(s.esforco) + 8;
+        rx -= bw;
+        this.drawBadge(s.esforco, rx, yy, "#475569");
+        rx -= 4;
+      }
+      if (prio) {
+        const t = `P${prio}`;
+        const bw = this.doc.getTextWidth(t) + 8;
+        rx -= bw;
+        this.drawBadge(t, rx, yy, prioColor);
+        rx -= 4;
+      }
+      if (s.epico) {
+        this.doc.setFont("helvetica", "normal");
+        this.doc.setFontSize(8.5);
+        this.doc.setTextColor(MUTED);
+        const epicoText = String(s.epico).toUpperCase();
+        const ew = this.doc.getTextWidth(epicoText);
+        rx -= ew;
+        this.doc.text(epicoText, rx, yy);
+      }
+      yy += 12;
+      const { lines, lineH } = this.wrapText(storyLine, iW, 10.5);
+      this.doc.setTextColor(FG);
+      for (const ln of lines) { this.doc.text(ln, innerX, yy); yy += lineH; }
+      if (hasAcc) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold");
+        this.doc.setFontSize(8);
+        this.doc.setTextColor(MUTED);
+        this.doc.text("CRITÉRIOS DE ACEITAÇÃO", innerX, yy);
+        yy += 10;
+        for (const a of s.aceitacao) {
+          const { lines: al, lineH: alh } = this.wrapText(String(a), iW - 12, 9.5);
+          this.doc.setFont("helvetica", "normal");
+          this.doc.setFontSize(9.5);
+          this.doc.setTextColor(PRIMARY);
+          this.doc.text("▸", innerX, yy);
+          this.doc.setTextColor(FG);
+          for (let k = 0; k < al.length; k++) { this.doc.text(al[k], innerX + 10, yy); yy += alh; }
+        }
+      }
+      this.cardClose(totalH);
+    }
+  }
+
+  drawCasosTesteTable(casos: Array<any>, distribuicaoAlvo?: string) {
+    this.drawHeading(`${casos.length} casos de teste`, 3);
+    const padX = 12;
+    const innerW = CONTENT_W - padX * 2;
+    for (const c of casos) {
+      const prio = String(c.prioridade || "P2");
+      const prioColor = prio === "P0" ? "#B91C1C" : prio === "P1" ? "#B45309" : "#1D4ED8";
+      const titulo = String(c.titulo || "");
+      const tituloLines = this.measureLines(titulo, innerW, 11, "helvetica", "bold");
+      const hasPre = !!c.preconds;
+      const preLines = hasPre ? this.measureLines(String(c.preconds), innerW, 9.5) : 0;
+      const hasSteps = Array.isArray(c.steps) && c.steps.length > 0;
+      const stepLines = hasSteps ? c.steps.reduce((acc: number, st: any) => acc + this.measureLines(String(st), innerW - 16, 9.5), 0) : 0;
+      const hasEsp = !!c.esperado;
+      const espLines = hasEsp ? this.measureLines(String(c.esperado), innerW, 9.5) : 0;
+      const totalH = 10 + 12 + tituloLines * 13
+        + (hasPre ? 4 + 10 + preLines * 11.5 : 0)
+        + (hasSteps ? 4 + 10 + stepLines * 11.5 : 0)
+        + (hasEsp ? 4 + 10 + espLines * 11.5 : 0)
+        + 10;
+      const { innerX, innerW: iW, startY } = this.cardOpen(totalH, prioColor);
+      let yy = startY;
+      this.doc.setFont("courier", "normal");
+      this.doc.setFontSize(8.5);
+      this.doc.setTextColor(MUTED);
+      this.doc.text(String(c.id || ""), innerX, yy);
+      const bw = this.doc.getTextWidth(prio) + 8;
+      this.drawBadge(prio, innerX + iW - bw, yy, prioColor);
+      if (c.tipo) {
+        this.doc.setFont("helvetica", "normal");
+        this.doc.setFontSize(8.5);
+        this.doc.setTextColor(MUTED);
+        const tipoText = String(c.tipo).toUpperCase();
+        const tw = this.doc.getTextWidth(tipoText);
+        this.doc.text(tipoText, innerX + iW - bw - 6 - tw, yy);
+      }
+      yy += 12;
+      const { lines: tl, lineH: tlh } = this.wrapText(titulo, iW, 11, "helvetica", "bold");
+      this.doc.setTextColor(FG);
+      for (const ln of tl) { this.doc.text(ln, innerX, yy); yy += tlh; }
+      if (hasPre) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8); this.doc.setTextColor(MUTED);
+        this.doc.text("PRÉ-CONDIÇÕES", innerX, yy); yy += 10;
+        const { lines: pl, lineH: plh } = this.wrapText(String(c.preconds), iW, 9.5);
+        this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(9.5); this.doc.setTextColor(FG);
+        for (const ln of pl) { this.doc.text(ln, innerX, yy); yy += plh; }
+      }
+      if (hasSteps) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8); this.doc.setTextColor(MUTED);
+        this.doc.text("PASSOS", innerX, yy); yy += 10;
+        let n = 1;
+        for (const st of c.steps) {
+          const { lines: sl, lineH: slh } = this.wrapText(String(st), iW - 16, 9.5);
+          this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(9.5); this.doc.setTextColor(PRIMARY);
+          this.doc.text(`${n}.`, innerX, yy);
+          this.doc.setFont("helvetica", "normal"); this.doc.setTextColor(FG);
+          for (let k = 0; k < sl.length; k++) { this.doc.text(sl[k], innerX + 14, yy); yy += slh; }
+          n++;
+        }
+      }
+      if (hasEsp) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8); this.doc.setTextColor(MUTED);
+        this.doc.text("RESULTADO ESPERADO", innerX, yy); yy += 10;
+        const { lines: el, lineH: elh } = this.wrapText(String(c.esperado), iW, 9.5);
+        this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(9.5); this.doc.setTextColor(FG);
+        for (const ln of el) { this.doc.text(ln, innerX, yy); yy += elh; }
+      }
+      this.cardClose(totalH);
+    }
+    if (distribuicaoAlvo) {
+      const { lines: dl, lineH: dlh } = this.wrapText(distribuicaoAlvo, CONTENT_W, 9, "helvetica", "italic");
+      this.doc.setTextColor(MUTED);
+      for (const ln of dl) {
+        this.ensure(dlh);
+        this.doc.text(ln, MARGIN_X, this.y);
+        this.y += dlh;
+      }
+      this.setBody();
+    }
+  }
+
+  drawMilestonesTable(milestones: Array<any>, duracaoTotal?: string, marcoMvp?: string | number) {
+    const header = `${milestones.length} marcos${duracaoTotal ? ` · ${duracaoTotal}` : ""}${marcoMvp ? ` · MVP no marco ${marcoMvp}` : ""}`;
+    this.drawHeading(header, 3);
+    const padX = 12;
+    const innerW = CONTENT_W - padX * 2;
+    for (const m of milestones) {
+      const risk = String(m.risco || "").toLowerCase();
+      const riskColor = risk === "alto" ? "#B91C1C" : risk === "medio" ? "#B45309" : risk === "baixo" ? PRIMARY : "#6B7383";
+      const isMvp = String(marcoMvp) === String(m.numero);
+      const marcoLabel = `MARCO ${m.numero}`;
+      this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(11);
+      const mw = this.doc.getTextWidth(marcoLabel);
+      const nameText = ` — ${String(m.nome || "")}`;
+      // Compute dynamic right-reserved width: risk badge + MVP badge + duracao
+      this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8.5);
+      let rightReserve = 0;
+      if (m.risco) rightReserve += this.doc.getTextWidth(String(m.risco).toUpperCase()) + 8 + 4;
+      if (isMvp) rightReserve += this.doc.getTextWidth("MVP") + 8 + 4;
+      if (m.duracao) {
+        this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(8.5);
+        rightReserve += this.doc.getTextWidth(String(m.duracao)) + 8;
+      }
+      const nameLines = this.measureLines(nameText, innerW - mw - rightReserve - 8, 11, "helvetica", "bold");
+      const hasFeat = Array.isArray(m.features) && m.features.length > 0;
+      const featLines = hasFeat ? m.features.reduce((acc: number, f: any) => acc + this.measureLines(String(f), innerW - 12, 9.5), 0) : 0;
+      const hasCrit = !!m.criterio_aceitacao;
+      const critLines = hasCrit ? this.measureLines(String(m.criterio_aceitacao), innerW, 9.5) : 0;
+      const hasDemo = !!m.demo;
+      const demoLines = hasDemo ? this.measureLines(String(m.demo), innerW, 9.5) : 0;
+      const hasDeps = Array.isArray(m.dependencias) && m.dependencias.length > 0;
+      const totalH = 10 + nameLines * 13
+        + (hasFeat ? 4 + 10 + featLines * 11.5 : 0)
+        + (hasCrit ? 4 + 10 + critLines * 11.5 : 0)
+        + (hasDemo ? 4 + 10 + demoLines * 11.5 : 0)
+        + (hasDeps ? 4 + 10 : 0)
+        + 10;
+      const { innerX, innerW: iW, startY } = this.cardOpen(totalH, isMvp ? ACCENT : PRIMARY);
+      let yy = startY;
+      this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(11); this.doc.setTextColor(PRIMARY);
+      this.doc.text(marcoLabel, innerX, yy);
+      const { lines: nl, lineH: nlh } = this.wrapText(nameText, iW - mw - rightReserve - 8, 11, "helvetica", "bold");
+      this.doc.setTextColor(FG);
+      this.doc.text(nl[0] || "", innerX + mw, yy);
+      let rx = innerX + iW;
+      if (m.risco) {
+        const t = String(m.risco).toUpperCase();
+        const bw = this.doc.getTextWidth(t) + 8;
+        rx -= bw;
+        this.drawBadge(t, rx, yy, riskColor);
+        rx -= 4;
+      }
+      if (isMvp) {
+        const t = "MVP";
+        const bw = this.doc.getTextWidth(t) + 8;
+        rx -= bw;
+        this.drawBadge(t, rx, yy, ACCENT);
+        rx -= 4;
+      }
+      if (m.duracao) {
+        this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(8.5); this.doc.setTextColor(MUTED);
+        const dText = String(m.duracao);
+        const dw = this.doc.getTextWidth(dText);
+        rx -= dw;
+        this.doc.text(dText, rx, yy);
+      }
+      yy += nlh;
+      for (let k = 1; k < nl.length; k++) {
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(11); this.doc.setTextColor(FG);
+        this.doc.text(nl[k], innerX, yy);
+        yy += nlh;
+      }
+      if (hasFeat) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8); this.doc.setTextColor(MUTED);
+        this.doc.text("FEATURES", innerX, yy); yy += 10;
+        for (const f of m.features) {
+          const { lines: fl, lineH: flh } = this.wrapText(String(f), iW - 12, 9.5);
+          this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(9.5); this.doc.setTextColor(PRIMARY);
+          this.doc.text("•", innerX, yy);
+          this.doc.setTextColor(FG);
+          for (let k = 0; k < fl.length; k++) { this.doc.text(fl[k], innerX + 10, yy); yy += flh; }
+        }
+      }
+      if (hasCrit) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8); this.doc.setTextColor(MUTED);
+        this.doc.text("CRITÉRIO DE ACEITAÇÃO", innerX, yy); yy += 10;
+        const { lines: cl, lineH: clh } = this.wrapText(String(m.criterio_aceitacao), iW, 9.5);
+        this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(9.5); this.doc.setTextColor(FG);
+        for (const ln of cl) { this.doc.text(ln, innerX, yy); yy += clh; }
+      }
+      if (hasDemo) {
+        yy += 4;
+        this.doc.setFont("helvetica", "bold"); this.doc.setFontSize(8); this.doc.setTextColor(MUTED);
+        this.doc.text("DEMO", innerX, yy); yy += 10;
+        const { lines: dl, lineH: dlh } = this.wrapText(String(m.demo), iW, 9.5);
+        this.doc.setFont("helvetica", "italic"); this.doc.setFontSize(9.5); this.doc.setTextColor(FG);
+        for (const ln of dl) { this.doc.text(ln, innerX, yy); yy += dlh; }
+      }
+      if (hasDeps) {
+        yy += 4;
+        this.doc.setFont("helvetica", "normal"); this.doc.setFontSize(8.5); this.doc.setTextColor(MUTED);
+        this.doc.text(`Depende de: ${m.dependencias.join(", ")}`, innerX, yy);
+        yy += 10;
+      }
+      this.cardClose(totalH);
+    }
+  }
+
   private drawTokens(tokens: LineToken[], x: number, w: number = CONTENT_W - (x - MARGIN_X)) {
     const lineH = 13;
     const fontSize = 10.5;
@@ -301,7 +627,9 @@ class PdfRenderer {
     while (i < lines.length) {
       const ln = lines[i];
       // Code block
-      if (/^```/.test(ln)) {
+      const fence = ln.match(/^```(\w+)?\s*$/);
+      if (fence) {
+        const lang = (fence[1] || "").toLowerCase();
         const buf: string[] = [];
         i++;
         while (i < lines.length && !/^```/.test(lines[i])) {
@@ -309,7 +637,13 @@ class PdfRenderer {
           i++;
         }
         i++; // skip closing fence
-        if (buf.length) this.drawCode(buf);
+        if (buf.length) {
+          if (lang === "json" && this.tryDrawStructured(buf.join("\n"))) {
+            // rendered as structured table
+          } else {
+            this.drawCode(buf);
+          }
+        }
         inList = false;
         continue;
       }

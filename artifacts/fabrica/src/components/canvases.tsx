@@ -1949,6 +1949,17 @@ const ESFORCO_STYLE: Record<string, string> = {
   G: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
 };
 
+const ESFORCO_CYCLE: Array<"P" | "M" | "G"> = ["P", "M", "G"];
+function cycleEsforco(cur?: "P" | "M" | "G"): "P" | "M" | "G" {
+  if (!cur) return "P";
+  const i = ESFORCO_CYCLE.indexOf(cur);
+  return ESFORCO_CYCLE[(i + 1) % ESFORCO_CYCLE.length];
+}
+function cyclePrioridade(cur?: number): number {
+  if (!cur || cur < 1 || cur > 5) return 1;
+  return cur === 5 ? 1 : cur + 1;
+}
+
 function prioStyle(p?: number): string {
   if (!p) return "bg-secondary text-muted-foreground border-border";
   if (p <= 2) return "bg-accent/15 text-accent-foreground dark:text-accent border-accent/40";
@@ -1981,6 +1992,8 @@ export function UserStoriesCanvas({
   const [overPos, setOverPos] = useState<"before" | "after">("before");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filterEpico, setFilterEpico] = useState<string | "all">("all");
+  const [filterPrio, setFilterPrio] = useState<number | "all">("all");
   const { toast } = useToast();
   const updateArtifact = useUpdateArtifact();
 
@@ -2039,7 +2052,7 @@ export function UserStoriesCanvas({
       { projectId: projectId!, phaseNumber: phaseNumber!, artifactKey: artifactKey!, data: { content: newContent, contentJson: null } },
       {
         onSuccess: () => {
-          toast({ title: "Stories reordenadas", description: `${items.length} stories atualizadas.` });
+          toast({ title: "Stories atualizadas", description: `${items.length} stories salvas.` });
           setDirty(false);
           setSaving(false);
           onUpdate?.();
@@ -2053,26 +2066,95 @@ export function UserStoriesCanvas({
   }
 
   const epicos = Array.from(new Set(items.map((s) => s.epico).filter(Boolean))) as string[];
+  const filterActive = filterEpico !== "all" || filterPrio !== "all";
+  const dragEnabled = canDrag && !filterActive;
+  const displayItems = items
+    .map((s, idx) => ({ s, idx }))
+    .filter(({ s }) => (filterEpico === "all" || s.epico === filterEpico) && (filterPrio === "all" || s.prioridade === filterPrio));
 
   return (
     <div className="space-y-4">
       <div className="flex items-baseline justify-between flex-wrap gap-3">
-        <h4 className="font-serif text-base">{items.length} user stories{epicos.length > 0 && <span className="text-muted-foreground font-sans"> · {epicos.length} épicos</span>}</h4>
-        {canDrag && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">Arraste para repriorizar</span>}
+        <h4 className="font-serif text-base">
+          {displayItems.length === items.length ? `${items.length} user stories` : `${displayItems.length} de ${items.length} stories`}
+          {epicos.length > 0 && <span className="text-muted-foreground font-sans"> · {epicos.length} épicos</span>}
+        </h4>
+        {canDrag && (
+          <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">
+            {dragEnabled ? "Arraste para repriorizar" : "Limpe filtros para reordenar"}
+          </span>
+        )}
       </div>
+      {(epicos.length > 0 || items.some((s) => s.prioridade != null)) && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {epicos.length > 0 && (
+            <>
+              <span className="text-[10px] font-mono uppercase text-muted-foreground mr-1">Épico:</span>
+              <button
+                type="button"
+                onClick={() => setFilterEpico("all")}
+                className={`text-[11px] px-2 py-0.5 rounded-full border transition-all ${filterEpico === "all" ? "bg-primary text-white border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}
+                data-testid="filter-epico-all"
+              >Todos</button>
+              {Array.from(new Set([...epicos, ...(filterEpico !== "all" ? [filterEpico] : [])])).map((ep) => (
+                <button
+                  key={ep}
+                  type="button"
+                  onClick={() => setFilterEpico(ep)}
+                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-all ${filterEpico === ep ? "bg-primary text-white border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}
+                  data-testid={`filter-epico-${ep}`}
+                >{ep}</button>
+              ))}
+            </>
+          )}
+          {items.some((s) => s.prioridade != null) && (
+            <>
+              <span className="text-[10px] font-mono uppercase text-muted-foreground ml-3 mr-1">Prioridade:</span>
+              <button
+                type="button"
+                onClick={() => setFilterPrio("all")}
+                className={`text-[11px] px-2 py-0.5 rounded-full border transition-all ${filterPrio === "all" ? "bg-primary text-white border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}
+                data-testid="filter-prio-all"
+              >Todas</button>
+              {[1, 2, 3, 4, 5].filter((p) => items.some((s) => s.prioridade === p) || filterPrio === p).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setFilterPrio(p)}
+                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-all ${filterPrio === p ? "bg-primary text-white border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/40"}`}
+                  data-testid={`filter-prio-${p}`}
+                >P{p}</button>
+              ))}
+            </>
+          )}
+          {filterActive && (
+            <button
+              type="button"
+              onClick={() => { setFilterEpico("all"); setFilterPrio("all"); }}
+              className="text-[11px] px-2 py-0.5 rounded-full text-muted-foreground hover:text-foreground ml-2"
+              data-testid="filter-clear"
+            >Limpar</button>
+          )}
+        </div>
+      )}
+      {displayItems.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          Nenhuma story corresponde aos filtros.
+        </div>
+      ) : (
       <div className="space-y-2">
-        {items.map((s, idx) => {
+        {displayItems.map(({ s, idx }) => {
           const isDragging = dragIdx === idx;
           const isOver = overIdx === idx && dragIdx !== null && dragIdx !== idx;
           return (
             <div
               key={s.id || `story-${idx}`}
               className={`relative transition-all ${isDragging ? "opacity-40" : ""}`}
-              draggable={canDrag}
-              onDragStart={canDrag ? (e) => onDragStart(e, idx) : undefined}
-              onDragOver={canDrag ? (e) => onDragOver(e, idx) : undefined}
-              onDrop={canDrag ? (e) => onDrop(e, idx) : undefined}
-              onDragEnd={canDrag ? onDragEnd : undefined}
+              draggable={dragEnabled}
+              onDragStart={dragEnabled ? (e) => onDragStart(e, idx) : undefined}
+              onDragOver={dragEnabled ? (e) => onDragOver(e, idx) : undefined}
+              onDrop={dragEnabled ? (e) => onDrop(e, idx) : undefined}
+              onDragEnd={dragEnabled ? onDragEnd : undefined}
               data-testid={`user-story-row-${idx}`}
             >
               {isOver && overPos === "before" && <div className="absolute left-0 right-0 -top-1 h-0.5 bg-accent rounded" aria-hidden="true" />}
@@ -2080,18 +2162,44 @@ export function UserStoriesCanvas({
               <details className={`rounded-xl border bg-card group ${canDrag ? "border-border hover:border-primary/40" : "border-border"}`}>
                 <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
                   {canDrag && (
-                    <span className="cursor-grab active:cursor-grabbing text-muted-foreground select-none" aria-label="Arrastar story" title="Arrastar para reordenar" onClick={(e) => e.preventDefault()}>
+                    <span className={`select-none ${dragEnabled ? "cursor-grab active:cursor-grabbing text-muted-foreground" : "cursor-not-allowed text-muted-foreground/30"}`} aria-label={dragEnabled ? "Arrastar story" : "Limpe filtros para arrastar"} title={dragEnabled ? "Arrastar para reordenar" : "Limpe filtros para arrastar"} onClick={(e) => e.preventDefault()}>
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
                     </span>
                   )}
-                  {s.prioridade != null && <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${prioStyle(s.prioridade)}`}>P{s.prioridade}</span>}
+                  {s.prioridade != null && (
+                    canDrag ? (
+                      <button
+                        type="button"
+                        className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all ${prioStyle(s.prioridade)}`}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); const next = [...items]; next[idx] = { ...s, prioridade: cyclePrioridade(s.prioridade) }; setItems(next); setDirty(true); }}
+                        aria-label={`Prioridade ${s.prioridade}, clique para alterar`}
+                        title="Clique para alterar prioridade (1-5)"
+                        data-testid={`button-user-story-prio-${idx}`}
+                      >P{s.prioridade}</button>
+                    ) : (
+                      <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${prioStyle(s.prioridade)}`}>P{s.prioridade}</span>
+                    )
+                  )}
                   <span className="font-mono text-[11px] text-muted-foreground">{s.id}</span>
                   <span className="flex-1 text-sm text-foreground truncate">
                     <span className="text-muted-foreground">Como </span><strong>{s.persona}</strong>
                     <span className="text-muted-foreground">, quero </span>{s.acao}
                   </span>
                   {s.epico && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">{s.epico}</span>}
-                  {s.esforco && <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${ESFORCO_STYLE[s.esforco] ?? ESFORCO_STYLE.M}`}>{s.esforco}</span>}
+                  {s.esforco && (
+                    canDrag ? (
+                      <button
+                        type="button"
+                        className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all ${ESFORCO_STYLE[s.esforco] ?? ESFORCO_STYLE.M}`}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); const next = [...items]; next[idx] = { ...s, esforco: cycleEsforco(s.esforco) }; setItems(next); setDirty(true); }}
+                        aria-label={`Esforço ${s.esforco}, clique para alterar`}
+                        title="Clique para alterar esforço (P/M/G)"
+                        data-testid={`button-user-story-esforco-${idx}`}
+                      >{s.esforco}</button>
+                    ) : (
+                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${ESFORCO_STYLE[s.esforco] ?? ESFORCO_STYLE.M}`}>{s.esforco}</span>
+                    )
+                  )}
                   <svg className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="6 9 12 15 18 9" /></svg>
                 </summary>
                 <div className="px-4 pb-3 pt-2 border-t border-border space-y-2 text-sm">
@@ -2114,12 +2222,13 @@ export function UserStoriesCanvas({
           );
         })}
       </div>
+      )}
       {canDrag && dirty && (
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
           <span className="text-xs text-muted-foreground mr-auto">Alterações não salvas</span>
           <Button variant="outline" size="sm" onClick={reset} disabled={saving} data-testid="button-user-stories-reset">Desfazer</Button>
           <Button size="sm" onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-user-stories-save">
-            {saving ? "Salvando…" : "Salvar ordem"}
+            {saving ? "Salvando…" : "Salvar alterações"}
           </Button>
         </div>
       )}
@@ -2229,7 +2338,7 @@ export function CasosTesteCanvas({
       { projectId: projectId!, phaseNumber: phaseNumber!, artifactKey: artifactKey!, data: { content: newContent, contentJson: null } },
       {
         onSuccess: () => {
-          toast({ title: "Casos reordenados", description: `${items.length} casos atualizados.` });
+          toast({ title: "Casos atualizados", description: `${items.length} casos salvos.` });
           setDirty(false);
           setSaving(false);
           onUpdate?.();
@@ -2284,7 +2393,22 @@ export function CasosTesteCanvas({
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
                     </span>
                   )}
-                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${PRIO_STYLE[c.prioridade] ?? PRIO_STYLE.P2}`}>{c.prioridade}</span>
+                  {canDrag ? (
+                    <button
+                      type="button"
+                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all ${PRIO_STYLE[c.prioridade] ?? PRIO_STYLE.P2}`}
+                      onClick={(e) => {
+                        e.preventDefault(); e.stopPropagation();
+                        const nextPrio = c.prioridade === "P0" ? "P1" : c.prioridade === "P1" ? "P2" : "P0";
+                        const next = [...items]; next[idx] = { ...c, prioridade: nextPrio }; setItems(next); setDirty(true);
+                      }}
+                      aria-label={`Prioridade ${c.prioridade}, clique para alterar`}
+                      title="Clique para alterar prioridade (P0/P1/P2)"
+                      data-testid={`button-caso-teste-prio-${idx}`}
+                    >{c.prioridade}</button>
+                  ) : (
+                    <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${PRIO_STYLE[c.prioridade] ?? PRIO_STYLE.P2}`}>{c.prioridade}</span>
+                  )}
                   <span className="font-mono text-[11px] text-muted-foreground">{c.id}</span>
                   <span className="flex-1 text-sm text-foreground">{c.titulo}</span>
                   {c.tipo && <span className="text-[10px] font-mono uppercase text-muted-foreground">{c.tipo}</span>}
@@ -2317,7 +2441,7 @@ export function CasosTesteCanvas({
           <span className="text-xs text-muted-foreground mr-auto">Alterações não salvas</span>
           <Button variant="outline" size="sm" onClick={reset} disabled={saving} data-testid="button-casos-teste-reset">Desfazer</Button>
           <Button size="sm" onClick={save} disabled={saving} className="bg-primary hover:bg-primary/90 text-white" data-testid="button-casos-teste-save">
-            {saving ? "Salvando…" : "Salvar ordem"}
+            {saving ? "Salvando…" : "Salvar alterações"}
           </Button>
         </div>
       )}
