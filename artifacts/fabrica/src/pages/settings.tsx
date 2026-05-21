@@ -141,6 +141,15 @@ export function SettingsPage() {
                     {clerkUser?.emailAddresses?.[0]?.emailAddress ?? "—"}
                   </div>
                 </div>
+                <div>
+                  <Label className="text-sm font-medium">Contato administrativo</Label>
+                  <div className="mt-1.5 text-sm">
+                    <a href="mailto:contato@foundersflow.com.br" className="text-primary hover:underline">
+                      contato@foundersflow.com.br
+                    </a>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Canal oficial para questões administrativas, financeiras e comerciais.</p>
+                </div>
                 <Button
                   onClick={handleSave}
                   disabled={!displayName.trim() || updateSettings.isPending}

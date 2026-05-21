@@ -149,6 +149,16 @@ export function PrivacyPage() {
             <p className="text-sm text-muted-foreground leading-relaxed mb-3">
               Para qualquer questão relacionada à privacidade ou exercício dos seus direitos LGPD:
             </p>
+            <div className="grid gap-2 text-sm mb-4">
+              <div>
+                <strong className="text-foreground">Contato geral:</strong>{" "}
+                <a href="mailto:contato@foundersflow.com.br" className="text-primary hover:underline">contato@foundersflow.com.br</a>
+              </div>
+              <div>
+                <strong className="text-foreground">Encarregado (DPO):</strong>{" "}
+                <a href="mailto:privacidade@foundersflow.com.br" className="text-primary hover:underline">privacidade@foundersflow.com.br</a>
+              </div>
+            </div>
             <div className="flex gap-3 flex-wrap">
               <Link href="/atendimento">
                 <button className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">

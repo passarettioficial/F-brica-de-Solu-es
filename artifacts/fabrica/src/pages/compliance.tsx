@@ -708,6 +708,7 @@ function IncidentesTab() {
         <Table
           headers={["Papel", "Contato", "Quando acionar"]}
           rows={[
+            ["Contato geral / Atendimento", "contato@foundersflow.com.br", "Dúvidas comerciais, suporte e contato administrativo"],
             ["DPO / Encarregado LGPD", "privacidade@foundersflow.com.br", "Todo incidente P0 ou P1 — responsável pela notificação à ANPD"],
             ["Engenharia (on-call)", "Canal #incidentes (Slack interno)", "Todo incidente P0 ou P1 imediatamente"],
             ["Stripe Support", "dashboard.stripe.com → Support", "Incidentes envolvendo webhooks ou dados de pagamento"],

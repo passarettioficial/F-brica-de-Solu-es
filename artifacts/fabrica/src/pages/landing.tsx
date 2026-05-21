@@ -21,6 +21,8 @@ const faqs = [
   { q: "Posso evoluir depois?", a: "Sim. O upgrade acontece dentro do produto." },
 ];
 
+const CONTACT_EMAIL = "contato@foundersflow.com.br";
+
 const footerLinks = [
   { href: "/pricing", label: "Preços" },
   { href: "/privacidade", label: "Privacidade" },
@@ -163,6 +165,15 @@ export function LandingPage() {
                   </div>
                 </Link>
               ))}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="rounded-xl border border-border/70 px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors break-all"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Contato geral: <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>
             </div>
           </div>
         </section>

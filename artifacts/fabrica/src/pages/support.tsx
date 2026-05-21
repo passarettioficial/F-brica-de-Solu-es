@@ -149,17 +149,20 @@ export function SupportPage() {
             <span className="text-xs text-[#25D366] font-medium mt-2 block">Abrir conversa →</span>
           </a>
 
-          <div className="bg-card border border-card-border rounded-2xl p-6">
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
+          <a
+            href="mailto:contato@foundersflow.com.br"
+            className="bg-card border border-card-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-md transition-all group block"
+          >
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
                 <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
               </svg>
             </div>
-            <h3 className="font-medium text-foreground mb-1">E-mail / Ticket</h3>
-            <p className="text-sm text-muted-foreground">Preencha o formulário abaixo e receba a resposta por e-mail</p>
-            <span className="text-xs text-primary font-medium mt-2 block">Ver formulário ↓</span>
-          </div>
+            <h3 className="font-medium text-foreground mb-1">E-mail direto</h3>
+            <p className="text-sm text-muted-foreground break-all">contato@foundersflow.com.br</p>
+            <span className="text-xs text-primary font-medium mt-2 block">Abrir cliente de e-mail →</span>
+          </a>
 
           <div className="bg-card border border-card-border rounded-2xl p-6">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
