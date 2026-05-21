@@ -776,6 +776,45 @@ export function PhasePage() {
           )}
         </div>
 
+        {/* Método FoundersFlow — upgrade banner for legacy projects */}
+        {(() => {
+          if (!phaseDef?.artifacts?.length || !hasArtifacts || isLocked || generating) return null;
+          const LEGACY_KEYS = ["SWOT", "PERSONAS"];
+          const expectedKeys = new Set(phaseDef.artifacts.map((a) => a.key));
+          const hasLegacy = artifacts.some((a) => LEGACY_KEYS.includes(a.artifactKey) && a.content?.trim());
+          const missingNew = phaseDef.artifacts.some((a) => !artifacts.find((art) => art.artifactKey === a.key && art.content?.trim()));
+          const hasUnknown = artifacts.some((a) => !expectedKeys.has(a.artifactKey) && !LEGACY_KEYS.includes(a.artifactKey) && a.content?.trim());
+          if (!hasLegacy && !(missingNew && hasUnknown)) return null;
+          return (
+            <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-accent/10 to-transparent p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-xl">✨</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-accent font-bold">Método FoundersFlow · atualização disponível</span>
+                  </div>
+                  <h3 className="font-serif text-base text-foreground mb-1">Este projeto usa o método anterior</h3>
+                  <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                    A Fase {phaseNumber} ganhou novos canvases visuais (
+                    {phaseNumber === 1 ? "Seletor de Nicho, Matriz Competitiva 2×2" : "Cartão de Persona, Mapa de Decisão de Compra, Valor Quantificado, LTV ÷ CAC"}
+                    ). Regenerar substitui os artefatos antigos pelo método atualizado — você pode baixar os atuais antes se quiser.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleExecuteAI}
+                      className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold"
+                    >
+                      Atualizar para Método FoundersFlow
+                    </Button>
+                    <span className="text-[11px] text-muted-foreground self-center">consome 1 geração de IA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Phase Preview — shown before first generation */}
         {!hasArtifacts && !isLocked && phaseDef?.artifacts && phaseDef.artifacts.length > 0 && (
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
