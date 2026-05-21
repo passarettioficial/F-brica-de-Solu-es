@@ -27,6 +27,7 @@ import {
   ValorQuantificadoCanvas,
   LtvCacCanvas,
   EditableLtvCacCanvas,
+  EditableScorePotencialCanvas,
   MatrizRbacCanvas,
   ModeloDadosCanvas,
   MilestonesCanvas,
@@ -90,51 +91,6 @@ function LeanCanvas({ content }: { content: string }) {
           <div className="text-xs text-foreground leading-snug">{data[block.key] ?? <span className="text-muted-foreground italic">—</span>}</div>
         </div>
       ))}
-    </div>
-  );
-}
-
-function ScorePotencial({ content }: { content: string }) {
-  const data = parseJsonBlock<Record<string, any>>(content) ?? {};
-
-  if (!data.desejabilidade) return <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{content}</div>;
-
-  const dims = ["desejabilidade", "viabilidade", "factibilidade", "escalabilidade", "timing"];
-  const rec = data.recomendacao as string;
-  const recColors: Record<string, string> = {
-    "AVANCAR": "bg-primary/10 text-primary border-primary/30",
-    "PIVOTAR": "bg-accent/10 text-accent-foreground border-accent/30",
-    "ABANDONAR": "bg-red-950/20 text-red-400 border-red-800/50",
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-5 gap-2">
-        {dims.map((dim) => (
-          <div key={dim} className="text-center">
-            <div className="text-2xl font-bold text-primary">{data[dim] ?? "—"}</div>
-            <div className="text-[10px] text-muted-foreground capitalize mt-0.5">{dim}</div>
-            {data.justificativas?.[dim] && <div className="text-[10px] text-foreground mt-1 leading-snug">{data.justificativas[dim]}</div>}
-          </div>
-        ))}
-      </div>
-      {rec && (
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${recColors[rec] ?? "bg-muted text-muted-foreground"}`}>
-          Recomendação: {rec}
-        </div>
-      )}
-      {data.proximos_passos?.length > 0 && (
-        <div>
-          <div className="text-xs font-medium mb-1">Próximos passos</div>
-          <ul className="space-y-0.5">
-            {data.proximos_passos.map((step: string, i: number) => (
-              <li key={i} className="text-xs text-foreground flex gap-2">
-                <span className="text-primary flex-shrink-0">{i + 1}.</span><span>{step}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
@@ -344,7 +300,16 @@ const ArtifactCard = memo(function ArtifactCard({
               ) : isLeanCanvas ? (
                 <ProtectWrap protect={!canCopy}><LeanCanvas content={artifact.content} /></ProtectWrap>
               ) : isScorePotencial ? (
-                <ProtectWrap protect={!canCopy}><ScorePotencial content={artifact.content} /></ProtectWrap>
+                <ProtectWrap protect={!canCopy}>
+                  <EditableScorePotencialCanvas
+                    content={artifact.content}
+                    projectId={projectId}
+                    phaseNumber={phaseNumber}
+                    artifactKey={artifact.artifactKey}
+                    canEdit={canCopy}
+                    onUpdate={onUpdate}
+                  />
+                </ProtectWrap>
               ) : isSeletorNicho ? (
                 <ProtectWrap protect={!canCopy}><SeletorNichoCanvas content={artifact.content} /></ProtectWrap>
               ) : isMatrizComp ? (
