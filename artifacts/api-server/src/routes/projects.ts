@@ -13,6 +13,7 @@ import { analyzeProjectCoherence, analyzeMarketPotential } from "../lib/ai";
 import { logEvent } from "../lib/events";
 import { createNotification } from "../lib/notifications";
 import { seedDemoProject } from "../lib/demoSeed";
+import { buildProjectArtifactContext } from "../lib/project-context";
 
 const router: IRouter = Router();
 
@@ -631,20 +632,7 @@ router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> =
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
-  const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
-  const lines: string[] = [];
-  for (const phase of phases.sort((a, b) => a.phaseNumber - b.phaseNumber)) {
-    const artifacts = await db.select().from(phaseArtifactsTable)
-      .where(eq(phaseArtifactsTable.phaseId, phase.id));
-    const filled = artifacts.filter(a => a.content?.trim());
-    if (filled.length > 0) {
-      lines.push(`=== FASE ${phase.phaseNumber} ===`);
-      for (const a of filled) {
-        lines.push(`[${a.artifactKey}]\n${a.content.slice(0, 1500)}`);
-      }
-    }
-  }
-  const artifactContext = lines.join("\n\n");
+  const artifactContext = await buildProjectArtifactContext(id, 1500);
 
   if (!artifactContext.trim()) {
     res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;
@@ -682,20 +670,7 @@ router.post("/projects/:id/potential/analyze", async (req, res): Promise<void> =
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
-  const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, id));
-  const lines: string[] = [];
-  for (const phase of phases.sort((a, b) => a.phaseNumber - b.phaseNumber)) {
-    const artifacts = await db.select().from(phaseArtifactsTable)
-      .where(eq(phaseArtifactsTable.phaseId, phase.id));
-    const filled = artifacts.filter(a => a.content?.trim());
-    if (filled.length > 0) {
-      lines.push(`=== FASE ${phase.phaseNumber} ===`);
-      for (const a of filled) {
-        lines.push(`[${a.artifactKey}]\n${a.content.slice(0, 1200)}`);
-      }
-    }
-  }
-  const artifactContext = lines.join("\n\n");
+  const artifactContext = await buildProjectArtifactContext(id, 1200);
 
   if (!artifactContext.trim()) {
     res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;

@@ -55,6 +55,28 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 - **Recomendação dinâmica:** `recommendedPlanId = requestedPlan ?? UPGRADE_COPY[reason].recommended` (default ai→founder, projects→founder, seats→studio). Card recomendado ganha borda accent + ring-2 + shadow-xl + badge laranja "Recomendado para você" (substitui o badge default), e auto-scrollIntoView center após 250ms.
 - **Banner topo:** `role=status aria-live=polite`, ícone ↑ accent, copy contextual, `data-testid="upgrade-banner-{reason}"`.
 
+### Auto-save em edição inline de artefatos
+
+- **Componente:** `ArtifactCard` em `artifacts/fabrica/src/pages/phase.tsx`. Adicionado `useEffect` debounced (1500ms) que dispara `updateArtifact.mutate` automaticamente quando `draft !== lastSavedRef.current` durante edição.
+- **Estado visual:** `autoSaveState: "idle" | "saving" | "saved" | "error"` exibido em `<span aria-live="polite" data-testid="autosave-state">` no toolbar de edição.
+- **Beforeunload guard:** segundo `useEffect` registra `beforeunload` listener enquanto há diff não persistido — browser pede confirmação antes de fechar aba.
+- **Botões:** "Fechar" (era "Cancelar") restaura para `lastSavedRef.current` (último persistido, não o original); "Salvar agora" disabled quando draft===last.
+
+### Dedupe coherence/potential
+
+- **Helper:** `artifacts/api-server/src/lib/project-context.ts` exporta `buildProjectArtifactContext(projectId, charLimit)`. Substitui duplicação em `/projects/:id/coherence/analyze` e `/projects/:id/potential/analyze` (era loop fase→artefatos→slice em ambos).
+
+### Landing v2 (conversão + prova social)
+
+- **Hero:** headline com transformação clara ("Da ideia ao produto validado em 7 fases"), subheading explicando o método. CTA primário accent laranja "Começar grátis →" + secundário "Ver projeto demo (sem cadastro)" se `VITE_DEMO_SHARE_ID` configurado (fallback "Explorar templates").
+- **Output sample card:** mockup de PRD GestaoPro com chrome de janela (3 dots), badge "Exemplo de output" + chips PRD/Markdown/PDF — mostra produto antes de cadastro.
+- **Proof bar:** 3 stats (45+ artefatos, 7 fases, <5min) com `stat-shimmer` em primary.
+- **7 phases grid:** lista nominal de cada fase com descrição curta (Ideia, PRD, Segurança, Spec, Execução, Testes, Lançamento) — explicita o método.
+- **Testimonials section:** 3 cards em `bg-foreground` com depoimentos placeholder de personas reais (founder SaaS B2B, CTO em transição, founder solo healthtech). **Substituir por depoimentos reais quando disponíveis.**
+- **FAQ atualizado:** 4 perguntas concretas (cartão, vertical, exportação, LGPD).
+- **CTA final:** card centralizado com "Sua próxima ideia merece um plano de verdade" + accent button.
+- **Setup demo público:** admin gera share de um projeto demo via UI (`/projects/:id` → Colaboração → "Gerar link"), pega o `shareId` retornado e define `VITE_DEMO_SHARE_ID=<id>` no env do fabrica antes do build.
+
 ### ⌘K Command Palette
 
 - **Componente:** `components/command-palette.tsx` montado globalmente em `App.tsx` ao lado de `PaywallModal`.

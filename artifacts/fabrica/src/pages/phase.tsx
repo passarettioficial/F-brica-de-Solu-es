@@ -208,8 +208,60 @@ const ArtifactCard = memo(function ArtifactCard({
   const [draft, setDraft] = useState(artifact.content);
   const [downloaded, setDownloaded] = useState(!!artifact.downloadedAt);
   const [showHistory, setShowHistory] = useState(false);
+  const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [userDirty, setUserDirty] = useState(false);
+  const lastSavedRef = useRef(artifact.content);
+  const saveReqIdRef = useRef(0);
+  const latestReqIdRef = useRef(0);
   const { toast } = useToast();
   const updateArtifact = useUpdateArtifact();
+
+  // Sync lastSavedRef + draft when artifact.content changes from server (regen, restore, external update)
+  // — but only when user is NOT actively editing with unsaved changes.
+  useEffect(() => {
+    if (editing && userDirty) return;
+    lastSavedRef.current = artifact.content;
+    setDraft(artifact.content);
+  }, [artifact.content, editing, userDirty]);
+
+  // Auto-save debounced (1500ms) — only fires after user actually types in this edit session
+  useEffect(() => {
+    if (!editing || !userDirty) return;
+    if (draft === lastSavedRef.current) return;
+    setAutoSaveState("saving");
+    const t = setTimeout(() => {
+      const reqId = ++saveReqIdRef.current;
+      latestReqIdRef.current = reqId;
+      const snapshot = draft;
+      updateArtifact.mutate(
+        { projectId, phaseNumber, artifactKey: artifact.artifactKey, data: { content: snapshot, contentJson: null } },
+        {
+          onSuccess: () => {
+            // Ignore stale responses — only the most recent request wins
+            if (reqId !== latestReqIdRef.current) return;
+            lastSavedRef.current = snapshot;
+            setAutoSaveState("saved");
+            onUpdate();
+          },
+          onError: () => {
+            if (reqId !== latestReqIdRef.current) return;
+            setAutoSaveState("error");
+          },
+        }
+      );
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [draft, editing, userDirty, projectId, phaseNumber, artifact.artifactKey, updateArtifact, onUpdate]);
+
+  // Warn before unload while there are real unsaved edits
+  useEffect(() => {
+    if (!editing || !userDirty) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (draft !== lastSavedRef.current) { e.preventDefault(); e.returnValue = ""; }
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [editing, userDirty, draft]);
 
   const isLeanCanvas = phaseNumber === 1 && artifact.artifactKey === "LEAN_CANVAS";
   const isScorePotencial = phaseNumber === 1 && artifact.artifactKey === "SCORE_POTENCIAL";
@@ -305,14 +357,28 @@ const ArtifactCard = memo(function ArtifactCard({
             <div className="space-y-3">
               <Textarea
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => { setDraft(e.target.value); setUserDirty(true); }}
                 className="min-h-[240px] text-sm font-mono"
                 aria-label={`Editar ${meta?.label ?? artifact.artifactKey}`}
               />
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => { setEditing(false); setDraft(artifact.content); }}>Cancelar</Button>
-                <Button size="sm" onClick={save} disabled={updateArtifact.isPending} className="bg-primary hover:bg-primary/90 text-white">
-                  {updateArtifact.isPending ? "Salvando..." : "Salvar"}
+              <div className="flex gap-2 justify-end items-center">
+                <span
+                  className={`text-xs mr-auto transition-opacity ${
+                    autoSaveState === "saving" ? "text-muted-foreground" :
+                    autoSaveState === "saved" ? "text-primary" :
+                    autoSaveState === "error" ? "text-red-600 dark:text-red-400" :
+                    "opacity-0"
+                  }`}
+                  aria-live="polite"
+                  data-testid="autosave-state"
+                >
+                  {autoSaveState === "saving" && "Salvando…"}
+                  {autoSaveState === "saved" && "✓ Salvo automaticamente"}
+                  {autoSaveState === "error" && "Falha ao salvar — tente novamente"}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => { setEditing(false); setDraft(lastSavedRef.current); setUserDirty(false); setAutoSaveState("idle"); }}>Fechar</Button>
+                <Button size="sm" onClick={save} disabled={updateArtifact.isPending || draft === lastSavedRef.current} className="bg-primary hover:bg-primary/90 text-white">
+                  {updateArtifact.isPending ? "Salvando..." : "Salvar agora"}
                 </Button>
               </div>
             </div>
@@ -439,7 +505,7 @@ const ArtifactCard = memo(function ArtifactCard({
                     </Link>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="text-xs" onClick={() => { setEditing(true); setDraft(artifact.content); }}>
+                      <Button variant="outline" size="sm" className="text-xs" onClick={() => { setEditing(true); setDraft(artifact.content); lastSavedRef.current = artifact.content; setUserDirty(false); setAutoSaveState("idle"); }}>
                         Editar
                       </Button>
                       <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-primary" onClick={() => setShowHistory(true)} data-testid="button-history">
