@@ -33,6 +33,7 @@ import {
   MetricasPosLaunchCanvas,
 } from "@/components/canvases";
 import { deriveGate } from "@/lib/gate-derivations";
+import { deriveArtifactBadge } from "@/lib/artifact-derivations";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -282,6 +283,25 @@ const ArtifactCard = memo(function ArtifactCard({
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-3">
           {isEmpty && <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Não gerado</span>}
+          {!isEmpty && (() => {
+            const badge = deriveArtifactBadge(artifact.artifactKey, artifact.content);
+            if (!badge) return null;
+            const styles = {
+              ok: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
+              warn: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
+              alert: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30",
+            }[badge.state];
+            const icon = badge.state === "ok" ? "✓" : badge.state === "warn" ? "⚠" : "✕";
+            return (
+              <span
+                title={badge.tooltip ?? badge.label}
+                className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full border max-w-[220px] truncate ${styles}`}
+              >
+                <span className="flex-shrink-0">{icon}</span>
+                <span className="truncate">{badge.label}</span>
+              </span>
+            );
+          })()}
           {downloaded && !isEmpty && (
             <span
               title="Artefato já baixado"
