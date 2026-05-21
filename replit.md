@@ -48,6 +48,13 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 - **Frontend:** página `/p/:shareId` (`public-share.tsx`) renderiza header próprio com CTA "Criar meu plano"/"Começar grátis", tabs de fases, ArtifactBody markdown. Meta `robots noindex` no Helmet. UI de share em `project.tsx` aba Colaboração: gerar/copiar/revogar com status visual.
 - **Audit events:** `user.project.shared`, `user.project.unshared`.
 
+### Paywall contextual end-to-end (loop fechado)
+
+- **Trigger sites:** `paywall-modal.tsx` (limite IA — `?upgrade=ai&plan=founder|studio`); `dashboard.tsx` handleCreate `onError` inspeciona `ApiError.status===403 && data.code==="PROJECT_LIMIT_REACHED"` e redireciona para `/pricing?upgrade=projects` com toast informativo. `seats` reservado p/ futuro (sem trigger ainda).
+- **`pricing.tsx`** consome `?upgrade=ai|projects|seats` via wouter `useSearch` + `URLSearchParams`, validação narrow (ignora valores inválidos). Cada reason tem copy própria (`UPGRADE_COPY`): eyebrow + título + descrição + recommended plan.
+- **Recomendação dinâmica:** `recommendedPlanId = requestedPlan ?? UPGRADE_COPY[reason].recommended` (default ai→founder, projects→founder, seats→studio). Card recomendado ganha borda accent + ring-2 + shadow-xl + badge laranja "Recomendado para você" (substitui o badge default), e auto-scrollIntoView center após 250ms.
+- **Banner topo:** `role=status aria-live=polite`, ícone ↑ accent, copy contextual, `data-testid="upgrade-banner-{reason}"`.
+
 ### PDF Export Viral B2B (projeto completo)
 
 - **Cover branded:** banda primary blue 140pt + stripe accent, mark `FOUNDERSFLOW`, título 34pt, dots de progresso das 7 fases (blue=done / outlined=pending), meta block, CTA strip light blue rodapé com `foundersflow.com.br ›`.

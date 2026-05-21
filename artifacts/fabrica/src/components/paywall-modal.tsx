@@ -97,7 +97,7 @@ export function PaywallModal() {
 
   function goToCheckout(planId: string) {
     close();
-    setLocation(`/pricing?upgrade=${planId}`);
+    setLocation(`/pricing?upgrade=ai&plan=${planId}`);
   }
 
   return (

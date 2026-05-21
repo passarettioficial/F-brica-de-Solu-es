@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -8,6 +8,28 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 type BillingCycle = "monthly" | "yearly";
+type UpgradeReason = "ai" | "projects" | "seats";
+
+const UPGRADE_COPY: Record<UpgradeReason, { eyebrow: string; title: string; description: string; recommended: "founder" | "studio" }> = {
+  ai: {
+    eyebrow: "Limite de IA atingido",
+    title: "Libere mais execuções de IA por dia",
+    description: "Você esgotou o limite diário do plano Explorar (3 IAs/dia). Founder libera 30/dia — suficiente para fechar fases inteiras sem esperar.",
+    recommended: "founder",
+  },
+  projects: {
+    eyebrow: "Limite de projetos atingido",
+    title: "Toque mais de um produto ao mesmo tempo",
+    description: "Explorar mantém 1 projeto ativo. Founder libera até 5 e o Studio é ilimitado — ideal para serial founders e consultores.",
+    recommended: "founder",
+  },
+  seats: {
+    eyebrow: "Convide seu time",
+    title: "Compartilhe a construção com o time",
+    description: "Assentos múltiplos só no Studio: até 3 pessoas colaborando no mesmo projeto, com permissões e visibilidade.",
+    recommended: "studio",
+  },
+};
 
 const PLANS = [
   {
@@ -110,6 +132,29 @@ export function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
+  const search = useSearch();
+  const { upgradeReason, requestedPlan } = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const raw = params.get("upgrade");
+    const reason: UpgradeReason | null = raw === "ai" || raw === "projects" || raw === "seats" ? raw : null;
+    const planParam = params.get("plan");
+    const plan = planParam === "founder" || planParam === "studio" ? planParam : null;
+    return { upgradeReason: reason, requestedPlan: plan };
+  }, [search]);
+
+  const recommendedPlanId = upgradeReason
+    ? (requestedPlan ?? UPGRADE_COPY[upgradeReason].recommended)
+    : null;
+
+  const recommendedCardRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!recommendedPlanId) return;
+    const t = setTimeout(() => {
+      recommendedCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+    return () => clearTimeout(t);
+  }, [recommendedPlanId]);
+
   async function handleSubscribe(planId: string) {
     setLoading(planId);
     try {
@@ -171,6 +216,30 @@ export function PricingPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-16">
+        {upgradeReason && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-8 rounded-2xl border border-accent/30 bg-accent/[0.05] p-5 flex items-start gap-4"
+            data-testid={`upgrade-banner-${upgradeReason}`}
+          >
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-accent font-mono font-bold text-sm">
+              ↑
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-accent mb-1">
+                {UPGRADE_COPY[upgradeReason].eyebrow}
+              </div>
+              <div className="font-serif text-lg text-foreground leading-snug mb-1">
+                {UPGRADE_COPY[upgradeReason].title}
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {UPGRADE_COPY[upgradeReason].description}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-10">
           <p className="text-xs font-mono font-semibold text-primary uppercase tracking-[0.22em] mb-3">Planos</p>
           <h1 className="font-serif text-4xl text-foreground mb-4">
@@ -219,16 +288,25 @@ export function PricingPage() {
             const isYearly = cycle === "yearly" && plan.id !== "free";
             const displayPrice = isYearly ? plan.priceYearly : plan.priceMonthly;
             const displayPeriod = isYearly ? plan.periodYearly : plan.period;
+            const isRecommended = recommendedPlanId === plan.id;
             return (
             <div
               key={plan.id}
-              className={`relative rounded-2xl border p-7 flex flex-col ${
-                plan.highlight
+              ref={isRecommended ? recommendedCardRef : undefined}
+              className={`relative rounded-2xl border p-7 flex flex-col transition-all ${
+                isRecommended
+                  ? "border-accent shadow-xl bg-card ring-2 ring-accent/30 ring-offset-2 ring-offset-background"
+                  : plan.highlight
                   ? "border-primary/30 shadow-lg bg-card"
                   : "border-card-border bg-card"
               }`}
+              data-testid={`pricing-plan-${plan.id}${isRecommended ? "-recommended" : ""}`}
             >
-              {plan.badge && (
+              {isRecommended ? (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold bg-accent text-accent-foreground whitespace-nowrap">
+                  Recomendado para você
+                </div>
+              ) : plan.badge && (
                 <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-semibold ${
                   plan.highlight ? "bg-primary text-white" : "bg-foreground text-background"
                 }`}>

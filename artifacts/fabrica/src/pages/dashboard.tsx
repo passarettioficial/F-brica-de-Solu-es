@@ -404,7 +404,17 @@ export function Dashboard() {
         toast({ title: "Projeto criado!", description: `"${project.name}" pronto. Abrindo Fase 1…` });
         setTimeout(() => setLocation(`/projects/${project.id}/phases/1`), 80);
       },
-      onError: () => { toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" }); },
+      onError: (err) => {
+        const status = (err as { status?: number } | null)?.status;
+        const code = (err as { data?: { code?: string } } | null)?.data?.code;
+        if (status === 403 && code === "PROJECT_LIMIT_REACHED") {
+          toast({ title: "Limite de projetos atingido", description: "Redirecionando para os planos…" });
+          setShowNew(false);
+          setTimeout(() => setLocation("/pricing?upgrade=projects"), 300);
+          return;
+        }
+        toast({ title: "Erro ao criar projeto", description: "Tente novamente em alguns instantes.", variant: "destructive" });
+      },
     });
   }
 
