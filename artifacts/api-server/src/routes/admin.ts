@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, desc, count, sql, gte, and, isNull } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable, phasesTable, phaseArtifactsTable } from "@workspace/db";
+import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable, phasesTable, phaseArtifactsTable, artifactFeedbackTable } from "@workspace/db";
 import { requireAdmin } from "../lib/adminAuth";
 import { logger } from "../lib/logger";
 import { auditLog } from "../lib/audit";
@@ -95,6 +95,54 @@ router.get("/admin/stats", async (req: Request, res: Response): Promise<void> =>
   } catch (err) {
     logger.error({ err }, "Admin stats error");
     res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// ─── Artifact Feedback Aggregator ────────────────────────────────────────────
+
+router.get("/admin/feedback-stats", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  try {
+    const rows = await db
+      .select({
+        phaseNumber: artifactFeedbackTable.phaseNumber,
+        artifactKey: artifactFeedbackTable.artifactKey,
+        up: sql<number>`count(*) filter (where ${artifactFeedbackTable.rating} = 'up')`,
+        down: sql<number>`count(*) filter (where ${artifactFeedbackTable.rating} = 'down')`,
+        comments: sql<number>`count(*) filter (where ${artifactFeedbackTable.comment} is not null and length(${artifactFeedbackTable.comment}) > 0)`,
+        lastAt: sql<string>`max(${artifactFeedbackTable.updatedAt})`,
+      })
+      .from(artifactFeedbackTable)
+      .groupBy(artifactFeedbackTable.phaseNumber, artifactFeedbackTable.artifactKey)
+      .orderBy(artifactFeedbackTable.phaseNumber, artifactFeedbackTable.artifactKey);
+
+    const recentComments = await db
+      .select({
+        phaseNumber: artifactFeedbackTable.phaseNumber,
+        artifactKey: artifactFeedbackTable.artifactKey,
+        rating: artifactFeedbackTable.rating,
+        comment: artifactFeedbackTable.comment,
+        updatedAt: artifactFeedbackTable.updatedAt,
+      })
+      .from(artifactFeedbackTable)
+      .where(sql`${artifactFeedbackTable.comment} is not null and length(${artifactFeedbackTable.comment}) > 0`)
+      .orderBy(desc(artifactFeedbackTable.updatedAt))
+      .limit(30);
+
+    res.json({
+      byArtifact: rows.map((r) => {
+        const up = Number(r.up ?? 0);
+        const down = Number(r.down ?? 0);
+        const total = up + down;
+        const score = total > 0 ? Math.round((up / total) * 100) : null;
+        return { phaseNumber: r.phaseNumber, artifactKey: r.artifactKey, up, down, total, comments: Number(r.comments ?? 0), score, lastAt: r.lastAt };
+      }),
+      recentComments,
+    });
+  } catch (err) {
+    logger.error({ err }, "admin/feedback-stats failed");
+    res.status(500).json({ error: "Failed to load feedback stats" });
   }
 });
 

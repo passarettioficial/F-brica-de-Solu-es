@@ -143,11 +143,11 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-serif text-base font-medium">
+              <h3 className="font-serif text-base font-medium" data-testid="coherence-headline">
                 {score == null ? "Score de Coerência"
-                  : score >= 75 ? "Produto coeso — artefatos alinhados"
-                  : score >= 50 ? "Divergências detectadas — revise antes de avançar"
-                  : "Produto incoerente — risco real de falha"}
+                  : score >= 75 ? "Forte — produto coeso entre fases"
+                  : score >= 50 ? "Atenção — divergências detectadas, revise antes de avançar"
+                  : "Risco — produto incoerente, alta chance de falha"}
               </h3>
               {score != null && (
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${

@@ -759,7 +759,7 @@ export function Dashboard() {
               <Label htmlFor="proj-briefing" className="text-sm font-medium">
                 Briefing inicial <span className="text-xs font-normal text-muted-foreground ml-2">— Mais detalhe = melhores artefatos</span>
               </Label>
-              <Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder={"Descreva: (1) qual problema resolve, (2) para quem, (3) como é diferente do que existe hoje.\n\nEx: App de delivery para pets em condominios. O morador pede racao e medicamentos sem sair de casa. Diferencial: parceria com petshops locais e entrega em 2h."} className="mt-1.5 min-h-[140px]" data-testid="textarea-project-briefing" />
+              <Textarea id="proj-briefing" value={briefing} onChange={e => setBriefing(e.target.value)} placeholder={"PROBLEMA: que dor concreta seu produto resolve?\nPÚBLICO: quem sofre com essa dor (perfil, contexto, tamanho)?\nDIFERENCIAL: por que sua solução é melhor do que o que existe hoje?\nMODELO: como você vai monetizar (assinatura, comissão, B2B)?\n\nEx: PROBLEMA: condomínios perdem 4h/semana com pedidos de pet shop por moradores. PÚBLICO: síndicos e moradores de prédios urbanos com pets. DIFERENCIAL: parceria com petshops locais + entrega em 2h. MODELO: comissão 12% por pedido + assinatura R$29/mês para entrega ilimitada."} className="mt-1.5 min-h-[180px]" data-testid="textarea-project-briefing" />
               {briefing.trim().length > 0 && (() => {
                 const wc = briefing.trim().split(/\s+/).filter(Boolean).length;
                 const tier = wc >= 80 ? { label: "Excelente — artefatos altamente personalizados", color: "text-emerald-600 dark:text-emerald-400" }

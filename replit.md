@@ -66,6 +66,23 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 
 - **Helper:** `artifacts/api-server/src/lib/project-context.ts` exporta `buildProjectArtifactContext(projectId, charLimit)`. Substitui duplicação em `/projects/:id/coherence/analyze` e `/projects/:id/potential/analyze` (era loop fase→artefatos→slice em ambos).
 
+### "Baseado em — Fase N-1" no header de execução
+
+- **Local:** `phase.tsx` antes do card "Gerar com IA" (somente `phaseNumber >= 2`). Lê estática `PHASES[phaseNumber - 2].artifacts` + `ARTIFACT_LABELS` — sem fetch extra. Mostra até 6 chips com `+N` overflow + linha "A IA lê esses artefatos para manter coerência entre as fases". `data-testid="based-on-prev"`.
+
+### Briefing estruturado (placeholder PROBLEMA/PÚBLICO/DIFERENCIAL/MODELO)
+
+- **Local:** `dashboard.tsx` textarea `proj-briefing`. Placeholder com 4 prompts em maiúsculas + exemplo D2C real (condomínio/pet). Min-height 180px (era 140) pra acomodar bloco estruturado.
+
+### Microcopy reativa no Score de Coerência
+
+- **Local:** `project.tsx` CoherenceCard h3 (`data-testid="coherence-headline"`). Bands: `≥75` "Forte — produto coeso entre fases"; `≥50` "Atenção — divergências detectadas, revise antes de avançar"; `<50` "Risco — produto incoerente, alta chance de falha". Mantém badge de status e parágrafo `data?.resumo` inalterados.
+
+### Admin → Feedback (agregador de thumbs)
+
+- **Backend:** `GET /admin/feedback-stats` (admin-gated) — agrega `artifactFeedbackTable` com `count(*) FILTER (WHERE rating='up'|'down')` agrupado por `(phaseNumber, artifactKey)`, ordenado por phase/key (estabilidade). Retorna `byArtifact[]` (up/down/total/score%/comments/lastAt) + `recentComments[]` (últimos 30 com comentário, ordenados por `updatedAt`).
+- **Frontend:** `components/admin/FeedbackTab.tsx` registrado em `admin.tsx` como tab "Feedback" (entre Insights e Usuários). Summary cards (votos/👍/👎/aprovação%), tabela ordenável (problemas/volume/fase) com tie-breakers determinísticos, lista de comentários recentes. Botões de sort com `aria-pressed`. Sem XSS — comentários renderizados como texto React.
+
 ### Feedback de artefatos (thumbs up/down + comentário)
 
 - **Schema:** `lib/db/src/schema/artifact_feedback.ts` — `artifactFeedbackTable` (userId, projectId, phaseNumber, artifactKey, rating up|down, comment ≤500, timestamps). Unique idx `(userId, projectId, phaseNumber, artifactKey)` permite mudança de voto sem duplicar. EventType `artifact_feedback` adicionado.

@@ -1371,6 +1371,38 @@ export function PhasePage() {
           </div>
         )}
 
+        {/* Baseado em — contexto das fases anteriores */}
+        {phaseNumber >= 2 && (() => {
+          const prevDef = PHASES[phaseNumber - 2];
+          if (!prevDef?.artifacts?.length) return null;
+          const items = prevDef.artifacts.slice(0, 6);
+          return (
+            <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3" data-testid="based-on-prev">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                Baseado em — Fase {phaseNumber - 1}: {prevDef.name}
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {items.map((art) => {
+                  const meta = ARTIFACT_LABELS[art.key];
+                  return (
+                    <span key={art.key} className="text-[11px] bg-background border border-border/60 text-foreground/80 px-2 py-0.5 rounded-md">
+                      {meta?.label ?? art.key}
+                    </span>
+                  );
+                })}
+                {prevDef.artifacts.length > items.length && (
+                  <span className="text-[11px] text-muted-foreground px-1 py-0.5">
+                    +{prevDef.artifacts.length - items.length}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
+                A IA lê esses artefatos para manter coerência entre as fases.
+              </p>
+            </div>
+          );
+        })()}
+
         {/* AI Execution */}
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-start justify-between mb-1">
