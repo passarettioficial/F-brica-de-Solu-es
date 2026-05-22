@@ -241,33 +241,35 @@
 }
 
 /* ============================================================
-   PHASE THEMES — shared accent color (both modes)
+   PHASE THEMES — brand-aligned palette only (azul primário, azul profundo, laranja accent).
+   Sem roxo/verde/pink. Diferenciação por shade de azul; Fase 7 (Deploy) em laranja accent
+   como sinal de celebração/conversão.
    ============================================================ */
-[data-phase="1"] { --phase-accent: #7724FD; }
-[data-phase="2"] { --phase-accent: #2D9CDB; }
-[data-phase="3"] { --phase-accent: #EF4444; }
-[data-phase="4"] { --phase-accent: #00C2A8; }
-[data-phase="5"] { --phase-accent: #F59E0B; }
-[data-phase="6"] { --phase-accent: #EC4899; }
-[data-phase="7"] { --phase-accent: #22D3A0; }
+[data-phase="1"] { --phase-accent: #1A3FAB; }  /* Ideia      → azul primário */
+[data-phase="2"] { --phase-accent: #3454BD; }  /* PRD        → azul médio */
+[data-phase="3"] { --phase-accent: #0F1F5C; }  /* Segurança  → azul profundo */
+[data-phase="4"] { --phase-accent: #1A3FAB; }  /* Spec       → azul primário */
+[data-phase="5"] { --phase-accent: #3454BD; }  /* Implement. → azul médio */
+[data-phase="6"] { --phase-accent: #0F1F5C; }  /* Teste      → azul profundo */
+[data-phase="7"] { --phase-accent: #FF8C42; }  /* Deploy     → laranja accent */
 
-/* Light mode phase soft/glow/gradient/border */
-[data-phase="1"] { --phase-accent-soft: rgba(119,36,253,0.08); --phase-glow: rgba(119,36,253,0.10); --phase-gradient: linear-gradient(160deg, rgba(119,36,253,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(119,36,253,0.18); }
-[data-phase="2"] { --phase-accent-soft: rgba(45,156,219,0.08); --phase-glow: rgba(45,156,219,0.10); --phase-gradient: linear-gradient(160deg, rgba(45,156,219,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(45,156,219,0.18); }
-[data-phase="3"] { --phase-accent-soft: rgba(239,68,68,0.08); --phase-glow: rgba(239,68,68,0.10); --phase-gradient: linear-gradient(160deg, rgba(239,68,68,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(239,68,68,0.18); }
-[data-phase="4"] { --phase-accent-soft: rgba(0,194,168,0.08); --phase-glow: rgba(0,194,168,0.10); --phase-gradient: linear-gradient(160deg, rgba(0,194,168,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(0,194,168,0.18); }
-[data-phase="5"] { --phase-accent-soft: rgba(245,158,11,0.08); --phase-glow: rgba(245,158,11,0.10); --phase-gradient: linear-gradient(160deg, rgba(245,158,11,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(245,158,11,0.18); }
-[data-phase="6"] { --phase-accent-soft: rgba(236,72,153,0.08); --phase-glow: rgba(236,72,153,0.10); --phase-gradient: linear-gradient(160deg, rgba(236,72,153,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(236,72,153,0.18); }
-[data-phase="7"] { --phase-accent-soft: rgba(34,211,160,0.08); --phase-glow: rgba(34,211,160,0.10); --phase-gradient: linear-gradient(160deg, rgba(34,211,160,0.04) 0%, #F5F4FF 100%); --phase-border: rgba(34,211,160,0.18); }
+/* Light mode phase soft/glow/gradient/border — todos sobre cool off-white #EEF1FB */
+[data-phase="1"] { --phase-accent-soft: rgba(26,63,171,0.08);  --phase-glow: rgba(26,63,171,0.10);  --phase-gradient: linear-gradient(160deg, rgba(26,63,171,0.04) 0%, #EEF1FB 100%); --phase-border: rgba(26,63,171,0.18); }
+[data-phase="2"] { --phase-accent-soft: rgba(52,84,189,0.08);  --phase-glow: rgba(52,84,189,0.10);  --phase-gradient: linear-gradient(160deg, rgba(52,84,189,0.04) 0%, #EEF1FB 100%); --phase-border: rgba(52,84,189,0.18); }
+[data-phase="3"] { --phase-accent-soft: rgba(15,31,92,0.08);   --phase-glow: rgba(15,31,92,0.10);   --phase-gradient: linear-gradient(160deg, rgba(15,31,92,0.04)  0%, #EEF1FB 100%); --phase-border: rgba(15,31,92,0.20);  }
+[data-phase="4"] { --phase-accent-soft: rgba(26,63,171,0.08);  --phase-glow: rgba(26,63,171,0.10);  --phase-gradient: linear-gradient(160deg, rgba(26,63,171,0.04) 0%, #EEF1FB 100%); --phase-border: rgba(26,63,171,0.18); }
+[data-phase="5"] { --phase-accent-soft: rgba(52,84,189,0.08);  --phase-glow: rgba(52,84,189,0.10);  --phase-gradient: linear-gradient(160deg, rgba(52,84,189,0.04) 0%, #EEF1FB 100%); --phase-border: rgba(52,84,189,0.18); }
+[data-phase="6"] { --phase-accent-soft: rgba(15,31,92,0.08);   --phase-glow: rgba(15,31,92,0.10);   --phase-gradient: linear-gradient(160deg, rgba(15,31,92,0.04)  0%, #EEF1FB 100%); --phase-border: rgba(15,31,92,0.20);  }
+[data-phase="7"] { --phase-accent-soft: rgba(255,140,66,0.08); --phase-glow: rgba(255,140,66,0.12); --phase-gradient: linear-gradient(160deg, rgba(255,140,66,0.05) 0%, #EEF1FB 100%); --phase-border: rgba(255,140,66,0.25); }
 
-/* Dark mode phase overrides (deep gradients and stronger glows) */
-.dark[data-phase="1"] { --phase-accent-soft: rgba(119,36,253,0.15); --phase-glow: rgba(119,36,253,0.28); --phase-gradient: linear-gradient(160deg, #2B0E6D 0%, #0D0B14 65%); --phase-border: rgba(119,36,253,0.35); }
-.dark[data-phase="2"] { --phase-accent-soft: rgba(45,156,219,0.15); --phase-glow: rgba(45,156,219,0.28); --phase-gradient: linear-gradient(160deg, #0A2540 0%, #0D0B14 65%); --phase-border: rgba(45,156,219,0.35); }
-.dark[data-phase="3"] { --phase-accent-soft: rgba(239,68,68,0.15); --phase-glow: rgba(239,68,68,0.28); --phase-gradient: linear-gradient(160deg, #3D0A0A 0%, #0D0B14 65%); --phase-border: rgba(239,68,68,0.35); }
-.dark[data-phase="4"] { --phase-accent-soft: rgba(0,194,168,0.15); --phase-glow: rgba(0,194,168,0.28); --phase-gradient: linear-gradient(160deg, #003D35 0%, #0D0B14 65%); --phase-border: rgba(0,194,168,0.35); }
-.dark[data-phase="5"] { --phase-accent-soft: rgba(245,158,11,0.15); --phase-glow: rgba(245,158,11,0.28); --phase-gradient: linear-gradient(160deg, #2D1A00 0%, #0D0B14 65%); --phase-border: rgba(245,158,11,0.35); }
-.dark[data-phase="6"] { --phase-accent-soft: rgba(236,72,153,0.15); --phase-glow: rgba(236,72,153,0.28); --phase-gradient: linear-gradient(160deg, #3D0A25 0%, #0D0B14 65%); --phase-border: rgba(236,72,153,0.35); }
-.dark[data-phase="7"] { --phase-accent-soft: rgba(34,211,160,0.15); --phase-glow: rgba(34,211,160,0.28); --phase-gradient: linear-gradient(160deg, #003D20 0%, #0D0B14 65%); --phase-border: rgba(34,211,160,0.35); }
+/* Dark mode phase overrides — gradientes em azul profundo brand */
+.dark[data-phase="1"] { --phase-accent-soft: rgba(26,63,171,0.18);  --phase-glow: rgba(74,117,232,0.28); --phase-gradient: linear-gradient(160deg, #0F1F5C 0%, #08102B 65%); --phase-border: rgba(74,117,232,0.35); }
+.dark[data-phase="2"] { --phase-accent-soft: rgba(52,84,189,0.18);  --phase-glow: rgba(74,117,232,0.28); --phase-gradient: linear-gradient(160deg, #122468 0%, #08102B 65%); --phase-border: rgba(74,117,232,0.35); }
+.dark[data-phase="3"] { --phase-accent-soft: rgba(15,31,92,0.30);   --phase-glow: rgba(26,63,171,0.30);  --phase-gradient: linear-gradient(160deg, #0A1746 0%, #08102B 65%); --phase-border: rgba(74,117,232,0.35); }
+.dark[data-phase="4"] { --phase-accent-soft: rgba(26,63,171,0.18);  --phase-glow: rgba(74,117,232,0.28); --phase-gradient: linear-gradient(160deg, #0F1F5C 0%, #08102B 65%); --phase-border: rgba(74,117,232,0.35); }
+.dark[data-phase="5"] { --phase-accent-soft: rgba(52,84,189,0.18);  --phase-glow: rgba(74,117,232,0.28); --phase-gradient: linear-gradient(160deg, #122468 0%, #08102B 65%); --phase-border: rgba(74,117,232,0.35); }
+.dark[data-phase="6"] { --phase-accent-soft: rgba(15,31,92,0.30);   --phase-glow: rgba(26,63,171,0.30);  --phase-gradient: linear-gradient(160deg, #0A1746 0%, #08102B 65%); --phase-border: rgba(74,117,232,0.35); }
+.dark[data-phase="7"] { --phase-accent-soft: rgba(255,140,66,0.18); --phase-glow: rgba(255,140,66,0.30); --phase-gradient: linear-gradient(160deg, #3D1F0A 0%, #08102B 65%); --phase-border: rgba(255,140,66,0.40); }
 
 /* ============================================================
    BASE LAYER

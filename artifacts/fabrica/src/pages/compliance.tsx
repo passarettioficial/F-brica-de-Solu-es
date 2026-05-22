@@ -16,7 +16,8 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
     blue:   "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     yellow: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
     red:    "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-    purple: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+    // brand: "purple" remapeado para azul primário (sem roxo no design system)
+    purple: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     gray:   "bg-muted text-muted-foreground",
   };
   return (
@@ -319,7 +320,7 @@ function ThreatModelTab() {
   const threats = [
     {
       category: "S — Spoofing",
-      color: "border-purple-400",
+      color: "border-blue-400",
       badge: <Badge color="purple">SPOOFING</Badge>,
       threats: [
         {

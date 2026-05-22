@@ -5,9 +5,10 @@ import { usePlan } from "@/hooks/usePlan";
 import { PHASES } from "@/lib/constants";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+// Brand-aligned phase palette — sem roxo/verde/pink. Shades de azul + laranja no Deploy.
 const PHASE_COLORS: Record<number, string> = {
-  1: "#7724FD", 2: "#2D9CDB", 3: "#EF4444",
-  4: "#00C2A8", 5: "#F59E0B", 6: "#EC4899", 7: "#22D3A0",
+  1: "#1A3FAB", 2: "#3454BD", 3: "#0F1F5C",
+  4: "#1A3FAB", 5: "#3454BD", 6: "#0F1F5C", 7: "#FF8C42",
 };
 
 interface PhaseStatus {
@@ -95,7 +96,7 @@ export function AppSidebar({
               const isDone = status === "completed";
               const isActive = phaseNum === currentPhase;
               const isLocked = status === "locked" && !isActive;
-              const color = PHASE_COLORS[phaseNum] ?? "#7724FD";
+              const color = PHASE_COLORS[phaseNum] ?? "#1A3FAB";
               const isLast = i === PHASES.length - 1;
 
               return (
