@@ -575,6 +575,13 @@ const ArtifactCard = memo(function ArtifactCard({
           )}
         </div>
       )}
+      {!isEmpty && !editing && (
+        <ArtifactFeedback
+          projectId={projectId}
+          phaseNumber={phaseNumber}
+          artifactKey={artifact.artifactKey}
+        />
+      )}
       {showHistory && (
         <ArtifactHistoryDialog
           projectId={projectId}
@@ -589,6 +596,128 @@ const ArtifactCard = memo(function ArtifactCard({
     </div>
   );
 });
+
+function ArtifactFeedback({
+  projectId,
+  phaseNumber,
+  artifactKey,
+}: {
+  projectId: number;
+  phaseNumber: number;
+  artifactKey: string;
+}) {
+  const storageKey = `ff_artifact_fb_${projectId}_${phaseNumber}_${artifactKey}`;
+  const [rating, setRating] = useState<"up" | "down" | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(storageKey);
+    return raw === "up" || raw === "down" ? raw : null;
+  });
+  const [showComment, setShowComment] = useState(false);
+  const [comment, setComment] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const { toast } = useToast();
+
+  async function send(next: "up" | "down", extraComment?: string) {
+    try {
+      const res = await fetch(
+        `${basePath}/api/projects/${projectId}/phases/${phaseNumber}/artifacts/${artifactKey}/feedback`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: next, comment: extraComment ?? null }),
+        }
+      );
+      if (!res.ok) throw new Error(String(res.status));
+      window.localStorage.setItem(storageKey, next);
+      setRating(next);
+      if (next === "down" && !extraComment) setShowComment(true);
+      if (extraComment) {
+        setShowComment(false);
+        toast({ title: "Obrigado pelo retorno", description: "Vamos usar isso pra melhorar os prompts." });
+      }
+    } catch {
+      toast({ title: "Não foi possível enviar", description: "Tente novamente em alguns segundos.", variant: "destructive" });
+    }
+  }
+
+  async function submitComment() {
+    if (!rating || !comment.trim()) return;
+    setSubmittingComment(true);
+    await send(rating, comment.trim());
+    setSubmittingComment(false);
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/60">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs text-muted-foreground">Esse artefato foi útil?</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void send("up")}
+            aria-label="Marcar como útil"
+            aria-pressed={rating === "up"}
+            data-testid={`feedback-up-${artifactKey}`}
+            className={`px-2 py-1 rounded-md text-sm border transition-colors ${
+              rating === "up"
+                ? "bg-primary/10 border-primary/40 text-primary"
+                : "bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+            }`}
+          >
+            👍
+          </button>
+          <button
+            type="button"
+            onClick={() => void send("down")}
+            aria-label="Marcar como não útil"
+            aria-pressed={rating === "down"}
+            data-testid={`feedback-down-${artifactKey}`}
+            className={`px-2 py-1 rounded-md text-sm border transition-colors ${
+              rating === "down"
+                ? "bg-accent/10 border-accent/50 text-accent"
+                : "bg-background border-border text-muted-foreground hover:border-accent/50 hover:text-accent"
+            }`}
+          >
+            👎
+          </button>
+        </div>
+        {rating && (
+          <span className="text-[11px] text-muted-foreground" aria-live="polite">
+            {rating === "up" ? "Anotado — obrigado." : "Anotado — o que faltou?"}
+          </span>
+        )}
+      </div>
+      {showComment && rating === "down" && (
+        <div className="mt-2 flex flex-col sm:flex-row gap-2">
+          <Textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="O que ficou genérico, errado ou faltando? (opcional)"
+            rows={2}
+            maxLength={500}
+            aria-label="Comentário sobre o artefato"
+            className="text-xs flex-1"
+            data-testid={`feedback-comment-${artifactKey}`}
+          />
+          <div className="flex gap-2 sm:flex-col">
+            <Button
+              size="sm"
+              onClick={() => void submitComment()}
+              disabled={!comment.trim() || submittingComment}
+              className="text-xs"
+            >
+              Enviar
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowComment(false); setComment(""); }} className="text-xs">
+              Fechar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ArtifactHistoryDialog({
   projectId,
@@ -811,6 +940,54 @@ function PhaseCompletionBanner({ phaseNumber, projectId }: { phaseNumber: number
   const nextPhase = PHASES[phaseNumber];
   const [, setLocation] = useLocation();
 
+  if (phaseNumber === 7) {
+    return (
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="text-center">
+          <div className="text-4xl mb-3">🎉</div>
+          <h3 className="font-serif text-xl text-foreground mb-2">
+            Plano de lançamento completo
+          </h3>
+          <p className="text-sm text-muted-foreground mb-5 max-w-xl mx-auto">
+            Você tem RUNBOOK de deploy, GTM, checklist de lançamento, métricas pós-launch, crescimento 90d, pitch e SLA.
+            Agora é executar. Sugestão de próximos 7-14 dias:
+          </p>
+        </div>
+        <ol className="text-sm text-foreground space-y-2 max-w-xl mx-auto mb-6 list-decimal list-inside">
+          <li>Rodar o RUNBOOK_DEPLOY em ambiente real (staging → prod).</li>
+          <li>Executar o LAUNCH_CHECKLIST — não pule etapas de comunicação.</li>
+          <li>Disparar o GTM — primeiros 10 clientes da lista.</li>
+          <li>Instrumentar as METRICAS_POS_LAUNCH antes do tráfego chegar.</li>
+          <li>Agendar retrospectiva 14d pós-launch para revisitar o PLANO_CRESCIMENTO_90_DIAS.</li>
+        </ol>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            onClick={() => setLocation(`/projects/${projectId}?tab=collaboration`)}
+            className="bg-primary hover:bg-primary/90 text-white"
+            data-testid="phase7-share"
+          >
+            Compartilhar projeto →
+          </Button>
+          <Button
+            onClick={() => setLocation(`/dashboard?new=1`)}
+            variant="outline"
+            data-testid="phase7-new-project"
+          >
+            Iniciar novo projeto
+          </Button>
+          <Button
+            onClick={() => setLocation(`/projects/${projectId}`)}
+            variant="ghost"
+            className="text-muted-foreground"
+            data-testid="phase7-view-project"
+          >
+            Ver projeto completo
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="text-4xl mb-3">🎉</div>
@@ -818,23 +995,14 @@ function PhaseCompletionBanner({ phaseNumber, projectId }: { phaseNumber: number
         Fase {phaseNumber} concluída!
       </h3>
       <p className="text-sm text-muted-foreground mb-5">
-        {phaseNumber < 7
-          ? `Excelente trabalho! Agora você pode avançar para a Fase ${phaseNumber + 1} — ${nextPhase?.name}.`
-          : "Incrível! Você concluiu todas as 7 fases. Seu produto está pronto para o mercado."}
+        Excelente trabalho! Agora você pode avançar para a Fase {phaseNumber + 1} — {nextPhase?.name}.
       </p>
-      {phaseNumber < 7 && nextPhase ? (
+      {nextPhase && (
         <Button
           onClick={() => setLocation(`/projects/${projectId}/phases/${phaseNumber + 1}`)}
           className="bg-primary hover:bg-primary/90 text-white"
         >
           Ir para Fase {phaseNumber + 1} — {nextPhase.name} →
-        </Button>
-      ) : (
-        <Button
-          onClick={() => setLocation(`/projects/${projectId}`)}
-          className="bg-primary hover:bg-primary/90 text-white"
-        >
-          Ver projeto completo →
         </Button>
       )}
     </div>

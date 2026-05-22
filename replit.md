@@ -66,13 +66,23 @@ AI-powered web app for founders. 7 sequential phases take a product from idea to
 
 - **Helper:** `artifacts/api-server/src/lib/project-context.ts` exporta `buildProjectArtifactContext(projectId, charLimit)`. Substitui duplicação em `/projects/:id/coherence/analyze` e `/projects/:id/potential/analyze` (era loop fase→artefatos→slice em ambos).
 
+### Feedback de artefatos (thumbs up/down + comentário)
+
+- **Schema:** `lib/db/src/schema/artifact_feedback.ts` — `artifactFeedbackTable` (userId, projectId, phaseNumber, artifactKey, rating up|down, comment ≤500, timestamps). Unique idx `(userId, projectId, phaseNumber, artifactKey)` permite mudança de voto sem duplicar. EventType `artifact_feedback` adicionado.
+- **Route:** `POST /api/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/feedback` — Zod `ArtifactFeedbackBody` (`zod/v4`), upsert via `onConflictDoUpdate`, loga evento com `hasComment`.
+- **UI:** `ArtifactFeedback` em `phase.tsx` (após body, antes do history dialog) — thumbs com `aria-pressed`, localStorage cache (`ff_artifact_fb_*`) pra hidratar voto entre reloads. Down abre Textarea opcional (max 500ch, `aria-label`). Toast confirma envio.
+
+### Fase 7 — encerramento como "plano de lançamento completo"
+
+- **PhaseCompletionBanner** em `phase.tsx` agora ramifica em `phaseNumber === 7`: troca copy "produto pronto para o mercado" por "Plano de lançamento completo" + checklist de execução 7-14d (RUNBOOK, LAUNCH_CHECKLIST, GTM, METRICAS_POS_LAUNCH, retro 14d) + 3 CTAs: Compartilhar projeto (vai pra aba colaboração), Iniciar novo projeto (`/dashboard?new=1`), Ver projeto completo.
+
 ### Landing v2 (conversão + prova social)
 
 - **Hero:** headline com transformação clara ("Da ideia ao produto validado em 7 fases"), subheading explicando o método. CTA primário accent laranja "Começar grátis →" + secundário "Ver projeto demo (sem cadastro)" se `VITE_DEMO_SHARE_ID` configurado (fallback "Explorar templates").
 - **Output sample card:** mockup de PRD GestaoPro com chrome de janela (3 dots), badge "Exemplo de output" + chips PRD/Markdown/PDF — mostra produto antes de cadastro.
 - **Proof bar:** 3 stats (45+ artefatos, 7 fases, <5min) com `stat-shimmer` em primary.
 - **7 phases grid:** lista nominal de cada fase com descrição curta (Ideia, PRD, Segurança, Spec, Execução, Testes, Lançamento) — explicita o método.
-- **Testimonials section:** 3 cards em `bg-foreground` com depoimentos placeholder de personas reais (founder SaaS B2B, CTO em transição, founder solo healthtech). **Substituir por depoimentos reais quando disponíveis.**
+- **Why we exist (bloco "Por que a FoundersFlow existe"):** substitui testimonials placeholder. Bloco `bg-foreground` com 3 cards before/after nomeando dor concreta ("3 semanas no Notion virando spaghetti" → "PRD + LGPD em uma tarde"; "Prompts soltos no ChatGPT sem memória" → "Cada fase lê as anteriores"; "Consultoria de R$8k" → "Lean Canvas + STRIDE + RBAC + GTM"). CTA "Quer ser case study?" linka pra `/atendimento`. Restaurar testimonials reais quando ≥3 cases com nome+empresa estiverem disponíveis.
 - **FAQ atualizado:** 4 perguntas concretas (cartão, vertical, exportação, LGPD).
 - **CTA final:** card centralizado com "Sua próxima ideia merece um plano de verdade" + accent button.
 - **Setup demo público:** admin gera share de um projeto demo via UI (`/projects/:id` → Colaboração → "Gerar link"), pega o `shareId` retornado e define `VITE_DEMO_SHARE_ID=<id>` no env do fabrica antes do build.

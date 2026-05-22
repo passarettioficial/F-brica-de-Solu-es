@@ -42,10 +42,19 @@ const sampleArtifact = {
   ],
 };
 
-const testimonials = [
-  { name: "Fundador SaaS B2B", role: "Bootstrap, 2 cofundadores", quote: "Saí de 3 semanas travado no Notion pra ter PRD + LGPD + roadmap em uma tarde." },
-  { name: "CTO em transição", role: "Saindo de big tech", quote: "O que eu mais valorizei foi a coerência entre as fases — não é um gerador de markdown solto." },
-  { name: "Founder solo healthtech", role: "Pré-seed", quote: "O STRIDE e o mapa LGPD da Fase 3 me economizaram a consultoria de compliance." },
+const painPoints = [
+  {
+    before: "3 semanas no Notion virando spaghetti",
+    after: "PRD + LGPD + arquitetura em uma tarde, com coerência entre as fases.",
+  },
+  {
+    before: "Prompts soltos no ChatGPT sem memória",
+    after: "Cada fase lê as anteriores. A IA conhece o seu negócio no fim da Fase 1.",
+  },
+  {
+    before: "Consultoria de R$8k por documento",
+    after: "Lean Canvas, threat model STRIDE, RBAC e GTM gerados — sem sair da plataforma.",
+  },
 ];
 
 const faqs = [
@@ -182,24 +191,31 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* TESTIMONIALS */}
+        {/* WHY WE EXIST */}
         <section className="bg-foreground px-6 py-16 text-background">
-          <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-5xl">
             <div className="mb-10 text-center">
-              <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent">Founders usando</div>
-              <h2 className="mt-3 text-3xl font-serif md:text-4xl">Quem está construindo com a FoundersFlow</h2>
+              <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent">Por que a FoundersFlow existe</div>
+              <h2 className="mt-3 text-3xl font-serif md:text-4xl">Você não precisa de mais um documento em branco.</h2>
+              <p className="mt-4 text-sm leading-relaxed text-background/70 max-w-2xl mx-auto">
+                Founder no Brasil queima semanas montando PRD genérico, traduzindo LGPD do zero e copiando prompt no ChatGPT
+                que esquece tudo na próxima sessão. A FoundersFlow existe para fechar esse ciclo.
+              </p>
             </div>
-            <div className="grid gap-5 md:grid-cols-3">
-              {testimonials.map((t) => (
-                <div key={t.name} className="rounded-2xl border border-background/15 bg-background/5 p-5">
-                  <p className="text-sm leading-relaxed text-background/90">"{t.quote}"</p>
-                  <div className="mt-4 border-t border-background/15 pt-3">
-                    <div className="text-sm font-semibold">{t.name}</div>
-                    <div className="text-xs text-background/60">{t.role}</div>
-                  </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {painPoints.map((p) => (
+                <div key={p.before} className="rounded-2xl border border-background/15 bg-background/5 p-5">
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-background/50 mb-2">Antes</div>
+                  <p className="text-sm leading-relaxed text-background/80 mb-4 line-through decoration-accent/60">{p.before}</p>
+                  <div className="text-[11px] font-mono uppercase tracking-wider text-accent mb-2">Com FoundersFlow</div>
+                  <p className="text-sm leading-relaxed text-background">{p.after}</p>
                 </div>
               ))}
             </div>
+            <p className="mt-8 text-center text-[11px] text-background/40">
+              Estamos coletando os primeiros depoimentos de founders ativos. Quer ser case study?{" "}
+              <Link href={`${base}/atendimento`} className="underline hover:text-accent">Fale com a gente.</Link>
+            </p>
           </div>
         </section>
 

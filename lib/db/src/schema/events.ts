@@ -23,4 +23,5 @@ export type EventType =
   | "coherence_analyzed"
   | "market_potential_analyzed"
   | "validation_generated"
-  | "project_completed";
+  | "project_completed"
+  | "artifact_feedback";

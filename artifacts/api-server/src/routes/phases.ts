@@ -1,11 +1,17 @@
 import { Router, type IRouter } from "express";
 import { eq, and, inArray, desc } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, projectsTable, phasesTable, phaseArtifactsTable, artifactVersionsTable, usersTable } from "@workspace/db";
+import { db, projectsTable, phasesTable, phaseArtifactsTable, artifactVersionsTable, usersTable, artifactFeedbackTable } from "@workspace/db";
 import {
   UpdatePhaseGatesBody,
   UpdateArtifactBody,
 } from "@workspace/api-zod";
+import { z } from "zod/v4";
+
+const ArtifactFeedbackBody = z.object({
+  rating: z.enum(["up", "down"]),
+  comment: z.string().trim().max(500).nullish(),
+});
 import { generatePhaseArtifacts } from "../lib/ai";
 import { logEvent } from "../lib/events";
 import { checkAndIncrementAiUsage, aiLimitPayload } from "../lib/auth";
@@ -311,6 +317,40 @@ router.patch("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/do
 
   if (!artifact) { res.status(404).json({ error: "Artifact not found" }); return; }
   res.json(artifact);
+});
+
+// POST /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/feedback
+router.post("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/feedback", async (req, res): Promise<void> => {
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const projectId = parseInt(Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId, 10);
+  const phaseNumber = parseInt(Array.isArray(req.params.phaseNumber) ? req.params.phaseNumber[0] : req.params.phaseNumber, 10);
+  const artifactKey = Array.isArray(req.params.artifactKey) ? req.params.artifactKey[0] : req.params.artifactKey;
+  if (isNaN(projectId) || isNaN(phaseNumber) || !artifactKey) { res.status(400).json({ error: "Invalid params" }); return; }
+
+  const parsed = ArtifactFeedbackBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: "Invalid body", issues: parsed.error.issues }); return; }
+  const { rating } = parsed.data;
+  const comment = parsed.data.comment && parsed.data.comment.length > 0 ? parsed.data.comment : null;
+
+  const [project] = await db.select().from(projectsTable).where(
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+  );
+  if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const [user] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.clerkId, userId));
+  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+
+  await db.insert(artifactFeedbackTable)
+    .values({ userId: user.id, projectId, phaseNumber, artifactKey, rating, comment })
+    .onConflictDoUpdate({
+      target: [artifactFeedbackTable.userId, artifactFeedbackTable.projectId, artifactFeedbackTable.phaseNumber, artifactFeedbackTable.artifactKey],
+      set: { rating, comment, updatedAt: new Date() },
+    });
+
+  void logEvent(userId, "artifact_feedback", { projectId, phaseNumber, artifactKey, rating, hasComment: !!comment });
+  res.json({ ok: true });
 });
 
 // POST /projects/:projectId/phases/:phaseNumber/execute (SSE)
