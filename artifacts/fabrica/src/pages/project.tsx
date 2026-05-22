@@ -513,11 +513,32 @@ function ValidationTab({ projectId, phases }: { projectId: number; phases: any[]
   }
 
   async function analyzeNotes() {
-    const validation = currentValidation;
-    if (!validation) return;
+    if (!notesText.trim()) {
+      setAnalysisError("Adicione as notas das entrevistas antes de analisar.");
+      return;
+    }
+    // Garante validation existente + persiste notas atuais (mesmo se usuário não clicou "Salvar notas")
+    const validation = await getOrCreateValidation();
+    if (!validation) {
+      setAnalysisError("Não foi possível inicializar a validação. Tente novamente.");
+      return;
+    }
     setAnalysisGenerating(true);
     setAnalysisContent("");
     setAnalysisError(null);
+    if (notesText !== (validation.interviewNotes ?? "")) {
+      const patchRes = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interviewNotes: notesText }),
+      });
+      if (!patchRes.ok) {
+        setAnalysisError("Erro ao salvar notas. Tente novamente.");
+        setAnalysisGenerating(false);
+        return;
+      }
+      await loadValidations();
+    }
     const res = await fetch(`${basePath}/api/projects/${projectId}/validations/${validation.id}/analyze`, { method: "POST" });
     if (!res.ok || !res.body) {
       const body = await res.json().catch(() => ({}));
