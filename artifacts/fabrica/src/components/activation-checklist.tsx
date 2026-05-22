@@ -49,7 +49,7 @@ export function ActivationChecklist({
     { id: "ai", label: "Gerar artefatos com IA", description: "Clique em Gerar com IA na Fase 1 do seu projeto.", done: hasAiUsage },
     { id: "templates", label: "Usar um template", description: "Comece a partir de um modelo de produto.", done: hasTemplates },
     { id: "share", label: "Compartilhar um projeto", description: "Convide alguém e gere contexto compartilhável.", done: hasSharedProject },
-    { id: "phase1", label: "Concluir a Fase 1 — Diagnóstico", description: "Audite sua ideia com Lean Canvas, SWOT e Score de Potencial.", done: phase1Completed, href: hasProjects ? "/dashboard" : undefined },
+    { id: "phase1", label: "Concluir a Fase 1 — Diagnóstico", description: "Audite sua ideia com Lean Canvas, JTBD e Score de Potencial.", done: phase1Completed, href: hasProjects ? "/dashboard" : undefined },
     { id: "phase3", label: "Chegar na metade — Fase 3", description: "Segurança, LGPD e privacidade mapeados antes da arquitetura.", done: phase3Completed },
     { id: "complete", label: "Concluir as 7 fases", description: "Do diagnóstico ao lançamento — produto pronto.", done: allPhasesCompleted },
   ];

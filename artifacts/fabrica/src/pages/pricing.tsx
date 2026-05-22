@@ -413,7 +413,7 @@ export function PricingPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { q: "\"Qual é o maior risco do meu modelo de pricing?\"", icon: "💰" },
-                    { q: "\"Como eu deveria priorizar o backlog dado meu SWOT?\"", icon: "📋" },
+                    { q: "\"Quais hipóteses do meu PRD têm maior risco de falhar?\"", icon: "📋" },
                     { q: "\"Quais são os gaps de segurança na minha arquitetura?\"", icon: "🔒" },
                   ].map((ex, i) => (
                     <div key={i} className="bg-muted/40 rounded-lg p-3">

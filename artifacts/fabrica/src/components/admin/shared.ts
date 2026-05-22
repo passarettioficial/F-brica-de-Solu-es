@@ -27,7 +27,6 @@ export const ALL_DELIVERABLES: Array<{ phase: number; phaseName: string; key: st
   { phase: 1, phaseName: "IDEIA", key: "LEAN_CANVAS", label: "Lean Canvas" },
   { phase: 1, phaseName: "IDEIA", key: "JTBD", label: "Jobs to Be Done" },
   { phase: 1, phaseName: "IDEIA", key: "ANALISE_COMPETITIVA", label: "Análise Competitiva" },
-  { phase: 1, phaseName: "IDEIA", key: "SWOT", label: "Análise SWOT" },
   { phase: 1, phaseName: "IDEIA", key: "DIMENSIONAMENTO_MERCADO", label: "TAM / SAM / SOM" },
   { phase: 1, phaseName: "IDEIA", key: "VALIDACAO_RAPIDA", label: "Script de Validação" },
   { phase: 1, phaseName: "IDEIA", key: "HIPOTESE_CENTRAL", label: "Hipótese Central" },
