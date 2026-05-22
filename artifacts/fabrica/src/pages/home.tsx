@@ -591,22 +591,22 @@ export function Home() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-5 items-start">
-              {/* Free */}
+              {/* Explorar (free) */}
               <div className="glass-card rounded-2xl p-6 flex flex-col gap-4">
                 <div>
-                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">Gratuito</p>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">Explorar</p>
                   <div className="text-3xl font-serif font-bold text-foreground">R$0</div>
                   <p className="text-xs text-muted-foreground mt-1">Para sempre</p>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Valide sua ideia e saia da folha em branco sem gastar nada. Fases 1 a 3 completas.
+                  Valide sua ideia e saia da folha em branco sem gastar nada. Comece a testar o método.
                 </p>
                 <ul className="space-y-2 text-sm flex-1">
                   {[
-                    "3 fases gratuitas (Ideia, PRD, Segurança)",
                     "1 projeto ativo",
-                    "5 execuções de IA por dia",
-                    "Lean Canvas, personas, LGPD embutida",
+                    "3 execuções de IA por dia",
+                    "Acesso às 7 fases para explorar",
+                    "Lean Canvas, persona e LGPD",
                   ].map(f => (
                     <li key={f} className="flex items-start gap-2">
                       <span className="text-primary mt-0.5 flex-shrink-0">✓</span>
@@ -619,26 +619,26 @@ export function Home() {
                 </Link>
               </div>
 
-              {/* Pro — destacado */}
+              {/* Founder — destacado */}
               <div className="glass-card rounded-2xl p-6 flex flex-col gap-4 border-primary/40 relative shadow-lg shadow-primary/5">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-primary text-white text-[11px] font-semibold px-3 py-1 rounded-full tracking-wide">MAIS POPULAR</span>
+                  <span className="bg-accent text-accent-foreground text-[11px] font-semibold px-3 py-1 rounded-full tracking-wide">MAIS POPULAR</span>
                 </div>
                 <div>
-                  <p className="text-xs font-mono text-primary uppercase tracking-widest mb-1">Pro</p>
-                  <div className="text-3xl font-serif font-bold text-foreground">R$97<span className="text-base font-sans font-normal text-muted-foreground">/mês</span></div>
-                  <p className="text-xs text-muted-foreground mt-1">Cobrado mensalmente</p>
+                  <p className="text-xs font-mono text-primary uppercase tracking-widest mb-1">Founder</p>
+                  <div className="text-3xl font-serif font-bold text-foreground">R$197<span className="text-base font-sans font-normal text-muted-foreground">/mês</span></div>
+                  <p className="text-xs text-muted-foreground mt-1">Ou R$1.970/ano (≈R$164/mês)</p>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Para o founder que está construindo ativamente e precisa de todas as 7 fases.
+                  Para o founder que está construindo ativamente e precisa de todas as 7 fases sem fricção.
                 </p>
                 <ul className="space-y-2 text-sm flex-1">
                   {[
+                    "Até 5 projetos simultâneos",
+                    "30 execuções de IA por dia",
                     "Todas as 7 fases desbloqueadas",
-                    "Até 10 projetos simultâneos",
-                    "20 execuções de IA por dia",
-                    "Copiar e baixar todos os artefatos",
-                    "PRD, arquitetura, go-to-market completos",
+                    "AI Advisor por fase",
+                    "Edição inline + export PDF dos artefatos",
                   ].map(f => (
                     <li key={f} className="flex items-start gap-2">
                       <span className="text-primary mt-0.5 flex-shrink-0">✓</span>
@@ -646,28 +646,27 @@ export function Home() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/sign-up">
-                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">Começar com Pro →</Button>
+                <Link href="/pricing">
+                  <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold">Começar com Founder →</Button>
                 </Link>
               </div>
 
-              {/* Avançado */}
+              {/* Studio */}
               <div className="glass-card rounded-2xl p-6 flex flex-col gap-4">
                 <div>
-                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">Avançado</p>
-                  <div className="text-3xl font-serif font-bold text-foreground">R$197<span className="text-base font-sans font-normal text-muted-foreground">/mês</span></div>
-                  <p className="text-xs text-muted-foreground mt-1">Cobrado mensalmente</p>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-1">Studio</p>
+                  <div className="text-3xl font-serif font-bold text-foreground">R$697<span className="text-base font-sans font-normal text-muted-foreground">/mês</span></div>
+                  <p className="text-xs text-muted-foreground mt-1">Ou R$6.970/ano (≈R$581/mês)</p>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Para quem vai ao mercado com velocidade máxima — IA sem limites e AI Advisor.
+                  Para estúdios e times que tocam vários projetos em paralelo — IA sem teto e 3 assentos.
                 </p>
                 <ul className="space-y-2 text-sm flex-1">
                   {[
-                    "Tudo do plano Pro",
+                    "Tudo do Founder",
                     "Projetos ilimitados",
-                    "IA ilimitada — sem teto diário",
-                    "AI Advisor personalizado por fase",
-                    "Impressão de artefatos",
+                    "IA praticamente ilimitada (999/dia)",
+                    "Até 3 assentos no time",
                     "Prioridade no suporte",
                   ].map(f => (
                     <li key={f} className="flex items-start gap-2">
@@ -676,8 +675,8 @@ export function Home() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/sign-up">
-                  <Button variant="outline" className="w-full border-primary/30 hover:bg-primary/5">Começar com Avançado →</Button>
+                <Link href="/pricing">
+                  <Button variant="outline" className="w-full border-primary/30 hover:bg-primary/5">Começar com Studio →</Button>
                 </Link>
               </div>
             </div>
