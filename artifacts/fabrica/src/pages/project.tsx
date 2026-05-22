@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -91,11 +91,36 @@ function PhasePipeline({ phases, currentPhase, projectId }: {
 
 // ─── CoherenceCard ──────────────────────────────────────────────────────────
 
+function useCountUp(target: number | null | undefined, durationMs = 700) {
+  const [value, setValue] = useState<number | null>(target == null ? null : 0);
+  const currentRef = useRef<number>(0);
+  useEffect(() => {
+    if (target == null) { setValue(null); currentRef.current = 0; return; }
+    const from = currentRef.current;
+    const to = target;
+    if (from === to) { setValue(to); return; }
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = Math.round(from + (to - from) * eased);
+      currentRef.current = v;
+      setValue(v);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs]);
+  return value;
+}
+
 function CoherenceCard({ project, projectId, onRefresh }: { project: any; projectId: number; onRefresh: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const score = project.coherenceScore as number | null | undefined;
+  const animatedScore = useCountUp(score);
   const data = (project.coherenceData ?? null) as any;
   const updatedAt = project.coherenceUpdatedAt ? new Date(project.coherenceUpdatedAt) : null;
   const phases: any[] = project.phases ?? [];
@@ -138,7 +163,9 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
               )}
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-bold ${scoreColor}`}>{score != null ? score : "—"}</span>
+              <span className={`text-sm font-bold tabular-nums ${scoreColor}`} data-testid="coherence-score-number">
+                {animatedScore != null ? animatedScore : "—"}
+              </span>
             </div>
           </div>
           <div>
@@ -237,6 +264,7 @@ function MarketPotentialCard({ project, projectId, onRefresh }: { project: any; 
   const [error, setError] = useState<string | null>(null);
 
   const score = project.marketPotentialScore as number | null | undefined;
+  const animatedScore = useCountUp(score);
   const data = (project.marketPotentialData ?? null) as any;
   const updatedAt = project.marketPotentialUpdatedAt ? new Date(project.marketPotentialUpdatedAt) : null;
   const phases: any[] = project.phases ?? [];
@@ -287,7 +315,9 @@ function MarketPotentialCard({ project, projectId, onRefresh }: { project: any; 
               )}
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-bold ${scoreColor}`}>{score != null ? score : "—"}</span>
+              <span className={`text-sm font-bold tabular-nums ${scoreColor}`} data-testid="potential-score-number">
+                {animatedScore != null ? animatedScore : "—"}
+              </span>
             </div>
           </div>
           <div>

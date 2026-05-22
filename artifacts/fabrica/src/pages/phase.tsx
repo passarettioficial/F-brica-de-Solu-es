@@ -944,7 +944,7 @@ function PhaseCompletionBanner({ phaseNumber, projectId }: { phaseNumber: number
     return (
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="text-center">
-          <div className="text-4xl mb-3">🎉</div>
+          <div className="text-4xl mb-3 inline-block animate-celebrate">🎉</div>
           <h3 className="font-serif text-xl text-foreground mb-2">
             Plano de lançamento completo
           </h3>
@@ -990,7 +990,7 @@ function PhaseCompletionBanner({ phaseNumber, projectId }: { phaseNumber: number
 
   return (
     <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 text-center animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="text-4xl mb-3">🎉</div>
+      <div className="text-4xl mb-3 inline-block animate-celebrate">🎉</div>
       <h3 className="font-serif text-xl text-foreground mb-2">
         Fase {phaseNumber} concluída!
       </h3>
