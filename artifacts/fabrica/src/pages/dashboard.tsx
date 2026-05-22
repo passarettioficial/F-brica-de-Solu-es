@@ -76,7 +76,7 @@ function ProjectCard({ project, onContinue }: {
 
   return (
     <Link href={`/projects/${project.projectId}`} data-testid={`card-project-${project.projectId}`}>
-      <div className="glass-card rounded-2xl p-5 cursor-pointer group h-full relative overflow-hidden flex flex-col">
+      <div className="glass-card rounded-2xl p-5 cursor-pointer group h-full min-h-[208px] relative overflow-hidden flex flex-col">
         <div className="absolute top-3 right-3 w-3 h-3 border-t border-r border-primary/15 group-hover:border-primary/35 transition-colors" />
 
         <div className="flex-1">
@@ -131,7 +131,7 @@ function ResumeCard({ project }: { project: { projectId: number; name: string; c
   const motivation = motivations[project.completedPhases % motivations.length];
   return (
     <Link href={`/projects/${project.projectId}/phases/${project.currentPhase}`}>
-      <div className="glass-card rounded-2xl p-6 cursor-pointer group mb-6 relative overflow-hidden">
+      <div className="glass-card rounded-2xl p-6 cursor-pointer group relative overflow-hidden">
         <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none"><div className="absolute top-3 right-3 w-4 h-4 border-t border-r border-primary/20" /></div>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -169,7 +169,7 @@ function AiLimitBanner({ used, limit }: { used: number; limit: number }) {
   if (pct < 70) return null;
   const isExhausted = used >= limit;
   return (
-    <div className={`border rounded-2xl p-4 mb-6 flex items-start gap-3 ${isExhausted ? "bg-red-950/20 border-red-900/60" : "bg-primary/8 border-primary/20"}`} role="alert">
+    <div className={`border rounded-2xl p-4 flex items-start gap-3 ${isExhausted ? "bg-red-950/20 border-red-900/60" : "bg-primary/8 border-primary/20"}`} role="alert">
       <span className="text-base flex-shrink-0">{isExhausted ? "⚠️" : "⚡"}</span>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium ${isExhausted ? "text-red-300" : "text-primary"}`}>
@@ -468,8 +468,8 @@ export function Dashboard() {
           </div>
         </div>
 
-      <main className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="mb-8">
+      <main className="flex-1 overflow-y-auto px-8 py-6">
+        <div className="mb-6">
           <p className="text-xs font-mono uppercase tracking-[0.18em] mb-1" style={{ color: "var(--text-tertiary)" }}>PAINEL DE CONTROLE</p>
           <h1 className="text-2xl font-serif mb-1" style={{ color: "var(--text-primary)" }}>
             {user?.firstName ? `Olá, ${user.firstName}.` : "Bem-vindo."}
@@ -481,8 +481,8 @@ export function Dashboard() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-          <section className="space-y-6 min-w-0">
+        <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+          <section className="space-y-5 min-w-0">
             {showChecklist && (
               <ActivationChecklist
                 hasProjects={projects.length > 0}
@@ -499,7 +499,7 @@ export function Dashboard() {
             {!isLoading && dashboard && <AiLimitBanner used={dashboard.dailyAiUsage} limit={dashboard.dailyAiLimit} />}
             {!isLoading && mostRecentActive && projects.length > 0 && <ResumeCard project={mostRecentActive} />}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <MetricCard label="Projetos ativos" value={activeProjects} variant="default" />
               <MetricCard label="Fases concluídas" value={totalCompletedPhases} variant="accent" />
               <MetricCard label="IA hoje" value={`${dashboard?.dailyAiUsage ?? 0}/${dashboard?.dailyAiLimit ?? 2}`} sub={`${aiUsagePct}% usado`} variant="dim" />
@@ -532,13 +532,13 @@ export function Dashboard() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {SHORTCUTS.map((s) => {
                 const locked = s.planRequired && !permissions.hasAiAdvisor;
                 const href = locked ? "/pricing" : (s.href ?? "/pricing");
                 return (
                   <Link key={s.label} href={href}>
-                    <div className="glass-card rounded-2xl p-4 cursor-pointer group h-full" role="button" aria-label={s.label}>
+                    <div className="glass-card rounded-2xl p-5 cursor-pointer group h-full" role="button" aria-label={s.label}>
                       <div className="text-xl mb-2">{s.icon}</div>
                       <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{s.label}</div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">{locked ? "Plano Avancado" : s.desc}</div>
@@ -582,8 +582,8 @@ export function Dashboard() {
               )}
 
               {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-44" />)}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-2xl p-5 animate-pulse h-52" />)}
                 </div>
               ) : projects.length === 0 ? (
                 <EmptyState onNew={() => setShowNew(true)} onTemplate={applyTemplate} onDemo={loadDemoProject} demoLoading={demoLoading} />
@@ -592,7 +592,7 @@ export function Dashboard() {
                   Nenhum projeto encontrado para "{searchQuery}"
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredProjects.map((project) => (
                     <ProjectCard key={project.projectId} project={project} />
                   ))}
@@ -659,7 +659,7 @@ export function Dashboard() {
             )}
           </section>
 
-          <aside className="space-y-4 lg:pt-0">
+          <aside className="space-y-5 lg:pt-0">
             <div className="surface-panel rounded-2xl p-5">
               <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em] mb-3">Status de uso</p>
               <div className="space-y-3 text-sm">
