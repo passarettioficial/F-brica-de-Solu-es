@@ -27,6 +27,41 @@ function requireAuth(req: any) {
   return auth?.userId ?? null;
 }
 
+// Phase 3 (Segurança & LGPD) gating: free plan only unlocks POLITICA_PRIVACIDADE.
+// Strips content/contentJson server-side from the other 7 artifacts and marks locked.
+// Apply to ALL endpoints that return artifact rows so locking can't be bypassed via alternate routes.
+async function applyPhase3FreeGate<T extends { artifactKey: string; content?: string | null; contentJson?: unknown }>(
+  userId: string,
+  phaseNumber: number,
+  artifacts: T[],
+): Promise<(T & { locked?: boolean })[]> {
+  if (phaseNumber !== 3) return artifacts;
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable)
+    .where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  if (planCfg.id !== "free") return artifacts;
+  return artifacts.map((a) =>
+    a.artifactKey === "POLITICA_PRIVACIDADE"
+      ? a
+      : { ...a, content: "", contentJson: null, locked: true },
+  );
+}
+
+function isPhase3GatedKey(artifactKey: string): boolean {
+  return artifactKey !== "POLITICA_PRIVACIDADE";
+}
+
+async function isFreePlan(userId: string): Promise<boolean> {
+  const [userForPlan] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable)
+    .where(eq(usersTable.clerkId, userId));
+  const planCfg = getPlanConfig(userForPlan?.plan ?? "free", userForPlan?.isSuperuser ?? false);
+  return planCfg.id === "free";
+}
+
 
 // GET /projects/:projectId/phases/:phaseNumber
 router.get("/projects/:projectId/phases/:phaseNumber", async (req, res): Promise<void> => {
@@ -48,8 +83,9 @@ router.get("/projects/:projectId/phases/:phaseNumber", async (req, res): Promise
   if (!phase) { res.status(404).json({ error: "Phase not found" }); return; }
 
   const artifacts = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
+  const visibleArtifacts = await applyPhase3FreeGate(userId, phaseNumber, artifacts);
 
-  res.json({ ...phase, artifacts });
+  res.json({ ...phase, artifacts: visibleArtifacts });
 });
 
 // PATCH /projects/:projectId/phases/:phaseNumber/gates
@@ -158,7 +194,8 @@ router.get("/projects/:projectId/phases/:phaseNumber/artifacts", async (req, res
   if (!phase) { res.status(404).json({ error: "Phase not found" }); return; }
 
   const artifacts = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
-  res.json(artifacts);
+  const visibleArtifacts = await applyPhase3FreeGate(userId, phaseNumber, artifacts);
+  res.json(visibleArtifacts);
 });
 
 // PATCH /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey
@@ -235,7 +272,13 @@ router.get("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/vers
     .where(and(eq(artifactVersionsTable.phaseId, phase.id), eq(artifactVersionsTable.artifactKey, artifactKey)))
     .orderBy(desc(artifactVersionsTable.createdAt));
 
-  res.json(rows);
+  // Phase 3 free gating: hide version history content for locked artifacts.
+  let visibleRows: any[] = rows;
+  if (phaseNumber === 3 && isPhase3GatedKey(artifactKey) && (await isFreePlan(userId))) {
+    visibleRows = rows.map((r) => ({ ...r, content: "", contentJson: null, locked: true }));
+  }
+
+  res.json(visibleRows);
 });
 
 // POST /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/versions/:versionId/restore
@@ -316,7 +359,8 @@ router.patch("/projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/do
     .returning();
 
   if (!artifact) { res.status(404).json({ error: "Artifact not found" }); return; }
-  res.json(artifact);
+  const [visibleArtifact] = await applyPhase3FreeGate(userId, phaseNumber, [artifact]);
+  res.json(visibleArtifact);
 });
 
 // POST /projects/:projectId/phases/:phaseNumber/artifacts/:artifactKey/feedback
@@ -438,6 +482,11 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
   }, 15000);
   res.on("close", () => clearInterval(heartbeat));
 
+  // Phase 3 free gating: suppress raw token streaming so locked artifact content
+  // never leaves the server in the SSE progress channel. We still emit a generic
+  // status ping so the UI shows movement.
+  const suppressProgressContent = phaseNumber === 3 && (await isFreePlan(userId));
+
   try {
     const results = await generatePhaseArtifacts(
       phaseNumber,
@@ -445,6 +494,10 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
       project.briefing,
       previousArtifacts,
       (text) => {
+        if (suppressProgressContent) {
+          res.write(`data: ${JSON.stringify({ type: "progress", content: "" })}\n\n`);
+          return;
+        }
         res.write(`data: ${JSON.stringify({ type: "progress", content: text })}\n\n`);
       },
       founderProfile ?? undefined
@@ -467,11 +520,12 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     });
 
     const saved = await db.select().from(phaseArtifactsTable).where(eq(phaseArtifactsTable.phaseId, phase.id));
+    const visibleSaved = await applyPhase3FreeGate(userId, phaseNumber, saved);
 
     clearInterval(heartbeat);
     await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
     void logEvent(userId, "ai_generated", { projectId, phaseId: phase.id, artifactCount: saved.length });
-    res.write(`data: ${JSON.stringify({ type: "done", artifacts: saved })}\n\n`);
+    res.write(`data: ${JSON.stringify({ type: "done", artifacts: visibleSaved })}\n\n`);
     res.end();
   } catch (error) {
     clearInterval(heartbeat);

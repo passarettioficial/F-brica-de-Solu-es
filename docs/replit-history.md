@@ -2,6 +2,15 @@
 
 Notas de implementação das features já shipadas. Decisões vigentes ficam em `replit.md`. Este arquivo é referência pra entender o "porquê" de código existente.
 
+## Fase 3 (Segurança & LGPD) — Gating do free (upsell Founder/Studio)
+
+- **Regra de produto:** plano `free` recebe apenas `POLITICA_PRIVACIDADE` na Fase 3. Os outros 7 artefatos (DATA_MAP, CLASSIFICACAO_DADOS, PRIVACY_BY_DESIGN, THREAT_MODEL, MATRIZ_RBAC, OWASP_CHECKLIST, PLANO_INCIDENTES) ficam travados com upsell para Founder/Studio. Upgrade libera conteúdo imediatamente (DB intacto — strip é só na resposta).
+- **Backend (`routes/phases.ts`):** helper `applyPhase3FreeGate(userId, phaseNumber, artifacts[])` resolve plano via `getPlanConfig(plan, isSuperuser)` (superuser bypass mantido) e, quando `id==="free"` e `phaseNumber===3`, retorna artefatos !==POLITICA_PRIVACIDADE com `content=""`, `contentJson=null`, `locked=true`. Aplicado em **todos** endpoints que devolvem artifact rows: `GET /phases/:n` (com phase meta), `GET /phases/:n/artifacts`, `GET /phases/:n/artifacts/:key/versions` (via `isFreePlan` + `isPhase3GatedKey`), `PATCH /phases/:n/artifacts/:key/download` e SSE `done` em `POST /phases/:n/execute`. PATCH edit/restore + export markdown/JSON em `projects.ts` continuam barrados upstream por `canCopy` (402 EXPORT_REQUIRES_PAID_PLAN).
+- **SSE leak fix:** em `/execute`, `suppressProgressContent = phaseNumber===3 && isFreePlan(userId)` calculado antes da geração. Quando true, `onProgress` emite `{type:"progress", content:""}` (UI continua piscando, sem tokens crus do modelo vazando).
+- **Public share leak fix (`routes/public.ts`):** `GET /public/projects/:shareId` busca o plano do **dono** do projeto (`usersTable` join via `clerkId`) e aplica o mesmo gating. Free founder que ativa share não vaza Fase 3 premium.
+- **Frontend (`pages/phase.tsx` renderCard):** quando `phase===3 && plan==="free" && key!==POLITICA_PRIVACIDADE && (locked||!content)`, renderiza card travado com ícone de cadeado SVG inline (sem nova dep), chip laranja "Founder / Studio" e botão "Ver planos" → `/pricing`. Tokens brand (sem roxo).
+- **Architect:** PASS na terceira passada (fechou objetivo + dois bypasses subsequentes).
+
 ## Demo Project (ativação imediata)
 
 - **Schema:** `projectsTable.isDemo boolean default false` + partial unique index `projects_one_active_demo_per_user ON (clerk_id) WHERE is_demo=true AND deleted_at IS NULL` (garante 1 demo ativo/user no nível DB).

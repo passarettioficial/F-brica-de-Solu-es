@@ -1552,21 +1552,70 @@ export function PhasePage() {
             )}
             {(() => {
               const sections = (phaseDef as any)?.sections as { id: string; label: string; keys: string[] }[] | undefined;
-              const renderCard = (artifact: any) => (
-                <ArtifactCard
-                  key={artifact.id}
-                  artifact={artifact}
-                  phaseNumber={phaseNumber}
-                  projectId={projectId}
-                  canCopy={permissions.canCopy}
-                  canDownload={permissions.canDownload}
-                  onUpdate={invalidatePhase}
-                  expanded={expandedIds.has(artifact.id)}
-                  onToggleExpanded={() => toggleExpanded(artifact.id)}
-                  siblings={artifacts}
-                  projectName={project?.name ?? "Projeto"}
-                />
-              );
+              const isPhase3FreeLocked = (a: any) =>
+                phaseNumber === 3 &&
+                permissions.plan === "free" &&
+                a.artifactKey !== "POLITICA_PRIVACIDADE" &&
+                (a.locked === true || !a.content?.trim());
+              const renderCard = (artifact: any) => {
+                if (isPhase3FreeLocked(artifact)) {
+                  const meta = ARTIFACT_LABELS[artifact.artifactKey];
+                  return (
+                    <div
+                      key={artifact.id}
+                      className="bg-card border border-card-border rounded-xl overflow-hidden"
+                      data-testid={`locked-artifact-${artifact.artifactKey}`}
+                    >
+                      <div className="flex items-center justify-between gap-3 p-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-accent" aria-hidden="true">
+                              <rect x="3" y="11" width="18" height="11" rx="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-foreground leading-snug">
+                              {meta?.label ?? artifact.artifactKey}
+                            </div>
+                            {meta?.description && (
+                              <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{meta.description}</div>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-accent bg-accent/10 border border-accent/30 px-2 py-0.5 rounded-full flex-shrink-0">
+                          Founder / Studio
+                        </span>
+                      </div>
+                      <div className="border-t border-card-border bg-muted/20 px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p className="text-xs text-muted-foreground leading-relaxed max-w-md">
+                          Este entregável de segurança é exclusivo dos planos pagos. No Explorar voce libera apenas a Política de Privacidade desta fase.
+                        </p>
+                        <Link href="/pricing">
+                          <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground font-semibold whitespace-nowrap">
+                            Ver planos
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <ArtifactCard
+                    key={artifact.id}
+                    artifact={artifact}
+                    phaseNumber={phaseNumber}
+                    projectId={projectId}
+                    canCopy={permissions.canCopy}
+                    canDownload={permissions.canDownload}
+                    onUpdate={invalidatePhase}
+                    expanded={expandedIds.has(artifact.id)}
+                    onToggleExpanded={() => toggleExpanded(artifact.id)}
+                    siblings={artifacts}
+                    projectName={project?.name ?? "Projeto"}
+                  />
+                );
+              };
               if (!sections) return artifacts.map(renderCard);
               const grouped = sections.map((s) => ({
                 ...s,

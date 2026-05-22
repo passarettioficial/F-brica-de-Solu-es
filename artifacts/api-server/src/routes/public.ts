@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { eq, and, isNull, inArray } from "drizzle-orm";
-import { db, projectsTable, phasesTable, phaseArtifactsTable } from "@workspace/db";
+import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
+import { getPlanConfig } from "../lib/stripe";
 
 const router: IRouter = Router();
 
@@ -23,11 +24,21 @@ router.get("/public/projects/:shareId", async (req: Request, res): Promise<void>
     marketPotentialScore: projectsTable.marketPotentialScore,
     sharedAt: projectsTable.sharedAt,
     createdAt: projectsTable.createdAt,
+    clerkId: projectsTable.clerkId,
   }).from(projectsTable).where(
     and(eq(projectsTable.shareId, shareId), isNull(projectsTable.deletedAt))
   );
 
   if (!project) { res.status(404).json({ error: "Projeto não encontrado ou link revogado" }); return; }
+
+  // Phase 3 gating must follow the project OWNER's plan on public shares too —
+  // a free founder cannot leak premium artifacts by toggling the share link on.
+  const [owner] = await db
+    .select({ plan: usersTable.plan, isSuperuser: usersTable.isSuperuser })
+    .from(usersTable)
+    .where(eq(usersTable.clerkId, project.clerkId));
+  const ownerPlan = getPlanConfig(owner?.plan ?? "free", owner?.isSuperuser ?? false);
+  const ownerIsFree = ownerPlan.id === "free";
 
   const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, project.id));
   const sortedPhases = phases.sort((a, b) => a.phaseNumber - b.phaseNumber);
@@ -45,10 +56,14 @@ router.get("/public/projects/:shareId", async (req: Request, res): Promise<void>
   const phasesWithArtifacts = sortedPhases.map(p => ({
     phaseNumber: p.phaseNumber,
     status: p.status,
-    artifacts: (artifactsByPhase[p.id] ?? []).map(a => ({
-      artifactKey: a.artifactKey,
-      content: a.content,
-    })),
+    artifacts: (artifactsByPhase[p.id] ?? []).map(a => {
+      const gated = ownerIsFree && p.phaseNumber === 3 && a.artifactKey !== "POLITICA_PRIVACIDADE";
+      return {
+        artifactKey: a.artifactKey,
+        content: gated ? "" : a.content,
+        ...(gated ? { locked: true } : {}),
+      };
+    }),
   }));
 
   res.json({
