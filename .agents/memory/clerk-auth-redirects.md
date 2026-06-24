@@ -30,6 +30,11 @@ Clerk `<SignIn>` honors a raw `redirect_url` query param by default.
 # "Endpoint has been disabled. Enable it using the API and retry"
 
 This Postgres/Neon error in production (retention jobs, publish-time DB diff) means the prod DB
-compute endpoint is suspended — typically a Replit **deployment suspension** (e.g. billing
-failure), NOT a code bug. Do not change schema/migrations. Resolve billing + Resume the
+compute endpoint is suspended/disabled — typically a Replit **deployment/account suspension** (e.g.
+billing failure), NOT a code bug. Do not change schema/migrations. Resolve billing + Resume the
 deployment; the endpoint reactivates on connection. Dev DB is unaffected.
+
+**Nuance:** the *current* live deployment can still show healthy (`isDeployed:true`,
+`hasSuccessfulBuild:true`, public URL up) while **republish** fails — republish runs a schema diff
+against the prod DB compute, and only that step hits the disabled endpoint. Agent cannot enable the
+endpoint (no callback); route the user to Replit support for billing/account, don't keep retrying.
