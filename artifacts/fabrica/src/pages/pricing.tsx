@@ -11,6 +11,28 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 type BillingCycle = "monthly" | "yearly";
 type UpgradeReason = "ai" | "projects" | "seats";
 
+type AppliedCoupon = {
+  code: string;
+  discountType: string;
+  discountValue: number;
+  description: string | null;
+  appliesTo: string | null;
+};
+
+function formatBRL(value: number): string {
+  return `R$${value.toLocaleString("pt-BR", {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function applyDiscount(value: number, coupon: AppliedCoupon): number {
+  const discounted = coupon.discountType === "percent"
+    ? value * (1 - coupon.discountValue / 100)
+    : value - coupon.discountValue;
+  return Math.max(0, Math.round(discounted * 100) / 100);
+}
+
 const UPGRADE_COPY: Record<UpgradeReason, { eyebrow: string; title: string; description: string; recommended: "founder" | "studio" }> = {
   ai: {
     eyebrow: "Limite de IA atingido",
@@ -38,6 +60,8 @@ const PLANS = [
     name: "Explorar",
     priceMonthly: "R$0",
     priceYearly: "R$0",
+    monthlyValue: 0,
+    yearlyValue: 0,
     period: "",
     description: "Teste o produto sem cartão de crédito.",
     highlight: false,
@@ -60,6 +84,8 @@ const PLANS = [
     name: "Founder",
     priceMonthly: "R$197",
     priceYearly: "R$1.970",
+    monthlyValue: 197,
+    yearlyValue: 1970,
     yearlyMonthlyEquivalent: "R$164",
     period: "/mês",
     periodYearly: "/ano",
@@ -84,6 +110,8 @@ const PLANS = [
     name: "Studio",
     priceMonthly: "R$697",
     priceYearly: "R$6.970",
+    monthlyValue: 697,
+    yearlyValue: 6970,
     yearlyMonthlyEquivalent: "R$581",
     period: "/mês",
     periodYearly: "/ano",
@@ -135,6 +163,11 @@ export function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
+  const [couponInput, setCouponInput] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
   const search = useSearch();
   const { upgradeReason, requestedPlan } = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -171,7 +204,11 @@ export function PricingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ planId, billingCycle: cycle }),
+        body: JSON.stringify({
+          planId,
+          billingCycle: cycle,
+          ...(appliedCoupon && couponAppliesToPlan(planId) ? { couponCode: appliedCoupon.code } : {}),
+        }),
       });
       const data = await res.json() as { url?: string; error?: string };
       if (data.url) {
@@ -184,6 +221,56 @@ export function PricingPage() {
     } finally {
       setLoading(null);
     }
+  }
+
+  async function handleApplyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      const dest = `${basePath}/pricing`;
+      setLocation(`/sign-in?redirect_url=${encodeURIComponent(dest)}`);
+      return;
+    }
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res = await fetch(`${basePath}/api/billing/validate-coupon`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json() as AppliedCoupon & { valid?: boolean; error?: string };
+      if (res.ok && data.valid) {
+        setAppliedCoupon({
+          code: data.code,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          description: data.description ?? null,
+          appliesTo: data.appliesTo ?? null,
+        });
+        setCouponInput("");
+      } else {
+        setCouponError(data.error ?? "Cupom inválido");
+      }
+    } catch {
+      setCouponError("Erro de conexão");
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null);
+    setCouponError(null);
+  }
+
+  function couponAppliesToPlan(planId: string): boolean {
+    if (!appliedCoupon) return false;
+    if (planId === "free") return false;
+    if (!appliedCoupon.appliesTo) return true;
+    return appliedCoupon.appliesTo.split(",").map((p) => p.trim()).includes(planId);
   }
 
   const isCurrentPlan = (planId: string) => permissions.plan === planId;
@@ -292,10 +379,72 @@ export function PricingPage() {
           </div>
         </div>
 
+        {/* Coupon area */}
+        <div className="max-w-md mx-auto mb-10">
+          {appliedCoupon ? (
+            <div
+              className="rounded-xl border border-primary/30 bg-primary/[0.05] p-4 flex items-start gap-3"
+              data-testid="coupon-applied"
+            >
+              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-bold">✓</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-foreground">
+                  Cupom <span className="font-mono uppercase">{appliedCoupon.code}</span> aplicado
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {appliedCoupon.discountType === "percent"
+                    ? `${appliedCoupon.discountValue}% de desconto`
+                    : `${formatBRL(appliedCoupon.discountValue)} de desconto`}
+                  {appliedCoupon.description ? ` · ${appliedCoupon.description}` : ""}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={removeCoupon}
+                className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground underline"
+                data-testid="coupon-remove"
+              >
+                Remover
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => { setCouponInput(e.target.value); setCouponError(null); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void handleApplyCoupon(); } }}
+                  placeholder="Tem um cupom? Insira o código"
+                  className="flex-1 h-10 px-3 rounded-lg border border-card-border bg-card text-sm text-foreground placeholder:text-muted-foreground uppercase focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  data-testid="coupon-input"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleApplyCoupon()}
+                  disabled={couponLoading || !couponInput.trim()}
+                  data-testid="coupon-apply"
+                >
+                  {couponLoading ? "Validando..." : "Aplicar"}
+                </Button>
+              </div>
+              {couponError && (
+                <p className="mt-2 text-xs text-destructive" data-testid="coupon-error">{couponError}</p>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {PLANS.map((plan) => {
             const isYearly = cycle === "yearly" && plan.id !== "free";
-            const displayPrice = isYearly ? plan.priceYearly : plan.priceMonthly;
+            const basePrice = isYearly ? plan.priceYearly : plan.priceMonthly;
+            const baseValue = isYearly ? plan.yearlyValue : plan.monthlyValue;
+            const hasDiscount = couponAppliesToPlan(plan.id);
+            const displayPrice = hasDiscount && appliedCoupon
+              ? formatBRL(applyDiscount(baseValue, appliedCoupon))
+              : basePrice;
             const displayPeriod = isYearly ? plan.periodYearly : plan.period;
             const isRecommended = recommendedPlanId === plan.id;
             return (
@@ -325,10 +474,18 @@ export function PricingPage() {
 
               <div className="mb-6">
                 <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">{plan.name}</div>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="font-serif text-4xl text-foreground">{displayPrice}</span>
+                <div className="flex items-baseline gap-2 mb-1">
+                  {hasDiscount && (
+                    <span className="font-serif text-2xl text-muted-foreground line-through">{basePrice}</span>
+                  )}
+                  <span className={`font-serif text-4xl ${hasDiscount ? "text-primary" : "text-foreground"}`}>{displayPrice}</span>
                   <span className="text-muted-foreground text-sm">{displayPeriod}</span>
                 </div>
+                {hasDiscount && appliedCoupon && (
+                  <div className="text-xs font-medium text-primary mb-2">
+                    Cupom {appliedCoupon.code} aplicado
+                  </div>
+                )}
                 {isYearly && plan.yearlyMonthlyEquivalent && (
                   <div className="text-xs text-accent font-medium mb-2">
                     ≈ {plan.yearlyMonthlyEquivalent}/mês · economize 17%

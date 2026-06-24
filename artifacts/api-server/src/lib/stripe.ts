@@ -139,3 +139,45 @@ export async function getPriceId(lookupKey: string): Promise<string | null> {
     return null;
   }
 }
+
+// Maps an internal (DB) coupon to a Stripe coupon, creating it once and reusing
+// it on subsequent checkouts via a deterministic id derived from type + value.
+export async function getOrCreateStripeCoupon(coupon: {
+  code: string;
+  discountType: string;
+  discountValue: number;
+}): Promise<string | null> {
+  if (!stripe) return null;
+
+  const safeCode = coupon.code.toUpperCase().replace(/[^A-Z0-9_]/g, "");
+  const isPercent = coupon.discountType === "percent";
+  const id = isPercent
+    ? `ff_${safeCode}_pct_${Math.round(coupon.discountValue)}`
+    : `ff_${safeCode}_amt_${Math.round(coupon.discountValue)}`;
+
+  try {
+    const existing = await stripe.coupons.retrieve(id);
+    if (existing && !existing.deleted) return existing.id;
+  } catch {
+    // not found — fall through to create
+  }
+
+  const params: Stripe.CouponCreateParams = isPercent
+    ? { id, percent_off: coupon.discountValue, duration: "once", name: coupon.code }
+    : { id, amount_off: Math.round(coupon.discountValue * 100), currency: "brl", duration: "once", name: coupon.code };
+
+  try {
+    const created = await stripe.coupons.create(params);
+    return created.id;
+  } catch (err) {
+    // Possible race: another request created it first. Try retrieving once more.
+    try {
+      const existing = await stripe.coupons.retrieve(id);
+      if (existing && !existing.deleted) return existing.id;
+    } catch {
+      /* ignore */
+    }
+    logger.error({ err, code: coupon.code }, "Failed to create Stripe coupon");
+    return null;
+  }
+}

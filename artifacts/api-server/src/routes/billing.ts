@@ -1,9 +1,11 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, usersTable } from "@workspace/db";
-import { stripe, PLANS, getPlanConfig, getOrCreateStripeCustomer, getPriceId, normalizePlanId, type PlanId } from "../lib/stripe";
+import { db, usersTable, couponsTable } from "@workspace/db";
+import { stripe, PLANS, getPlanConfig, getOrCreateStripeCustomer, getPriceId, getOrCreateStripeCoupon, normalizePlanId, type PlanId } from "../lib/stripe";
 import { ensureUser } from "../lib/auth";
+import { validateCoupon } from "../lib/coupons";
+import { auditLog } from "../lib/audit";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -105,7 +107,7 @@ router.post("/billing/checkout", async (req: Request, res: Response): Promise<vo
 
   if (!stripe) { res.status(503).json({ error: "Pagamentos não configurados" }); return; }
 
-  const { planId, billingCycle } = req.body as { planId: PlanId; billingCycle?: "monthly" | "yearly" };
+  const { planId, billingCycle, couponCode } = req.body as { planId: PlanId; billingCycle?: "monthly" | "yearly"; couponCode?: string };
   const plan = PLANS[planId];
   if (!plan || planId === "free") { res.status(400).json({ error: "Plano inválido" }); return; }
   const cycle = billingCycle === "yearly" ? "yearly" : "monthly";
@@ -134,19 +136,54 @@ router.post("/billing/checkout", async (req: Request, res: Response): Promise<vo
     return;
   }
 
+  // Optional coupon — validate against our DB, then map to a Stripe coupon.
+  let discounts: { coupon: string }[] | undefined;
+  let appliedCouponCode: string | undefined;
+  if (couponCode && couponCode.trim()) {
+    const result = await validateCoupon(couponCode, planId);
+    if (!result.ok) { res.status(result.status).json({ error: result.error }); return; }
+    const stripeCouponId = await getOrCreateStripeCoupon(result.coupon);
+    if (!stripeCouponId) { res.status(503).json({ error: "Não foi possível aplicar o cupom. Tente novamente." }); return; }
+    discounts = [{ coupon: stripeCouponId }];
+    appliedCouponCode = result.coupon.code;
+  }
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
+    ...(discounts ? { discounts } : {}),
     success_url: `${BASE_URL}/billing?success=1&plan=${planId}`,
     cancel_url: `${BASE_URL}/pricing?canceled=1`,
-    metadata: { clerkId: userId, planId, billingCycle: cycle },
+    metadata: { clerkId: userId, planId, billingCycle: cycle, ...(appliedCouponCode ? { couponCode: appliedCouponCode } : {}) },
     subscription_data: {
-      metadata: { clerkId: userId, planId, billingCycle: cycle },
+      metadata: { clerkId: userId, planId, billingCycle: cycle, ...(appliedCouponCode ? { couponCode: appliedCouponCode } : {}) },
     },
   });
 
   res.json({ url: session.url });
+});
+
+// POST /billing/validate-coupon — user-facing coupon validation for checkout
+router.post("/billing/validate-coupon", async (req: Request, res: Response): Promise<void> => {
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const { code, planId } = req.body as { code?: string; planId?: string };
+  if (!code) { res.status(400).json({ error: "Código obrigatório" }); return; }
+
+  const result = await validateCoupon(code, planId);
+  if (!result.ok) { res.status(result.status).json({ error: result.error }); return; }
+
+  const c = result.coupon;
+  res.json({
+    valid: true,
+    code: c.code,
+    discountType: c.discountType,
+    discountValue: c.discountValue,
+    description: c.description,
+    appliesTo: c.appliesTo,
+  });
 });
 
 // POST /billing/portal — customer portal
@@ -201,6 +238,10 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
         const subscriptionId = session.subscription as string;
 
         if (clerkId && planId && subscriptionId) {
+          const [existing] = await db.select().from(usersTable).where(eq(usersTable.clerkId, clerkId));
+          // Idempotency: Stripe may redeliver this event. Only act once per subscription.
+          const alreadyProcessed = existing?.stripeSubscriptionId === subscriptionId;
+
           await db.update(usersTable)
             .set({
               plan: planId,
@@ -211,6 +252,19 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
             .where(eq(usersTable.clerkId, clerkId));
 
           logger.info({ clerkId, planId }, "Subscription activated");
+
+          const couponCode = session.metadata?.couponCode;
+          if (couponCode && !alreadyProcessed) {
+            // Bounded increment: never let concurrent redemptions exceed maxUses.
+            const [redeemed] = await db.update(couponsTable)
+              .set({ usesCount: sql`${couponsTable.usesCount} + 1`, updatedAt: new Date() })
+              .where(sql`${couponsTable.code} = ${couponCode} AND (${couponsTable.maxUses} IS NULL OR ${couponsTable.usesCount} < ${couponsTable.maxUses})`)
+              .returning();
+            if (redeemed) {
+              await auditLog({ eventType: "user.coupon.redeemed", actorClerkId: clerkId, meta: { code: couponCode, planId } });
+              logger.info({ clerkId, couponCode }, "Coupon redeemed");
+            }
+          }
         }
         break;
       }
