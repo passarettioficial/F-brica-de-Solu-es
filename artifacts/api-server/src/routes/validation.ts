@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, marketValidationsTable } from "@workspace/db";
 import { generateInterviewScript, analyzeInterviewNotes } from "../lib/ai";
-import { checkAndIncrementAiUsage, aiLimitPayload } from "../lib/auth";
+import { checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
 
 const router: IRouter = Router();
 
@@ -104,9 +104,12 @@ router.post("/projects/:projectId/validations/:validationId/generate-script", as
     res.status(400).json({ error: "Nenhum artefato gerado para esta fase ainda." }); return;
   }
 
-  const { allowed, limit, plan, used } = await checkAndIncrementAiUsage(userId);
-  if (!allowed) {
-    res.status(429).json(aiLimitPayload({ limit, plan, used, context: "Geração de script de validação" })); return;
+  const usage = await checkAndIncrementAiUsage(userId);
+  if (!usage.allowed) {
+    if (usage.reason === "trial_expired") {
+      res.status(402).json(trialExpiredPayload({ plan: usage.plan, context: "Geração de script de validação" })); return;
+    }
+    res.status(429).json(aiLimitPayload({ limit: usage.limit, plan: usage.plan, used: usage.used, context: "Geração de script de validação" })); return;
   }
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -181,9 +184,12 @@ router.post("/projects/:projectId/validations/:validationId/analyze", async (req
     res.status(400).json({ error: "Registre as notas das entrevistas antes de analisar." }); return;
   }
 
-  const { allowed, limit, plan, used } = await checkAndIncrementAiUsage(userId);
-  if (!allowed) {
-    res.status(429).json(aiLimitPayload({ limit, plan, used, context: "Análise de entrevistas" })); return;
+  const usage = await checkAndIncrementAiUsage(userId);
+  if (!usage.allowed) {
+    if (usage.reason === "trial_expired") {
+      res.status(402).json(trialExpiredPayload({ plan: usage.plan, context: "Análise de entrevistas" })); return;
+    }
+    res.status(429).json(aiLimitPayload({ limit: usage.limit, plan: usage.plan, used: usage.used, context: "Análise de entrevistas" })); return;
   }
 
   const artifactContext = await getArtifactContext(projectId, validation.phaseNumber);

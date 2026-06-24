@@ -6,7 +6,7 @@ import {
   CreateProjectBody,
   UpdateProjectBody,
 } from "@workspace/api-zod";
-import { ensureUser, checkAndIncrementAiUsage, aiLimitPayload } from "../lib/auth";
+import { ensureUser, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 import { auditLog } from "../lib/audit";
 import { analyzeProjectCoherence, analyzeMarketPotential } from "../lib/ai";
@@ -638,9 +638,12 @@ router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> =
     res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;
   }
 
-  const { allowed, limit, plan, used } = await checkAndIncrementAiUsage(userId);
-  if (!allowed) {
-    res.status(429).json(aiLimitPayload({ limit, plan, used, context: "Análise de coerência do projeto" })); return;
+  const usage = await checkAndIncrementAiUsage(userId);
+  if (!usage.allowed) {
+    if (usage.reason === "trial_expired") {
+      res.status(402).json(trialExpiredPayload({ plan: usage.plan, context: "Análise de coerência do projeto" })); return;
+    }
+    res.status(429).json(aiLimitPayload({ limit: usage.limit, plan: usage.plan, used: usage.used, context: "Análise de coerência do projeto" })); return;
   }
 
   try {
@@ -676,9 +679,12 @@ router.post("/projects/:id/potential/analyze", async (req, res): Promise<void> =
     res.status(400).json({ error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." }); return;
   }
 
-  const { allowed, limit, plan, used } = await checkAndIncrementAiUsage(userId);
-  if (!allowed) {
-    res.status(429).json(aiLimitPayload({ limit, plan, used, context: "Análise de potencial de mercado" })); return;
+  const usage = await checkAndIncrementAiUsage(userId);
+  if (!usage.allowed) {
+    if (usage.reason === "trial_expired") {
+      res.status(402).json(trialExpiredPayload({ plan: usage.plan, context: "Análise de potencial de mercado" })); return;
+    }
+    res.status(429).json(aiLimitPayload({ limit: usage.limit, plan: usage.plan, used: usage.used, context: "Análise de potencial de mercado" })); return;
   }
 
   try {

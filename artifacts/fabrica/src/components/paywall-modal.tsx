@@ -90,6 +90,7 @@ export function PaywallModal() {
   if (!reason) return null;
 
   const planLabel = PLAN_LABELS[reason.plan] ?? reason.plan;
+  const isTrialExpired = reason.kind === "trial_expired";
 
   function close() {
     setReason(null);
@@ -125,32 +126,47 @@ export function PaywallModal() {
         {/* Header */}
         <div className="text-center mb-6">
           <span className="inline-block text-[11px] font-mono font-semibold text-accent bg-accent/10 px-2.5 py-1 rounded-full uppercase tracking-wider mb-3">
-            Limite atingido
+            {isTrialExpired ? "Período gratuito encerrado" : "Limite atingido"}
           </span>
           <h2 id="paywall-title" className="font-serif text-2xl text-foreground mb-2 leading-snug">
-            Você usou suas {reason.limit} execuções de IA hoje
+            {isTrialExpired
+              ? "Seu período gratuito de 7 dias terminou"
+              : `Você usou suas ${reason.limit} execuções de IA hoje`}
           </h2>
           <p id="paywall-desc" className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
-            {reason.context
-              ? <>A próxima ação (<span className="font-medium text-foreground">{reason.context}</span>) precisa de IA. </>
-              : "Sua próxima geração precisa de IA. "}
-            Plano <span className="font-semibold text-foreground">{planLabel}</span> permite {reason.limit}/dia. Aumente agora ou volte amanhã.
+            {isTrialExpired ? (
+              <>
+                {reason.context
+                  ? <>A próxima ação (<span className="font-medium text-foreground">{reason.context}</span>) precisa de IA. </>
+                  : "Novas execuções precisam de IA. "}
+                O plano <span className="font-semibold text-foreground">{planLabel}</span> é gratuito por 7 dias. Faça upgrade para continuar executando — seu conteúdo segue disponível para visualização.
+              </>
+            ) : (
+              <>
+                {reason.context
+                  ? <>A próxima ação (<span className="font-medium text-foreground">{reason.context}</span>) precisa de IA. </>
+                  : "Sua próxima geração precisa de IA. "}
+                Plano <span className="font-semibold text-foreground">{planLabel}</span> permite {reason.limit}/dia. Aumente agora ou volte amanhã.
+              </>
+            )}
           </p>
         </div>
 
-        {/* Usage bar */}
-        <div className="mb-6 bg-muted/40 border border-card-border rounded-xl p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Uso hoje</span>
-            <span className="text-sm font-mono tabular-nums text-foreground">
-              <span className="text-accent font-semibold">{reason.used}</span>
-              <span className="text-muted-foreground"> / {reason.limit}</span>
-            </span>
+        {/* Usage bar (apenas no limite diário) */}
+        {!isTrialExpired && (
+          <div className="mb-6 bg-muted/40 border border-card-border rounded-xl p-4">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Uso hoje</span>
+              <span className="text-sm font-mono tabular-nums text-foreground">
+                <span className="text-accent font-semibold">{reason.used}</span>
+                <span className="text-muted-foreground"> / {reason.limit}</span>
+              </span>
+            </div>
+            <div className="h-2 bg-background rounded-full overflow-hidden">
+              <div className="h-full bg-accent" style={{ width: "100%" }} />
+            </div>
           </div>
-          <div className="h-2 bg-background rounded-full overflow-hidden">
-            <div className="h-full bg-accent" style={{ width: "100%" }} />
-          </div>
-        </div>
+        )}
 
         {/* Upgrade options side-by-side */}
         <div className="grid sm:grid-cols-2 gap-3 mb-5">
@@ -183,9 +199,11 @@ export function PaywallModal() {
                   <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-1">IA por dia</div>
                   <div className="font-serif text-xl text-primary">
                     {opt.aiPerDay >= 999 ? "Ilimitado" : `${opt.aiPerDay}×`}
-                    <span className="text-xs text-muted-foreground font-sans ml-1.5">
-                      vs {reason.limit} atual
-                    </span>
+                    {!isTrialExpired && (
+                      <span className="text-xs text-muted-foreground font-sans ml-1.5">
+                        vs {reason.limit} atual
+                      </span>
+                    )}
                   </div>
                 </div>
                 <ul className="space-y-1.5 mb-4">
@@ -219,7 +237,7 @@ export function PaywallModal() {
             className="text-muted-foreground hover:text-foreground transition-colors"
             data-testid="paywall-dismiss"
           >
-            Voltar amanhã
+            {isTrialExpired ? "Continuar só lendo" : "Voltar amanhã"}
           </button>
           <span className="text-muted-foreground">
             Cancele quando quiser · Sem fidelidade

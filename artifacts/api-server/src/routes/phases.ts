@@ -14,7 +14,7 @@ const ArtifactFeedbackBody = z.object({
 });
 import { generatePhaseArtifacts } from "../lib/ai";
 import { logEvent } from "../lib/events";
-import { checkAndIncrementAiUsage, aiLimitPayload } from "../lib/auth";
+import { checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
 import { auditLog } from "../lib/audit";
 import { createNotification } from "../lib/notifications";
 import { getPlanConfig } from "../lib/stripe";
@@ -446,11 +446,16 @@ router.post("/projects/:projectId/phases/:phaseNumber/execute", async (req, res)
     return;
   }
 
-  const { allowed, limit, plan, used } = await checkAndIncrementAiUsage(userId);
-  if (!allowed) {
+  const usage = await checkAndIncrementAiUsage(userId);
+  if (!usage.allowed) {
     await db.update(phasesTable).set({ isGenerating: false }).where(eq(phasesTable.id, phase.id));
-    await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit, phaseNumber, projectId }, req });
-    res.status(429).json(aiLimitPayload({ limit, plan, used, context: `Geração da Fase ${phaseNumber}` }));
+    if (usage.reason === "trial_expired") {
+      await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "free_trial_expired", phaseNumber, projectId }, req });
+      res.status(402).json(trialExpiredPayload({ plan: usage.plan, context: `Geração da Fase ${phaseNumber}` }));
+      return;
+    }
+    await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit: usage.limit, phaseNumber, projectId }, req });
+    res.status(429).json(aiLimitPayload({ limit: usage.limit, plan: usage.plan, used: usage.used, context: `Geração da Fase ${phaseNumber}` }));
     return;
   }
   await auditLog({ eventType: "user.ai.used", actorClerkId: userId, meta: { projectId, phaseNumber, projectName: project.name }, req });

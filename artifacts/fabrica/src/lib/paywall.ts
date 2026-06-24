@@ -3,6 +3,7 @@ export type PaywallReason = {
   used: number;
   plan: string;
   context?: string | null;
+  kind?: "ai_limit" | "trial_expired";
 };
 
 type Listener = (reason: PaywallReason) => void;
@@ -24,19 +25,20 @@ export function triggerPaywall(reason: PaywallReason): void {
  * Pass the already-parsed JSON body (or undefined) to avoid double-reading the stream.
  */
 export async function handleAiLimit(res: Response, parsed?: unknown): Promise<boolean> {
-  if (res.status !== 429) return false;
+  if (res.status !== 429 && res.status !== 402) return false;
   let body: unknown = parsed;
   if (body === undefined) {
     body = await res.clone().json().catch(() => null);
   }
   if (!body || typeof body !== "object") return false;
   const b = body as { code?: string; limit?: number; used?: number; plan?: string; context?: string | null };
-  if (b.code !== "AI_LIMIT_EXCEEDED") return false;
+  if (b.code !== "AI_LIMIT_EXCEEDED" && b.code !== "FREE_TRIAL_EXPIRED") return false;
   triggerPaywall({
     limit: typeof b.limit === "number" ? b.limit : 0,
     used: typeof b.used === "number" ? b.used : 0,
     plan: typeof b.plan === "string" ? b.plan : "free",
     context: b.context ?? null,
+    kind: b.code === "FREE_TRIAL_EXPIRED" ? "trial_expired" : "ai_limit",
   });
   return true;
 }
