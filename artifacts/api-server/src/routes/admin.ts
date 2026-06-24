@@ -525,9 +525,8 @@ router.post("/admin/coupons", async (req: Request, res: Response): Promise<void>
   const admin = await requireAdmin(req, res);
   if (!admin) return;
 
-  const { code, discountType, discountValue, maxUses, expiresAt, appliesTo, description } = req.body as {
+  const { code, discountValue, maxUses, expiresAt, appliesTo, description } = req.body as {
     code: string;
-    discountType: "percent" | "fixed";
     discountValue: number;
     maxUses?: number;
     expiresAt?: string;
@@ -535,15 +534,19 @@ router.post("/admin/coupons", async (req: Request, res: Response): Promise<void>
     description?: string;
   };
 
-  if (!code || !discountType || discountValue === undefined) {
-    res.status(400).json({ error: "Campos obrigatórios: code, discountType, discountValue" });
+  if (!code || discountValue === undefined) {
+    res.status(400).json({ error: "Campos obrigatórios: code, discountValue" });
+    return;
+  }
+  if (discountValue <= 0 || discountValue > 100) {
+    res.status(400).json({ error: "Desconto deve ser entre 1 e 100%" });
     return;
   }
 
   try {
     const [coupon] = await db.insert(couponsTable).values({
       code: code.toUpperCase().trim(),
-      discountType,
+      discountType: "percent",
       discountValue,
       maxUses: maxUses ?? null,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
@@ -553,7 +556,7 @@ router.post("/admin/coupons", async (req: Request, res: Response): Promise<void>
       usesCount: 0,
     }).returning();
 
-    await auditLog({ eventType: "admin.coupon.created", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { code: coupon.code, discountType, discountValue, maxUses, expiresAt }, req });
+    await auditLog({ eventType: "admin.coupon.created", actorClerkId: admin.clerkId, actorName: admin.displayName, meta: { code: coupon.code, discountType: "percent", discountValue, maxUses, expiresAt }, req });
 
     res.status(201).json({ coupon });
   } catch (err: unknown) {
@@ -571,9 +574,8 @@ router.patch("/admin/coupons/:id", async (req: Request, res: Response): Promise<
   if (!admin) return;
 
   const id = parseInt(String(req.params.id), 10);
-  const { code, discountType, discountValue, maxUses, expiresAt, appliesTo, description, active } = req.body as {
+  const { code, discountValue, maxUses, expiresAt, appliesTo, description, active } = req.body as {
     code?: string;
-    discountType?: "percent" | "fixed";
     discountValue?: number;
     maxUses?: number | null;
     expiresAt?: string | null;
@@ -582,10 +584,14 @@ router.patch("/admin/coupons/:id", async (req: Request, res: Response): Promise<
     active?: boolean;
   };
 
+  if (discountValue !== undefined && (discountValue <= 0 || discountValue > 100)) {
+    res.status(400).json({ error: "Desconto deve ser entre 1 e 100%" });
+    return;
+  }
+
   try {
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (code !== undefined) updates.code = code.toUpperCase().trim();
-    if (discountType !== undefined) updates.discountType = discountType;
     if (discountValue !== undefined) updates.discountValue = discountValue;
     if (maxUses !== undefined) updates.maxUses = maxUses;
     if (expiresAt !== undefined) updates.expiresAt = expiresAt ? new Date(expiresAt) : null;

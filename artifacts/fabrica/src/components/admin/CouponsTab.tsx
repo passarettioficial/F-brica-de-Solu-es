@@ -10,7 +10,7 @@ export function CouponsTab() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
-    code: "", discountType: "percent" as "percent" | "fixed", discountValue: "",
+    code: "", discountValue: "",
     maxUses: "", expiresAt: "", appliesTo: "", description: "",
   });
   const { toast } = useToast();
@@ -30,7 +30,7 @@ export function CouponsTab() {
         method: "POST",
         body: JSON.stringify({
           code: form.code,
-          discountType: form.discountType,
+          discountType: "percent",
           discountValue: parseFloat(form.discountValue),
           maxUses: form.maxUses ? parseInt(form.maxUses) : undefined,
           expiresAt: form.expiresAt || undefined,
@@ -40,7 +40,7 @@ export function CouponsTab() {
       });
       if (!r.ok) throw new Error((await r.json()).error);
       toast({ title: "Cupom criado" });
-      setForm({ code: "", discountType: "percent", discountValue: "", maxUses: "", expiresAt: "", appliesTo: "", description: "" });
+      setForm({ code: "", discountValue: "", maxUses: "", expiresAt: "", appliesTo: "", description: "" });
       load();
     } catch (e) {
       toast({ title: "Erro", description: String(e), variant: "destructive" });
@@ -70,15 +70,8 @@ export function CouponsTab() {
             <Input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="PROMO20" className="mt-1 font-mono" />
           </div>
           <div>
-            <Label className="text-xs">Tipo de desconto *</Label>
-            <select className="mt-1 w-full border border-border rounded-md px-3 py-2 text-sm bg-background" value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" }))}>
-              <option value="percent">Percentual (%)</option>
-              <option value="fixed">Valor fixo (R$)</option>
-            </select>
-          </div>
-          <div>
-            <Label className="text-xs">Valor *</Label>
-            <Input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: e.target.value }))} placeholder={form.discountType === "percent" ? "20" : "49"} className="mt-1" />
+            <Label className="text-xs">Desconto (%) *</Label>
+            <Input type="number" min="1" max="100" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: e.target.value }))} placeholder="20" className="mt-1" />
           </div>
           <div>
             <Label className="text-xs">Máximo de usos (em branco = ilimitado)</Label>
