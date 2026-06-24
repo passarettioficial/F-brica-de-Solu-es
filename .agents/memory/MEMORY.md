@@ -1,0 +1,1 @@
+- [Clerk auth on public CTAs + safe redirects](clerk-auth-redirects.md) — gate authed actions on public pages by Clerk state; use forceRedirectUrl + internal-path validation to block open-redirect; "endpoint disabled" = prod deploy suspension, not a code bug.

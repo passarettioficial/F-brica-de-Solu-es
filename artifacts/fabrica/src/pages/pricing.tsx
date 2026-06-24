@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
+import { useAuth } from "@clerk/react";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -129,6 +130,8 @@ const FAQ = [
 
 export function PricingPage() {
   const { permissions } = usePlan();
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, setLocation] = useLocation();
   const [loading, setLoading] = useState<string | null>(null);
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
@@ -156,6 +159,12 @@ export function PricingPage() {
   }, [recommendedPlanId]);
 
   async function handleSubscribe(planId: string) {
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      const dest = `${basePath}/pricing?plan=${planId}`;
+      setLocation(`/sign-in?redirect_url=${encodeURIComponent(dest)}`);
+      return;
+    }
     setLoading(planId);
     try {
       const res = await fetch(`${basePath}/api/billing/checkout`, {
@@ -367,7 +376,7 @@ export function PricingPage() {
               ) : (
                 <Button
                   onClick={() => handleSubscribe(plan.id)}
-                  disabled={loading === plan.id}
+                  disabled={!isLoaded || loading === plan.id}
                   className={`w-full ${plan.highlight ? "bg-primary hover:bg-primary/90 text-white" : ""}`}
                   variant={plan.highlight ? "default" : "outline"}
                 >
