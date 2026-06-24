@@ -15,8 +15,11 @@ O Stripe não conhece esses cupons até o checkout.
 - O mapeamento usa um **id determinístico** (`ff_<CODE>_pct_<n>` / `ff_<CODE>_amt_<n>`)
   com retrieve-or-create, então o mesmo cupom não cria objetos Stripe duplicados.
 - `percent` → `percent_off`; `fixed` → `amount_off` em **centavos** + `currency: "brl"`.
-- `duration: "once"` → desconto só na primeira fatura. Se algum dia o produto exigir
-  desconto recorrente, mudar para `repeating`/`forever` (não há campo de duração no schema).
+- `duration: "forever"` → desconto **recorrente** (toda mensalidade/anuidade). Ex.: 40% off
+  em R$197 = R$118,20 todo mês. Regra de negócio confirmada: o desconto é na mensalidade, não
+  só na primeira fatura. Não há campo de duração no schema — é fixo em `forever`.
+- Stripe coupons são imutáveis: o id determinístico inclui sufixo de versão (`_fv`) pra que
+  trocar a duração force criação de um coupon novo em vez de reusar um antigo (`once`).
 - `discounts` e `allow_promotion_codes` são mutuamente exclusivos na Checkout Session.
 
 # Contar uso de cupom no webhook com segurança

@@ -151,9 +151,11 @@ export async function getOrCreateStripeCoupon(coupon: {
 
   const safeCode = coupon.code.toUpperCase().replace(/[^A-Z0-9_]/g, "");
   const isPercent = coupon.discountType === "percent";
+  // Recurring discount: applies to every billing cycle. The `_fv` suffix versions the id
+  // so coupons previously created as `once` are not reused (Stripe coupons are immutable).
   const id = isPercent
-    ? `ff_${safeCode}_pct_${Math.round(coupon.discountValue)}`
-    : `ff_${safeCode}_amt_${Math.round(coupon.discountValue)}`;
+    ? `ff_${safeCode}_pct_${Math.round(coupon.discountValue)}_fv`
+    : `ff_${safeCode}_amt_${Math.round(coupon.discountValue)}_fv`;
 
   try {
     const existing = await stripe.coupons.retrieve(id);
@@ -163,8 +165,8 @@ export async function getOrCreateStripeCoupon(coupon: {
   }
 
   const params: Stripe.CouponCreateParams = isPercent
-    ? { id, percent_off: coupon.discountValue, duration: "once", name: coupon.code }
-    : { id, amount_off: Math.round(coupon.discountValue * 100), currency: "brl", duration: "once", name: coupon.code };
+    ? { id, percent_off: coupon.discountValue, duration: "forever", name: coupon.code }
+    : { id, amount_off: Math.round(coupon.discountValue * 100), currency: "brl", duration: "forever", name: coupon.code };
 
   try {
     const created = await stripe.coupons.create(params);
