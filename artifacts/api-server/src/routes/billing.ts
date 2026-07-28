@@ -1,9 +1,8 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
-import { db, usersTable, couponsTable } from "@workspace/db";
+import { db, usersTable, couponsTable, couponRedemptionsTable } from "@workspace/db";
 import { stripe, PLANS, getPlanConfig, getOrCreateStripeCustomer, getPriceId, getOrCreateStripeCoupon, normalizePlanId, type PlanId } from "../lib/stripe";
-import { ensureUser } from "../lib/auth";
+import { requireAuth, ensureUser } from "../lib/auth";
 import { validateCoupon } from "../lib/coupons";
 import { auditLog } from "../lib/audit";
 import { logger } from "../lib/logger";
@@ -11,11 +10,6 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 
 const BASE_URL = process.env.APP_BASE_URL ?? "http://localhost:80";
-
-function requireAuth(req: Request) {
-  const auth = getAuth(req);
-  return auth?.userId ?? null;
-}
 
 // GET /billing/plans — public endpoint with plan info
 router.get("/billing/plans", async (_req: Request, res: Response): Promise<void> => {
@@ -140,7 +134,7 @@ router.post("/billing/checkout", async (req: Request, res: Response): Promise<vo
   let discounts: { coupon: string }[] | undefined;
   let appliedCouponCode: string | undefined;
   if (couponCode && couponCode.trim()) {
-    const result = await validateCoupon(couponCode, planId);
+    const result = await validateCoupon(couponCode, planId, userId);
     if (!result.ok) { res.status(result.status).json({ error: result.error }); return; }
     const stripeCouponId = await getOrCreateStripeCoupon(result.coupon);
     if (!stripeCouponId) { res.status(503).json({ error: "Não foi possível aplicar o cupom. Tente novamente." }); return; }
@@ -172,7 +166,7 @@ router.post("/billing/validate-coupon", async (req: Request, res: Response): Pro
   const { code, planId } = req.body as { code?: string; planId?: string };
   if (!code) { res.status(400).json({ error: "Código obrigatório" }); return; }
 
-  const result = await validateCoupon(code, planId);
+  const result = await validateCoupon(code, planId, userId);
   if (!result.ok) { res.status(result.status).json({ error: result.error }); return; }
 
   const c = result.coupon;
@@ -211,17 +205,25 @@ router.post("/billing/portal", async (req: Request, res: Response): Promise<void
 export async function handleStripeWebhook(req: Request, res: Response): Promise<void> {
   if (!stripe) { res.status(200).send("ok"); return; }
 
-  const sig = req.headers["stripe-signature"] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    // Fail closed: never accept an unsigned payload as a real Stripe event.
+    logger.error("STRIPE_WEBHOOK_SECRET não configurado — rejeitando webhook (fail-closed)");
+    res.status(500).send("Webhook not configured");
+    return;
+  }
+
+  const sig = req.headers["stripe-signature"] as string | undefined;
+  if (!sig) {
+    logger.warn("Stripe webhook recebido sem header stripe-signature");
+    res.status(400).send("Missing signature");
+    return;
+  }
 
   let event: import("stripe").Stripe.Event;
 
   try {
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret);
-    } else {
-      event = JSON.parse((req.body as Buffer).toString()) as import("stripe").Stripe.Event;
-    }
+    event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret);
   } catch (err) {
     logger.error({ err }, "Stripe webhook signature verification failed");
     res.status(400).send("Webhook error");
@@ -261,6 +263,11 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
               .where(sql`${couponsTable.code} = ${couponCode} AND (${couponsTable.maxUses} IS NULL OR ${couponsTable.usesCount} < ${couponsTable.maxUses})`)
               .returning();
             if (redeemed) {
+              // One redemption per (coupon, user) — the unique index is the real enforcement;
+              // onConflictDoNothing keeps a webhook redelivery from erroring on the duplicate.
+              await db.insert(couponRedemptionsTable)
+                .values({ couponId: redeemed.id, clerkId })
+                .onConflictDoNothing();
               await auditLog({ eventType: "user.coupon.redeemed", actorClerkId: clerkId, meta: { code: couponCode, planId } });
               logger.info({ clerkId, couponCode }, "Coupon redeemed");
             }
@@ -316,6 +323,68 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
           await db.update(usersTable)
             .set({ stripeSubscriptionStatus: "past_due", updatedAt: new Date() })
             .where(eq(usersTable.stripeCustomerId, customerId));
+        }
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as import("stripe").Stripe.Charge;
+        const customerId = charge.customer as string | null;
+        const isFullRefund = charge.amount_refunded >= charge.amount;
+
+        if (customerId) {
+          const [user] = await db.select().from(usersTable).where(eq(usersTable.stripeCustomerId, customerId));
+          if (user) {
+            await auditLog({
+              eventType: "user.payment.refunded",
+              actorClerkId: user.clerkId,
+              meta: { chargeId: charge.id, amountRefunded: charge.amount_refunded, amount: charge.amount, fullRefund: isFullRefund },
+            });
+
+            // Only a full refund revokes paid access — a partial/goodwill refund keeps the plan intact.
+            if (isFullRefund) {
+              if (user.stripeSubscriptionId) {
+                try {
+                  await stripe.subscriptions.cancel(user.stripeSubscriptionId);
+                } catch (err) {
+                  logger.error({ err, subscriptionId: user.stripeSubscriptionId }, "Failed to cancel subscription after full refund");
+                }
+              }
+              await db.update(usersTable)
+                .set({ plan: "free", stripeSubscriptionStatus: "refunded", updatedAt: new Date() })
+                .where(eq(usersTable.clerkId, user.clerkId));
+              logger.warn({ clerkId: user.clerkId, chargeId: charge.id }, "Full refund processed — plan downgraded to free");
+            }
+          }
+        }
+        break;
+      }
+
+      case "charge.dispute.created": {
+        const dispute = event.data.object as import("stripe").Stripe.Dispute;
+        const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id;
+
+        let customerId: string | null = null;
+        try {
+          const charge = await stripe.charges.retrieve(chargeId);
+          customerId = charge.customer as string | null;
+        } catch (err) {
+          logger.error({ err, chargeId }, "Failed to retrieve charge for dispute");
+        }
+
+        if (customerId) {
+          const [user] = await db.select().from(usersTable).where(eq(usersTable.stripeCustomerId, customerId));
+          if (user) {
+            await auditLog({
+              eventType: "user.payment.disputed",
+              actorClerkId: user.clerkId,
+              meta: { disputeId: dispute.id, chargeId, amount: dispute.amount, reason: dispute.reason },
+            });
+            // Chargebacks are flagged for manual review, not auto-revoked: Stripe already
+            // withholds the disputed funds, and a customer disputing in good faith shouldn't
+            // instantly lose access before support has a chance to respond.
+            logger.warn({ clerkId: user.clerkId, disputeId: dispute.id, reason: dispute.reason }, "Chargeback/dispute opened — flagged for manual review");
+          }
         }
         break;
       }

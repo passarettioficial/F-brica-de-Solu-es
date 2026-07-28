@@ -1,16 +1,10 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, marketValidationsTable } from "@workspace/db";
 import { generateInterviewScript, analyzeInterviewNotes } from "../lib/ai";
-import { checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
+import { requireAuth, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
 
 const router: IRouter = Router();
-
-function requireAuth(req: any) {
-  const auth = getAuth(req);
-  return auth?.userId ?? null;
-}
 
 async function getArtifactContext(projectId: number, phaseNumber?: number): Promise<string> {
   const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));

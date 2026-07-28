@@ -1,18 +1,13 @@
 import { Router, type IRouter } from "express";
 import { eq, and, inArray } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { recordOpenAiCost } from "../lib/openaiCost";
 import { getPlanConfig } from "../lib/stripe";
 import { sanitizeBriefing } from "../lib/ai";
+import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
-
-function requireAuth(req: any) {
-  const auth = getAuth(req);
-  return auth?.userId ?? null;
-}
 
 // POST /projects/:projectId/advisor — AI Advisor SSE (Advanced plan only)
 router.post("/projects/:projectId/advisor", async (req, res): Promise<void> => {

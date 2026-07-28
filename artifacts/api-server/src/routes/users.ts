@@ -1,10 +1,9 @@
 import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { z } from "zod/v4";
 import { db, usersTable } from "@workspace/db";
 import { UpdateUserSettingsBody } from "@workspace/api-zod";
-import { ensureUser } from "../lib/auth";
+import { requireAuth, ensureUser } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 
 const PROFILE_VALUES = {
@@ -36,8 +35,7 @@ const ProfilePatchSchema = z.object({
 const router: IRouter = Router();
 
 router.get("/users/me", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   await ensureUser(userId);
@@ -68,8 +66,7 @@ router.get("/users/me", async (req, res): Promise<void> => {
 });
 
 router.patch("/users/me/settings", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const parsed = UpdateUserSettingsBody.safeParse(req.body);
@@ -105,8 +102,7 @@ router.patch("/users/me/settings", async (req, res): Promise<void> => {
 });
 
 router.patch("/users/me/profile", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const parsed = ProfilePatchSchema.safeParse(req.body);

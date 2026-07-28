@@ -1,4 +1,4 @@
-import { useEffect, useRef, ComponentType } from "react";
+import { useEffect, useRef, lazy, Suspense, ComponentType } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -8,32 +8,44 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import { Home } from "@/pages/home";
-import { LandingPage } from "@/pages/landing";
-import { SignInPage } from "@/pages/sign-in";
-import { SignUpPage } from "@/pages/sign-up";
-import { Dashboard } from "@/pages/dashboard";
-import { ProjectPage } from "@/pages/project";
-import { PhasePage } from "@/pages/phase";
-import { SettingsPage } from "@/pages/settings";
-import { PricingPage } from "@/pages/pricing";
-import { BillingPage } from "@/pages/billing";
-import { AdvisorPage } from "@/pages/advisor";
-import { AdminPage } from "@/pages/admin";
-import { SupportPage } from "@/pages/support";
-import { PrivacyPage } from "@/pages/privacy";
-import { CompliancePage } from "@/pages/compliance";
-import { MarketAnalysisPage } from "@/pages/market-analysis";
-import { BrandbookPage } from "@/pages/brandbook";
-import { SalesVideoPage } from "@/pages/sales-video";
-import { ClarezaImediataPage } from "@/pages/clareza-imediata";
-import { FluxoContinuoPage } from "@/pages/fluxo-continuo";
-import { ProntoParaVenderPage } from "@/pages/pronto-para-vender";
+import { Spinner } from "@/components/ui/spinner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { PaywallModal } from "@/components/paywall-modal";
 import { CommandPalette } from "@/components/command-palette";
-import { PublicSharePage } from "@/pages/public-share";
+
+// Every route is its own chunk: nobody pays for the admin panel, the phase canvases, or the
+// pitch pages in their initial bundle just because those routes exist in the router.
+const NotFound = lazy(() => import("@/pages/not-found"));
+const Home = lazy(() => import("@/pages/home").then((m) => ({ default: m.Home })));
+const LandingPage = lazy(() => import("@/pages/landing").then((m) => ({ default: m.LandingPage })));
+const SignInPage = lazy(() => import("@/pages/sign-in").then((m) => ({ default: m.SignInPage })));
+const SignUpPage = lazy(() => import("@/pages/sign-up").then((m) => ({ default: m.SignUpPage })));
+const Dashboard = lazy(() => import("@/pages/dashboard").then((m) => ({ default: m.Dashboard })));
+const ProjectPage = lazy(() => import("@/pages/project").then((m) => ({ default: m.ProjectPage })));
+const PhasePage = lazy(() => import("@/pages/phase").then((m) => ({ default: m.PhasePage })));
+const SettingsPage = lazy(() => import("@/pages/settings").then((m) => ({ default: m.SettingsPage })));
+const PricingPage = lazy(() => import("@/pages/pricing").then((m) => ({ default: m.PricingPage })));
+const BillingPage = lazy(() => import("@/pages/billing").then((m) => ({ default: m.BillingPage })));
+const AdvisorPage = lazy(() => import("@/pages/advisor").then((m) => ({ default: m.AdvisorPage })));
+const AdminPage = lazy(() => import("@/pages/admin").then((m) => ({ default: m.AdminPage })));
+const SupportPage = lazy(() => import("@/pages/support").then((m) => ({ default: m.SupportPage })));
+const PrivacyPage = lazy(() => import("@/pages/privacy").then((m) => ({ default: m.PrivacyPage })));
+const CompliancePage = lazy(() => import("@/pages/compliance").then((m) => ({ default: m.CompliancePage })));
+const MarketAnalysisPage = lazy(() => import("@/pages/market-analysis").then((m) => ({ default: m.MarketAnalysisPage })));
+const BrandbookPage = lazy(() => import("@/pages/brandbook").then((m) => ({ default: m.BrandbookPage })));
+const SalesVideoPage = lazy(() => import("@/pages/sales-video").then((m) => ({ default: m.SalesVideoPage })));
+const ClarezaImediataPage = lazy(() => import("@/pages/clareza-imediata").then((m) => ({ default: m.ClarezaImediataPage })));
+const FluxoContinuoPage = lazy(() => import("@/pages/fluxo-continuo").then((m) => ({ default: m.FluxoContinuoPage })));
+const ProntoParaVenderPage = lazy(() => import("@/pages/pronto-para-vender").then((m) => ({ default: m.ProntoParaVenderPage })));
+const PublicSharePage = lazy(() => import("@/pages/public-share").then((m) => ({ default: m.PublicSharePage })));
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] w-full items-center justify-center">
+      <Spinner className="size-6 text-primary" />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -169,6 +181,7 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 function Router() {
   return (
     <PageTransition>
+    <Suspense fallback={<RouteFallback />}>
     <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/landing" component={LandingPage} />
@@ -210,6 +223,7 @@ function Router() {
       </Route>
       <Route component={NotFound} />
     </Switch>
+    </Suspense>
     </PageTransition>
   );
 }

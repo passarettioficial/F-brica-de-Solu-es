@@ -1,8 +1,9 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, desc, count, sql, gte, and, isNull } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable, phasesTable, phaseArtifactsTable, artifactFeedbackTable } from "@workspace/db";
 import { requireAdmin } from "../lib/adminAuth";
+import { requireAuth } from "../lib/auth";
+import { validateCoupon } from "../lib/coupons";
 import { logger } from "../lib/logger";
 import { auditLog } from "../lib/audit";
 import { getBudgetStatus, setBudget } from "../lib/openaiCost";
@@ -716,21 +717,15 @@ router.put("/admin/deliverables", async (req: Request, res: Response): Promise<v
 // ─── Coupon Validate (user-facing) ────────────────────────────────────────────
 
 router.post("/admin/coupons/validate", async (req: Request, res: Response): Promise<void> => {
-  const auth = getAuth(req);
-  if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const { code, planId } = req.body as { code: string; planId?: string };
-  if (!code) { res.status(400).json({ error: "Código obrigatório" }); return; }
 
-  const [coupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, code.toUpperCase().trim()));
-  if (!coupon || !coupon.active) { res.status(404).json({ error: "Cupom inválido ou inativo" }); return; }
-  if (coupon.expiresAt && coupon.expiresAt < new Date()) { res.status(400).json({ error: "Cupom expirado" }); return; }
-  if (coupon.maxUses !== null && coupon.usesCount >= coupon.maxUses) { res.status(400).json({ error: "Cupom esgotado" }); return; }
-  if (coupon.appliesTo && planId && !coupon.appliesTo.split(",").map(p => p.trim()).includes(planId)) {
-    res.status(400).json({ error: "Cupom não aplicável a este plano" });
-    return;
-  }
+  const result = await validateCoupon(code, planId, userId);
+  if (!result.ok) { res.status(result.status).json({ error: result.error }); return; }
 
+  const { coupon } = result;
   res.json({
     valid: true,
     discountType: coupon.discountType,

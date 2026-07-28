@@ -432,6 +432,11 @@ components:
       properties:
         status:
           type: string
+        checks:
+          type: object
+          properties:
+            database:
+              type: string
       required:
         - status
 

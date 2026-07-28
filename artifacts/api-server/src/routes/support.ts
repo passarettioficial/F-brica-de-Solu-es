@@ -1,23 +1,16 @@
 import { Router, type Request, type Response, type IRouter } from "express";
 import { eq, desc } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { db, supportTicketsTable } from "@workspace/db";
-import { ensureUser } from "../lib/auth";
+import { requireAuth, ensureUser } from "../lib/auth";
 
 const router: IRouter = Router();
-
-function requireAuth(req: Request): string {
-  const auth = getAuth(req);
-  if (!auth?.userId) throw Object.assign(new Error("Unauthorized"), { status: 401 });
-  return auth.userId;
-}
 
 const VALID_CATEGORIES = ["general", "billing", "technical", "lgpd"] as const;
 
 // POST /support/tickets — create a ticket
 router.post("/support/tickets", async (req: Request, res: Response): Promise<void> => {
-  let userId: string;
-  try { userId = requireAuth(req); } catch { res.status(401).json({ error: "Unauthorized" }); return; }
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const body = req.body as { subject?: unknown; message?: unknown; category?: unknown };
   const subject = typeof body.subject === "string" ? body.subject.trim() : "";
@@ -44,8 +37,8 @@ router.post("/support/tickets", async (req: Request, res: Response): Promise<voi
 
 // GET /support/tickets — list user's tickets
 router.get("/support/tickets", async (req: Request, res: Response): Promise<void> => {
-  let userId: string;
-  try { userId = requireAuth(req); } catch { res.status(401).json({ error: "Unauthorized" }); return; }
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const tickets = await db
     .select()
@@ -59,8 +52,8 @@ router.get("/support/tickets", async (req: Request, res: Response): Promise<void
 
 // GET /support/tickets/:id — get single ticket
 router.get("/support/tickets/:id", async (req: Request, res: Response): Promise<void> => {
-  let userId: string;
-  try { userId = requireAuth(req); } catch { res.status(401).json({ error: "Unauthorized" }); return; }
+  const userId = requireAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const id = parseInt(String(req.params.id ?? "0"));
   if (!id) { res.status(400).json({ error: "Invalid id" }); return; }

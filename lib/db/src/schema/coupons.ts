@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, real, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,3 +20,17 @@ export const couponsTable = pgTable("coupons", {
 export const insertCouponSchema = createInsertSchema(couponsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertCoupon = z.infer<typeof insertCouponSchema>;
 export type Coupon = typeof couponsTable.$inferSelect;
+
+// One row per (coupon, user) redemption. The unique index is the actual enforcement of
+// "one redemption per user per coupon" — validateCoupon() only pre-checks it for a fast 4xx.
+export const couponRedemptionsTable = pgTable("coupon_redemptions", {
+  id: serial("id").primaryKey(),
+  couponId: integer("coupon_id").notNull().references(() => couponsTable.id, { onDelete: "cascade" }),
+  clerkId: text("clerk_id").notNull(),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("coupon_redemptions_coupon_user_unique").on(table.couponId, table.clerkId),
+  index("coupon_redemptions_clerk_id_idx").on(table.clerkId),
+]);
+
+export type CouponRedemption = typeof couponRedemptionsTable.$inferSelect;

@@ -1,6 +1,14 @@
 import { db, usersTable } from "@workspace/db";
 import { eq, and, lt, sql } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
+import type { Request } from "express";
 import { getPlanConfig } from "./stripe";
+import { auditLog } from "./audit";
+
+/** Extracts the authenticated Clerk user id from the request, or null if unauthenticated. */
+export function requireAuth(req: Request): string | null {
+  return getAuth(req)?.userId ?? null;
+}
 
 export async function ensureUser(clerkId: string) {
   const existing = await db.select().from(usersTable).where(eq(usersTable.clerkId, clerkId)).limit(1);
@@ -19,15 +27,33 @@ export async function ensureUser(clerkId: string) {
       isAdmin: shouldBeAdmin,
       isSuperuser: shouldBeSuperuser,
     });
+
+    // Audit the grant at the exact moment it happens, not only on the next explicit admin action —
+    // a stray/misconfigured clerkId in ADMIN_CLERK_IDS/SUPERUSER_CLERK_IDS should leave a trail immediately.
+    if (shouldBeAdmin) {
+      await auditLog({ eventType: "admin.user.admin_toggled", actorClerkId: null, targetClerkId: clerkId, meta: { isAdmin: true, source: "ADMIN_CLERK_IDS env var (auto-grant on signup)" } });
+    }
+    if (shouldBeSuperuser) {
+      await auditLog({ eventType: "admin.user.superuser_toggled", actorClerkId: null, targetClerkId: clerkId, meta: { isSuperuser: true, source: "SUPERUSER_CLERK_IDS env var (auto-grant on signup)" } });
+    }
     return null;
   }
 
   const user = existing[0]!;
-  if ((shouldBeAdmin && !user.isAdmin) || (shouldBeSuperuser && !user.isSuperuser)) {
+  const grantsAdmin = shouldBeAdmin && !user.isAdmin;
+  const grantsSuperuser = shouldBeSuperuser && !user.isSuperuser;
+  if (grantsAdmin || grantsSuperuser) {
     const [updated] = await db.update(usersTable)
       .set({ isAdmin: shouldBeAdmin || user.isAdmin, isSuperuser: shouldBeSuperuser || user.isSuperuser, updatedAt: new Date() })
       .where(eq(usersTable.clerkId, clerkId))
       .returning();
+
+    if (grantsAdmin) {
+      await auditLog({ eventType: "admin.user.admin_toggled", actorClerkId: null, targetClerkId: clerkId, meta: { isAdmin: true, source: "ADMIN_CLERK_IDS env var (auto-grant on login)" } });
+    }
+    if (grantsSuperuser) {
+      await auditLog({ eventType: "admin.user.superuser_toggled", actorClerkId: null, targetClerkId: clerkId, meta: { isSuperuser: true, source: "SUPERUSER_CLERK_IDS env var (auto-grant on login)" } });
+    }
     return updated ?? null;
   }
 

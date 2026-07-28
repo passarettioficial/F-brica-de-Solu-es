@@ -1,12 +1,11 @@
 import { Router, type IRouter } from "express";
 import { eq, and, count, isNull, isNotNull, lt, inArray } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import {
   CreateProjectBody,
   UpdateProjectBody,
 } from "@workspace/api-zod";
-import { ensureUser, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
+import { requireAuth, ensureUser, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
 import { getPlanConfig } from "../lib/stripe";
 import { auditLog } from "../lib/audit";
 import { analyzeProjectCoherence, analyzeMarketPotential } from "../lib/ai";
@@ -21,8 +20,7 @@ const TRASH_RETENTION_DAYS = 30;
 
 // GET /projects/dashboard
 router.get("/projects/dashboard", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   await ensureUser(userId);
@@ -71,8 +69,7 @@ router.get("/projects/dashboard", async (req, res): Promise<void> => {
 
 // GET /projects/trash — list soft-deleted projects (auto-purge >30 days)
 router.get("/projects/trash", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const cutoff = new Date(Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
@@ -101,8 +98,7 @@ router.get("/projects/trash", async (req, res): Promise<void> => {
 
 // GET /projects
 router.get("/projects", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const projects = await db.select().from(projectsTable).where(
@@ -113,8 +109,7 @@ router.get("/projects", async (req, res): Promise<void> => {
 
 // POST /projects/demo — seed pre-populated demo project (idempotent)
 router.post("/projects/demo", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   await ensureUser(userId);
@@ -150,8 +145,7 @@ router.post("/projects/demo", async (req, res): Promise<void> => {
 
 // POST /projects
 router.post("/projects", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const parsed = CreateProjectBody.safeParse(req.body);
@@ -198,8 +192,7 @@ router.post("/projects", async (req, res): Promise<void> => {
 
 // GET /projects/:id
 router.get("/projects/:id", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -218,8 +211,7 @@ router.get("/projects/:id", async (req, res): Promise<void> => {
 
 // PATCH /projects/:id
 router.patch("/projects/:id", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -240,8 +232,7 @@ router.patch("/projects/:id", async (req, res): Promise<void> => {
 
 // DELETE /projects/:id — soft delete (move to trash)
 router.delete("/projects/:id", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -260,8 +251,7 @@ router.delete("/projects/:id", async (req, res): Promise<void> => {
 
 // POST /projects/:id/restore — restore from trash (checks plan limit)
 router.post("/projects/:id/restore", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -294,8 +284,7 @@ router.post("/projects/:id/restore", async (req, res): Promise<void> => {
 
 // DELETE /projects/:id/permanent — hard delete (irreversible)
 router.delete("/projects/:id/permanent", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -313,8 +302,7 @@ router.delete("/projects/:id/permanent", async (req, res): Promise<void> => {
 
 // POST /projects/:id/share — enable public sharing (generates shareId)
 router.post("/projects/:id/share", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -352,8 +340,7 @@ router.post("/projects/:id/share", async (req, res): Promise<void> => {
 
 // DELETE /projects/:id/share — revoke public sharing
 router.delete("/projects/:id/share", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -372,8 +359,7 @@ router.delete("/projects/:id/share", async (req, res): Promise<void> => {
 
 // GET /projects/:id/summary
 router.get("/projects/:id/summary", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -409,8 +395,7 @@ const PHASE_NAMES: Record<number, string> = {
 };
 
 router.get("/projects/:id/export.md", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -507,8 +492,7 @@ router.get("/projects/:id/export.md", async (req, res): Promise<void> => {
 
 // GET /projects/:id/export.json — full project tree for client-side PDF rendering
 router.get("/projects/:id/export.json", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -570,8 +554,7 @@ router.get("/projects/:id/export.json", async (req, res): Promise<void> => {
 
 // GET /benchmarks — platform aggregate metrics for cross-project comparison
 router.get("/benchmarks", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   // Platform-wide stats
@@ -619,8 +602,7 @@ router.get("/benchmarks", async (req, res): Promise<void> => {
 
 // POST /projects/:id/coherence/analyze
 router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -660,8 +642,7 @@ router.post("/projects/:id/coherence/analyze", async (req, res): Promise<void> =
 
 // POST /projects/:id/potential/analyze
 router.post("/projects/:id/potential/analyze", async (req, res): Promise<void> => {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  const userId = requireAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;

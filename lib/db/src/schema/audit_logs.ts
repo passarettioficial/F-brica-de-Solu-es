@@ -25,6 +25,8 @@ export type AuditEventType =
   | "user.ai.used"
   | "user.payment.subscribed"
   | "user.payment.canceled"
+  | "user.payment.refunded"
+  | "user.payment.disputed"
   | "user.coupon.redeemed"
   | "security.unauthorized"
   | "security.rate_limited"

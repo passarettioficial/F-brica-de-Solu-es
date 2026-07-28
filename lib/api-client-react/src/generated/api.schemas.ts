@@ -5,8 +5,13 @@
  * Fábrica de Soluções API
  * OpenAPI spec version: 0.1.0
  */
+export type HealthStatusChecks = {
+  database?: string;
+};
+
 export interface HealthStatus {
   status: string;
+  checks?: HealthStatusChecks;
 }
 
 export interface Project {

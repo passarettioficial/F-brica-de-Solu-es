@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
 import { eq, and, inArray, desc } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, artifactVersionsTable, usersTable, artifactFeedbackTable } from "@workspace/db";
 import {
   UpdatePhaseGatesBody,
@@ -14,7 +13,7 @@ const ArtifactFeedbackBody = z.object({
 });
 import { generatePhaseArtifacts } from "../lib/ai";
 import { logEvent } from "../lib/events";
-import { checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
+import { requireAuth, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
 import { auditLog } from "../lib/audit";
 import { createNotification } from "../lib/notifications";
 import { getPlanConfig } from "../lib/stripe";
@@ -22,15 +21,10 @@ import { snapshotArtifact, snapshotAllPhaseArtifacts } from "../lib/artifact-ver
 
 const router: IRouter = Router();
 
-function requireAuth(req: any) {
-  const auth = getAuth(req);
-  return auth?.userId ?? null;
-}
-
 // Phase 3 (Segurança & LGPD) gating: free plan only unlocks POLITICA_PRIVACIDADE.
 // Strips content/contentJson server-side from the other 7 artifacts and marks locked.
 // Apply to ALL endpoints that return artifact rows so locking can't be bypassed via alternate routes.
-async function applyPhase3FreeGate<T extends { artifactKey: string; content?: string | null; contentJson?: unknown }>(
+export async function applyPhase3FreeGate<T extends { artifactKey: string; content?: string | null; contentJson?: unknown }>(
   userId: string,
   phaseNumber: number,
   artifacts: T[],
@@ -49,7 +43,7 @@ async function applyPhase3FreeGate<T extends { artifactKey: string; content?: st
   );
 }
 
-function isPhase3GatedKey(artifactKey: string): boolean {
+export function isPhase3GatedKey(artifactKey: string): boolean {
   return artifactKey !== "POLITICA_PRIVACIDADE";
 }
 
