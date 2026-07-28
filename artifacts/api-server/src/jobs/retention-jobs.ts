@@ -2,6 +2,7 @@ import { db, phasesTable, projectsTable } from "@workspace/db";
 import { and, eq, lt, isNull, gte, inArray } from "drizzle-orm";
 import { createNotification } from "../lib/notifications";
 import { logger } from "../lib/logger";
+import { withAdvisoryLock } from "../lib/distributed-lock";
 
 const PHASE_NAMES: Record<number, string> = {
   1: "Ideia",
@@ -138,15 +139,21 @@ export function startRetentionJobs(): void {
   const TWELVE_HOURS = 12 * 60 * 60 * 1000;
   const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
+  // Every autoscale instance runs this same schedule — the advisory lock ensures only
+  // one instance's tick actually executes each job, so notifications aren't queued N times.
+  const runStalePhases = () => void withAdvisoryLock("retention:stale-phases", checkStalePhases);
+  const runStaleProjects = () => void withAdvisoryLock("retention:stale-projects", checkStaleProjects);
+  const runInactiveUsers = () => void withAdvisoryLock("retention:inactive-users", checkInactiveUsers);
+
   // Run once on startup (staggered to avoid startup spike)
-  setTimeout(() => void checkStalePhases(), 30_000);
-  setTimeout(() => void checkStaleProjects(), 60_000);
-  setTimeout(() => void checkInactiveUsers(), 90_000);
+  setTimeout(runStalePhases, 30_000);
+  setTimeout(runStaleProjects, 60_000);
+  setTimeout(runInactiveUsers, 90_000);
 
   // Then on intervals
-  setInterval(() => void checkStalePhases(), SIX_HOURS);
-  setInterval(() => void checkStaleProjects(), TWELVE_HOURS);
-  setInterval(() => void checkInactiveUsers(), TWENTY_FOUR_HOURS);
+  setInterval(runStalePhases, SIX_HOURS);
+  setInterval(runStaleProjects, TWELVE_HOURS);
+  setInterval(runInactiveUsers, TWENTY_FOUR_HOURS);
 
   logger.info("Retention jobs scheduled");
 }

@@ -7,6 +7,7 @@ import { validateCoupon } from "../lib/coupons";
 import { logger } from "../lib/logger";
 import { auditLog } from "../lib/audit";
 import { getBudgetStatus, setBudget } from "../lib/openaiCost";
+import { getMetricsSnapshot } from "../lib/metrics";
 
 const router: IRouter = Router();
 
@@ -16,6 +17,14 @@ router.get("/admin/me", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
   res.json({ isAdmin: admin.isAdmin, isSuperuser: admin.isSuperuser });
+});
+
+// ─── Infra Metrics (basic observability — per-instance, resets on restart) ───────────────
+
+router.get("/admin/metrics", async (req: Request, res: Response): Promise<void> => {
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+  res.json(getMetricsSnapshot());
 });
 
 // ─── Stats Overview ───────────────────────────────────────────────────────────

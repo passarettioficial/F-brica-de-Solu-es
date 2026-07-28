@@ -23,10 +23,20 @@ export type Coupon = typeof couponsTable.$inferSelect;
 
 // One row per (coupon, user) redemption. The unique index is the actual enforcement of
 // "one redemption per user per coupon" — validateCoupon() only pre-checks it for a fast 4xx.
+//
+// discountType/discountValue/planId/billingCycle are a SNAPSHOT taken at redemption time —
+// not a live join to couponsTable — so this row keeps reporting the discount actually
+// granted even if an admin edits the coupon's value later. Stripe remains the source of
+// truth for the exact R$ charged per invoice; this is the minimal ledger for "which coupon,
+// what discount, which plan, redeemed by whom, when" without needing to query Stripe.
 export const couponRedemptionsTable = pgTable("coupon_redemptions", {
   id: serial("id").primaryKey(),
   couponId: integer("coupon_id").notNull().references(() => couponsTable.id, { onDelete: "cascade" }),
   clerkId: text("clerk_id").notNull(),
+  planId: text("plan_id").notNull(),
+  billingCycle: text("billing_cycle").notNull(),
+  discountType: text("discount_type").notNull(),
+  discountValue: real("discount_value").notNull(),
   redeemedAt: timestamp("redeemed_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   uniqueIndex("coupon_redemptions_coupon_user_unique").on(table.couponId, table.clerkId),

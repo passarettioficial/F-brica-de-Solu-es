@@ -55,8 +55,9 @@ function mockUpdateOnce(returningRows: unknown[] = []) {
 
 function mockInsertOnce() {
   const onConflictDoNothing = vi.fn().mockResolvedValue(undefined);
-  insertMock.mockReturnValueOnce({ values: () => ({ onConflictDoNothing }) });
-  return onConflictDoNothing;
+  const values = vi.fn().mockReturnValue({ onConflictDoNothing });
+  insertMock.mockReturnValueOnce({ values });
+  return { onConflictDoNothing, values };
 }
 
 function fakeReq(opts: { hasSignature?: boolean } = {}) {
@@ -144,25 +145,33 @@ describe("handleStripeWebhook — eventos processados", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it("checkout.session.completed com cupom incrementa uso e registra a redenção por usuário", async () => {
+  it("checkout.session.completed com cupom incrementa uso e registra a redenção com snapshot do desconto", async () => {
     constructEventMock.mockReturnValueOnce({
       type: "checkout.session.completed",
       data: {
         object: {
-          metadata: { clerkId: "clerk_1", planId: "founder", couponCode: "PROMO10" },
+          metadata: { clerkId: "clerk_1", planId: "founder", billingCycle: "yearly", couponCode: "PROMO10" },
           subscription: "sub_123",
         },
       },
     });
     mockSelectOnce([{ clerkId: "clerk_1", stripeSubscriptionId: null }]); // existing user lookup
     mockUpdateOnce(); // user plan activation
-    mockUpdateOnce([{ id: 42, code: "PROMO10" }]); // bounded coupon usesCount increment
-    const onConflictDoNothing = mockInsertOnce();
+    mockUpdateOnce([{ id: 42, code: "PROMO10", discountType: "percent", discountValue: 20 }]); // bounded coupon usesCount increment
+    const { onConflictDoNothing, values } = mockInsertOnce();
 
     const res = fakeRes();
     await handleStripeWebhook(fakeReq(), res);
 
     expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(values).toHaveBeenCalledWith({
+      couponId: 42,
+      clerkId: "clerk_1",
+      planId: "founder",
+      billingCycle: "yearly",
+      discountType: "percent",
+      discountValue: 20,
+    });
     expect(onConflictDoNothing).toHaveBeenCalledTimes(1);
     expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({ eventType: "user.coupon.redeemed" }));
     expect(res.status).toHaveBeenCalledWith(200);

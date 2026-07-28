@@ -12,6 +12,7 @@ import {
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { handleStripeWebhook } from "./routes/billing";
+import { recordRequest } from "./lib/metrics";
 
 const app: Express = express();
 app.set("trust proxy", 1);
@@ -37,6 +38,20 @@ app.use(
 );
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+
+// Lightweight in-process request metrics (see lib/metrics.ts) — registered early so the
+// "finish" listener is attached before any handler runs; req.route is populated by Express
+// once the matching route handler is invoked, which always happens before "finish" fires.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const start = process.hrtime.bigint();
+  res.on("finish", () => {
+    const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+    const routePath = (req.route as { path?: string } | undefined)?.path;
+    const route = routePath ? `${req.method} ${req.baseUrl}${routePath}` : `${req.method} ${req.path}`;
+    recordRequest(route, res.statusCode, durationMs);
+  });
+  next();
+});
 
 const allowedOrigins = new Set<string>(
   [process.env.APP_BASE_URL, ...(process.env.CORS_ALLOWED_ORIGINS?.split(",") ?? [])]
