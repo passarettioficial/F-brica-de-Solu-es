@@ -7,6 +7,7 @@ const constructEventMock = vi.fn();
 const subscriptionsCancelMock = vi.fn();
 const chargesRetrieveMock = vi.fn();
 const auditLogMock = vi.fn();
+const planIdFromLookupKeyMock = vi.fn().mockReturnValue(null);
 
 vi.mock("@clerk/express", () => ({ getAuth: vi.fn() }));
 
@@ -29,6 +30,7 @@ vi.mock("../lib/stripe", () => ({
   getPriceId: vi.fn(),
   getOrCreateStripeCoupon: vi.fn(),
   normalizePlanId: (id: string) => id,
+  planIdFromLookupKey: planIdFromLookupKeyMock,
 }));
 
 vi.mock("../lib/coupons", () => ({ validateCoupon: vi.fn() }));
@@ -211,6 +213,175 @@ describe("handleStripeWebhook — eventos processados", () => {
     expect(subscriptionsCancelMock).not.toHaveBeenCalled();
     expect(updateMock).not.toHaveBeenCalled();
     expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({ eventType: "user.payment.refunded" }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.updated com status=past_due rebaixa o plano para free (F2)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.updated",
+      data: {
+        object: { id: "sub_1", status: "past_due", metadata: { clerkId: "clerk_1", planId: "founder" } },
+      },
+    });
+    mockSelectOnce([{ stripeSubscriptionId: "sub_1" }]); // canonical check: mesma assinatura do evento
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: "user.payment.canceled",
+      actorClerkId: "clerk_1",
+      meta: expect.objectContaining({ reason: "subscription_status", status: "past_due" }),
+    }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.updated com status=active aplica o plano do metadata normalmente (sem regressão)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.updated",
+      data: {
+        object: { id: "sub_1", status: "active", metadata: { clerkId: "clerk_1", planId: "studio" } },
+      },
+    });
+    mockSelectOnce([{ stripeSubscriptionId: "sub_1" }]);
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(auditLogMock).not.toHaveBeenCalled(); // só audita quando o acesso é revogado
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.updated com status=trialing mantém acesso (trialing concede acesso)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.updated",
+      data: {
+        object: { id: "sub_1", status: "trialing", metadata: { clerkId: "clerk_1", planId: "founder" } },
+      },
+    });
+    mockSelectOnce([{ stripeSubscriptionId: "sub_1" }]);
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(auditLogMock).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.updated deriva o plano do preço real da assinatura, não da metadata estática (F10)", async () => {
+    // Cliente trocou de Founder para Studio pelo Customer Portal — a metadata da
+    // assinatura (setada só na criação) continua dizendo "founder", mas o preço vigente
+    // (lookup_key) já reflete "studio". O plano gravado deve ser o do preço real.
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_1",
+          status: "active",
+          metadata: { clerkId: "clerk_1", planId: "founder" }, // desatualizada
+          items: { data: [{ price: { lookup_key: "studio_monthly" } }] }, // real
+        },
+      },
+    });
+    planIdFromLookupKeyMock.mockReturnValueOnce("studio");
+    mockSelectOnce([{ stripeSubscriptionId: "sub_1" }]);
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(planIdFromLookupKeyMock).toHaveBeenCalledWith("studio_monthly");
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.updated de assinatura NÃO-canônica é ignorado (F9)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.updated",
+      data: {
+        object: { id: "sub_OLD_secundaria", status: "canceled", metadata: { clerkId: "clerk_1", planId: "founder" } },
+      },
+    });
+    // Usuário já tem outra assinatura (sub_NOVA) como canônica — o evento é de uma antiga.
+    mockSelectOnce([{ stripeSubscriptionId: "sub_NOVA" }]);
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).not.toHaveBeenCalled(); // não mutou o estado da assinatura atual
+    expect(auditLogMock).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200); // webhook sempre confirma 200 ao Stripe
+  });
+
+  it("customer.subscription.updated de usuário sem assinatura canônica ainda registrada é aceito (primeiro sync)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.updated",
+      data: {
+        object: { id: "sub_1", status: "active", metadata: { clerkId: "clerk_1", planId: "founder" } },
+      },
+    });
+    mockSelectOnce([{ stripeSubscriptionId: null }]); // ainda não setado
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.deleted da assinatura canônica cancela e rebaixa para free", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.deleted",
+      data: { object: { id: "sub_1", metadata: { clerkId: "clerk_1" } } },
+    });
+    mockSelectOnce([{ stripeSubscriptionId: "sub_1" }]);
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("customer.subscription.deleted de assinatura NÃO-canônica é ignorado (F9)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "customer.subscription.deleted",
+      data: { object: { id: "sub_OLD_secundaria", metadata: { clerkId: "clerk_1" } } },
+    });
+    mockSelectOnce([{ stripeSubscriptionId: "sub_NOVA" }]);
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).not.toHaveBeenCalled(); // não cancelou a assinatura atual e correta
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("invoice.payment_failed rebaixa o plano para free (F2)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "invoice.payment_failed",
+      data: {
+        object: { customer: "cus_9" },
+      },
+    });
+    mockUpdateOnce([{ clerkId: "clerk_9" }]);
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: "user.payment.canceled",
+      actorClerkId: "clerk_9",
+      meta: expect.objectContaining({ reason: "invoice_payment_failed" }),
+    }));
     expect(res.status).toHaveBeenCalledWith(200);
   });
 

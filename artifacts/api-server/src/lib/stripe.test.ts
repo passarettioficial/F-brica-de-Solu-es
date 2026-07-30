@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizePlanId, getPlanConfig, PLANS } from "./stripe";
+import { normalizePlanId, getPlanConfig, planIdFromLookupKey, PLANS } from "./stripe";
 
 describe("normalizePlanId", () => {
   it("mantém planos atuais inalterados", () => {
@@ -43,5 +43,26 @@ describe("getPlanConfig", () => {
     expect(config.canDownload).toBe(false);
     expect(config.canPrint).toBe(false);
     expect(config.hasAiAdvisor).toBe(false);
+  });
+});
+
+describe("planIdFromLookupKey", () => {
+  it("resolve o plano pelo lookup_key mensal", () => {
+    expect(planIdFromLookupKey(PLANS.founder.lookupKey)).toBe("founder");
+    expect(planIdFromLookupKey(PLANS.studio.lookupKey)).toBe("studio");
+  });
+
+  it("resolve o plano pelo lookup_key anual", () => {
+    expect(planIdFromLookupKey(PLANS.founder.lookupKeyYearly)).toBe("founder");
+    expect(planIdFromLookupKey(PLANS.studio.lookupKeyYearly)).toBe("studio");
+  });
+
+  it("retorna null para lookup_key desconhecido (fallback pro chamador decidir)", () => {
+    expect(planIdFromLookupKey("preco-legado-sem-mapeamento")).toBeNull();
+  });
+
+  it("retorna null para lookup_key ausente/nulo", () => {
+    expect(planIdFromLookupKey(null)).toBeNull();
+    expect(planIdFromLookupKey(undefined)).toBeNull();
   });
 });

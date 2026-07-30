@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import type Stripe from "stripe";
 import { db, usersTable, couponsTable, couponRedemptionsTable } from "@workspace/db";
-import { stripe, PLANS, getOrCreateStripeCustomer, getPriceId, getOrCreateStripeCoupon, normalizePlanId, type PlanId } from "./stripe";
+import { stripe, PLANS, getOrCreateStripeCustomer, getPriceId, getOrCreateStripeCoupon, normalizePlanId, planIdFromLookupKey, type PlanId } from "./stripe";
 import { validateCoupon } from "./coupons";
 import { auditLog } from "./audit";
 import { logger } from "./logger";
@@ -33,6 +33,12 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
   const [user] = await db.select().from(usersTable).where(eq(usersTable.clerkId, params.clerkId));
   if (!user) return { ok: false, status: 404, error: "User not found" };
 
+  // Evita assinaturas duplicadas (duplo clique, múltiplas abas) — quem já tem uma
+  // assinatura ativa/trialing deve trocar de plano pelo Customer Portal, não criar outra.
+  if (user.stripeSubscriptionId && ACCESS_GRANTING_SUBSCRIPTION_STATUSES.has(user.stripeSubscriptionStatus ?? "")) {
+    return { ok: false, status: 409, error: "Você já tem uma assinatura ativa. Gerencie seu plano no portal de billing." };
+  }
+
   const customerId = await getOrCreateStripeCustomer(params.clerkId, params.email, user.stripeCustomerId);
   if (!user.stripeCustomerId) {
     await db.update(usersTable)
@@ -63,16 +69,24 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
     ...(appliedCouponCode ? { couponCode: appliedCouponCode } : {}),
   };
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    ...(discounts ? { discounts } : {}),
-    success_url: params.successUrl,
-    cancel_url: params.cancelUrl,
-    metadata,
-    subscription_data: { metadata },
-  });
+  // Chave determinística por (usuário, plano, ciclo, cupom, janela de 1 min) — o Stripe
+  // deduplica automaticamente requisições com a mesma idempotency key, então um duplo
+  // clique ou reenvio de formulário na mesma janela não cria uma segunda sessão/assinatura.
+  const idempotencyKey = `checkout_${params.clerkId}_${params.planId}_${params.billingCycle}_${appliedCouponCode ?? "no-coupon"}_${Math.floor(Date.now() / 60_000)}`;
+
+  const session = await stripe.checkout.sessions.create(
+    {
+      customer: customerId,
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      ...(discounts ? { discounts } : {}),
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+      metadata,
+      subscription_data: { metadata },
+    },
+    { idempotencyKey },
+  );
 
   return { ok: true, url: session.url! };
 }
@@ -128,21 +142,64 @@ export async function activateSubscriptionFromCheckout(session: Stripe.Checkout.
   }
 }
 
+// Únicos status de assinatura do Stripe que devem manter o acesso pago. Qualquer outro
+// (past_due, unpaid, incomplete, incomplete_expired, paused) rebaixa para "free" — sem
+// isso, um pagamento que falha mantinha o plano pago indefinidamente (stripeSubscriptionStatus
+// era gravado mas nunca lido por nenhuma checagem de permissão).
+const ACCESS_GRANTING_SUBSCRIPTION_STATUSES = new Set<string>(["active", "trialing"]);
+
+/**
+ * Um evento carrega a assinatura que ele descreve (sub.id); o usuário carrega a assinatura
+ * que consideramos canônica (user.stripeSubscriptionId). Se o usuário já tem uma canônica
+ * registrada e ela diverge da do evento, o evento é de uma assinatura antiga/secundária e
+ * não deve mutar o estado da assinatura atual — só ignoramos quando ainda não há nenhuma
+ * canônica (primeiro evento de um usuário novo, antes do checkout.session.completed setar).
+ */
+function isCanonicalSubscriptionEvent(canonicalId: string | null, eventSubscriptionId: string): boolean {
+  return !canonicalId || canonicalId === eventSubscriptionId;
+}
+
 export async function syncSubscriptionStatus(sub: Stripe.Subscription): Promise<void> {
   const clerkId = sub.metadata?.clerkId;
-  const rawPlanId = sub.metadata?.planId;
-  const planId = rawPlanId ? normalizePlanId(rawPlanId) : null;
   if (!clerkId) return;
 
+  // Preço vigente na assinatura é a fonte real de verdade (reflete trocas de plano feitas
+  // pelo Customer Portal); metadata (setada só na criação do checkout) é só o fallback.
+  const priceLookupKey = sub.items?.data?.[0]?.price?.lookup_key ?? null;
+  const rawPlanId = sub.metadata?.planId;
+  const planId = planIdFromLookupKey(priceLookupKey) ?? (rawPlanId ? normalizePlanId(rawPlanId) : null);
+
+  const [existing] = await db.select({ stripeSubscriptionId: usersTable.stripeSubscriptionId }).from(usersTable).where(eq(usersTable.clerkId, clerkId));
+  if (!isCanonicalSubscriptionEvent(existing?.stripeSubscriptionId ?? null, sub.id)) {
+    logger.warn({ clerkId, eventSubscriptionId: sub.id, canonicalSubscriptionId: existing?.stripeSubscriptionId }, "customer.subscription.updated de assinatura não-canônica — ignorado");
+    return;
+  }
+
+  const hasAccess = ACCESS_GRANTING_SUBSCRIPTION_STATUSES.has(sub.status);
   const updates: Record<string, unknown> = { stripeSubscriptionStatus: sub.status, updatedAt: new Date() };
-  if (planId) updates.plan = planId;
+  if (hasAccess) {
+    if (planId) updates.plan = planId;
+  } else {
+    updates.plan = "free";
+  }
 
   await db.update(usersTable).set(updates).where(eq(usersTable.clerkId, clerkId));
+
+  if (!hasAccess) {
+    logger.warn({ clerkId, status: sub.status }, "Subscription status sem acesso pago — plano rebaixado para free");
+    await auditLog({ eventType: "user.payment.canceled", actorClerkId: clerkId, meta: { reason: "subscription_status", status: sub.status } });
+  }
 }
 
 export async function cancelSubscription(sub: Stripe.Subscription): Promise<void> {
   const clerkId = sub.metadata?.clerkId;
   if (!clerkId) return;
+
+  const [existing] = await db.select({ stripeSubscriptionId: usersTable.stripeSubscriptionId }).from(usersTable).where(eq(usersTable.clerkId, clerkId));
+  if (!isCanonicalSubscriptionEvent(existing?.stripeSubscriptionId ?? null, sub.id)) {
+    logger.warn({ clerkId, eventSubscriptionId: sub.id, canonicalSubscriptionId: existing?.stripeSubscriptionId }, "customer.subscription.deleted de assinatura não-canônica — ignorado");
+    return;
+  }
 
   await db.update(usersTable)
     .set({ plan: "free", stripeSubscriptionId: null, stripeSubscriptionStatus: "canceled", updatedAt: new Date() })
@@ -155,9 +212,18 @@ export async function markInvoicePastDue(invoice: Stripe.Invoice): Promise<void>
   const customerId = invoice.customer as string;
   if (!customerId) return;
 
-  await db.update(usersTable)
-    .set({ stripeSubscriptionStatus: "past_due", updatedAt: new Date() })
-    .where(eq(usersTable.stripeCustomerId, customerId));
+  // invoice.payment_failed normalmente chega junto de customer.subscription.updated
+  // (status=past_due), que já rebaixaria via syncSubscriptionStatus — mas rebaixamos
+  // aqui também por segurança, caso os eventos cheguem fora de ordem ou só este dispare.
+  const [updated] = await db.update(usersTable)
+    .set({ stripeSubscriptionStatus: "past_due", plan: "free", updatedAt: new Date() })
+    .where(eq(usersTable.stripeCustomerId, customerId))
+    .returning({ clerkId: usersTable.clerkId });
+
+  if (updated) {
+    logger.warn({ clerkId: updated.clerkId }, "Fatura em atraso (past_due) — plano rebaixado para free");
+    await auditLog({ eventType: "user.payment.canceled", actorClerkId: updated.clerkId, meta: { reason: "invoice_payment_failed" } });
+  }
 }
 
 export async function processChargeRefund(charge: Stripe.Charge): Promise<void> {
@@ -177,6 +243,13 @@ export async function processChargeRefund(charge: Stripe.Charge): Promise<void> 
   // Only a full refund revokes paid access — a partial/goodwill refund keeps the plan intact.
   if (!isFullRefund) return;
 
+  // NOTA (F9, parcial): idealmente checaríamos aqui também se o charge pertence à
+  // assinatura canônica atual do usuário antes de revogar acesso (mesma proteção aplicada
+  // em syncSubscriptionStatus/cancelSubscription abaixo). Não implementado nesta correção:
+  // nesta versão da API do Stripe (2026-04-22.dahlia), Charge não expõe mais `.invoice`
+  // diretamente — o vínculo charge→invoice→subscription está em `invoice.parent
+  // .subscription_details.subscription`, uma estrutura que não pude confirmar com
+  // segurança sem acesso à API real. Requer validação antes de implementar.
   if (user.stripeSubscriptionId) {
     try {
       await stripe!.subscriptions.cancel(user.stripeSubscriptionId);

@@ -89,6 +89,20 @@ export function normalizePlanId(planId: string): PlanId {
   return LEGACY_PLAN_MAP[planId] ?? "free";
 }
 
+/**
+ * Deriva o plano a partir do lookup_key do preço vigente numa assinatura — a fonte real
+ * de verdade do que o cliente está pagando. Ao contrário de `sub.metadata.planId` (setado
+ * uma vez na criação do checkout e nunca recomputado), isto reflete corretamente trocas de
+ * plano feitas pelo Customer Portal, onde a metadata da assinatura não é atualizada.
+ */
+export function planIdFromLookupKey(lookupKey: string | null | undefined): PlanId | null {
+  if (!lookupKey) return null;
+  for (const plan of Object.values(PLANS)) {
+    if (plan.lookupKey === lookupKey || plan.lookupKeyYearly === lookupKey) return plan.id;
+  }
+  return null;
+}
+
 export function getPlanConfig(planId: string, isSuperuser = false): PlanConfig {
   if (isSuperuser) {
     return {
