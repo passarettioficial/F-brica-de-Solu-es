@@ -245,11 +245,21 @@ export async function processChargeRefund(charge: Stripe.Charge): Promise<void> 
 
   // NOTA (F9, parcial): idealmente checaríamos aqui também se o charge pertence à
   // assinatura canônica atual do usuário antes de revogar acesso (mesma proteção aplicada
-  // em syncSubscriptionStatus/cancelSubscription abaixo). Não implementado nesta correção:
-  // nesta versão da API do Stripe (2026-04-22.dahlia), Charge não expõe mais `.invoice`
-  // diretamente — o vínculo charge→invoice→subscription está em `invoice.parent
-  // .subscription_details.subscription`, uma estrutura que não pude confirmar com
-  // segurança sem acesso à API real. Requer validação antes de implementar.
+  // em syncSubscriptionStatus/cancelSubscription abaixo). Investigado a fundo (2 passadas)
+  // e ainda não implementado — o bloqueio real, confirmado nos tipos do SDK instalado
+  // (stripe@22.1.0, API 2026-04-22.dahlia):
+  //   - Invoice.parent.subscription_details.subscription é o vínculo invoice→subscription
+  //     e EXISTE (confirmado lendo Invoices.d.ts) — isso não é mais o problema.
+  //   - O problema é o sentido inverso: charge→invoice. `Charge` não expõe `.invoice`
+  //     nesta versão. `InvoicePayment.invoice` existe (Invoice←InvoicePayment), mas
+  //     `InvoicePaymentListParams` só filtra por `invoice` (busca payments DE uma invoice
+  //     já conhecida) — não há filtro por `payment.charge`/`payment.payment_intent` para
+  //     ir de charge → invoice. Não há índice reverso exposto pelo SDK tipado.
+  // Caminhos possíveis, nenhum implementado por ser arriscado demais para código de
+  // segurança financeira sem confirmar contra a API real: (a) `expand: ["invoice"]` no
+  // retrieve do charge com cast `as any` (SDK pode estar desatualizado vs. a API real —
+  // não verificável sem acesso live), (b) scan completo de invoices do customer (caro e
+  // ainda não garante precisão). Requer decisão de produto + acesso à API real do Stripe.
   if (user.stripeSubscriptionId) {
     try {
       await stripe!.subscriptions.cancel(user.stripeSubscriptionId);
