@@ -161,3 +161,160 @@ export interface UpdateArtifactBody {
 export interface UpdateUserSettingsBody {
   displayName?: string;
 }
+
+export type PlanInfoId = (typeof PlanInfoId)[keyof typeof PlanInfoId];
+
+export const PlanInfoId = {
+  founder: "founder",
+  studio: "studio",
+} as const;
+
+/**
+ * Public marketing/pricing catalog entry — not the billing source of truth.
+ */
+export interface PlanInfo {
+  id: PlanInfoId;
+  name: string;
+  price: string;
+  period: string;
+  priceYearly?: string;
+  periodYearly?: string;
+  description?: string;
+  highlight?: boolean;
+  badge?: string;
+  features: string[];
+  limitations?: string[];
+}
+
+export type BillingProfilePlan =
+  (typeof BillingProfilePlan)[keyof typeof BillingProfilePlan];
+
+export const BillingProfilePlan = {
+  free: "free",
+  founder: "founder",
+  studio: "studio",
+} as const;
+
+export type BillingProfilePermissions = {
+  canCopy: boolean;
+  canDownload: boolean;
+  canPrint: boolean;
+  hasAiAdvisor: boolean;
+  aiDailyLimit: number;
+  maxProjects: number;
+};
+
+export interface BillingProfile {
+  plan: BillingProfilePlan;
+  planName: string;
+  isAdmin: boolean;
+  isSuperuser: boolean;
+  /** @nullable */
+  stripeCustomerId?: string | null;
+  /** @nullable */
+  stripeSubscriptionId?: string | null;
+  /**
+   * Raw Stripe subscription status (active, past_due, canceled, trialing, etc).
+   * @nullable
+   */
+  stripeSubscriptionStatus?: string | null;
+  permissions: BillingProfilePermissions;
+}
+
+export type CreateCheckoutBodyPlanId =
+  (typeof CreateCheckoutBodyPlanId)[keyof typeof CreateCheckoutBodyPlanId];
+
+export const CreateCheckoutBodyPlanId = {
+  founder: "founder",
+  studio: "studio",
+} as const;
+
+export type CreateCheckoutBodyBillingCycle =
+  (typeof CreateCheckoutBodyBillingCycle)[keyof typeof CreateCheckoutBodyBillingCycle];
+
+export const CreateCheckoutBodyBillingCycle = {
+  monthly: "monthly",
+  yearly: "yearly",
+} as const;
+
+export interface CreateCheckoutBody {
+  planId: CreateCheckoutBodyPlanId;
+  billingCycle?: CreateCheckoutBodyBillingCycle;
+  couponCode?: string;
+  email?: string;
+}
+
+export interface CheckoutSessionResponse {
+  /** Stripe-hosted Checkout URL to redirect the user to. */
+  url: string;
+}
+
+export interface ValidateCouponBody {
+  code: string;
+  planId?: string;
+}
+
+export type CouponValidationResultDiscountType =
+  (typeof CouponValidationResultDiscountType)[keyof typeof CouponValidationResultDiscountType];
+
+export const CouponValidationResultDiscountType = {
+  percent: "percent",
+  fixed: "fixed",
+} as const;
+
+export interface CouponValidationResult {
+  valid: boolean;
+  code: string;
+  discountType: CouponValidationResultDiscountType;
+  discountValue: number;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  appliesTo?: string | null;
+}
+
+export type UpdateAdminUserBodyPlan =
+  (typeof UpdateAdminUserBodyPlan)[keyof typeof UpdateAdminUserBodyPlan];
+
+export const UpdateAdminUserBodyPlan = {
+  free: "free",
+  founder: "founder",
+  studio: "studio",
+} as const;
+
+/**
+ * plan/isAdmin/isSuperuser require the caller to be a superuser and are never allowed when clerkId (path param) matches the caller's own clerkId.
+ */
+export interface UpdateAdminUserBody {
+  displayName?: string;
+  plan?: UpdateAdminUserBodyPlan;
+  isAdmin?: boolean;
+  isSuperuser?: boolean;
+}
+
+export interface AdminUser {
+  id: number;
+  clerkId: string;
+  /** @nullable */
+  displayName?: string | null;
+  plan: string;
+  isAdmin: boolean;
+  isSuperuser: boolean;
+  dailyAiUsage?: number;
+  /** @nullable */
+  stripeCustomerId?: string | null;
+  /** @nullable */
+  stripeSubscriptionId?: string | null;
+  /** @nullable */
+  stripeSubscriptionStatus?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateBillingPortalSession200 = {
+  url: string;
+};
+
+export type UpdateAdminUser200 = {
+  user: AdminUser;
+};

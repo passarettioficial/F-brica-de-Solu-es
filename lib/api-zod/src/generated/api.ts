@@ -341,3 +341,132 @@ export const UpdateUserSettingsResponse = zod.object({
   dailyAiUsage: zod.number(),
   dailyAiLimit: zod.number(),
 });
+
+/**
+ * @summary Public plan catalog (pricing, features) — no auth required
+ */
+export const ListBillingPlansResponseItem = zod
+  .object({
+    id: zod.enum(["founder", "studio"]),
+    name: zod.string(),
+    price: zod.string(),
+    period: zod.string(),
+    priceYearly: zod.string().optional(),
+    periodYearly: zod.string().optional(),
+    description: zod.string().optional(),
+    highlight: zod.boolean().optional(),
+    badge: zod.string().optional(),
+    features: zod.array(zod.string()),
+    limitations: zod.array(zod.string()).optional(),
+  })
+  .describe(
+    "Public marketing\/pricing catalog entry — not the billing source of truth.",
+  );
+export const ListBillingPlansResponse = zod.array(ListBillingPlansResponseItem);
+
+/**
+ * @summary Current user's plan, permissions, and Stripe subscription state
+ */
+export const GetBillingProfileResponse = zod.object({
+  plan: zod.enum(["free", "founder", "studio"]),
+  planName: zod.string(),
+  isAdmin: zod.boolean(),
+  isSuperuser: zod.boolean(),
+  stripeCustomerId: zod.string().nullish(),
+  stripeSubscriptionId: zod.string().nullish(),
+  stripeSubscriptionStatus: zod
+    .string()
+    .nullish()
+    .describe(
+      "Raw Stripe subscription status (active, past_due, canceled, trialing, etc).",
+    ),
+  permissions: zod.object({
+    canCopy: zod.boolean(),
+    canDownload: zod.boolean(),
+    canPrint: zod.boolean(),
+    hasAiAdvisor: zod.boolean(),
+    aiDailyLimit: zod.number(),
+    maxProjects: zod.number(),
+  }),
+});
+
+/**
+ * Rejects with 409 if the user already has an active/trialing subscription (must use /billing/portal to change plan instead of creating a duplicate).
+ * @summary Create a Stripe Checkout session for a paid plan subscription
+ */
+export const createBillingCheckoutBodyBillingCycleDefault = `monthly`;
+
+export const CreateBillingCheckoutBody = zod.object({
+  planId: zod.enum(["founder", "studio"]),
+  billingCycle: zod
+    .enum(["monthly", "yearly"])
+    .default(createBillingCheckoutBodyBillingCycleDefault),
+  couponCode: zod.string().optional(),
+  email: zod.string().optional(),
+});
+
+export const CreateBillingCheckoutResponse = zod.object({
+  url: zod
+    .string()
+    .describe("Stripe-hosted Checkout URL to redirect the user to."),
+});
+
+/**
+ * @summary Validate a discount coupon code before checkout
+ */
+export const ValidateBillingCouponBody = zod.object({
+  code: zod.string(),
+  planId: zod.string().optional(),
+});
+
+export const ValidateBillingCouponResponse = zod.object({
+  valid: zod.boolean(),
+  code: zod.string(),
+  discountType: zod.enum(["percent", "fixed"]),
+  discountValue: zod.number(),
+  description: zod.string().nullish(),
+  appliesTo: zod.string().nullish(),
+});
+
+/**
+ * @summary Create a Stripe Customer Portal session (plan changes, payment method, invoices)
+ */
+export const CreateBillingPortalSessionResponse = zod.object({
+  url: zod.string(),
+});
+
+/**
+ * Requires isAdmin or isSuperuser to call at all. Changing plan/isAdmin/isSuperuser additionally requires isSuperuser on the caller, and is never allowed on the caller's own account (self-promotion / self-granting a paid plan is blocked).
+ * @summary Update a user's display name, plan, admin, or superuser status
+ */
+export const UpdateAdminUserParams = zod.object({
+  clerkId: zod.coerce.string(),
+});
+
+export const UpdateAdminUserBody = zod
+  .object({
+    displayName: zod.string().optional(),
+    plan: zod.enum(["free", "founder", "studio"]).optional(),
+    isAdmin: zod.boolean().optional(),
+    isSuperuser: zod.boolean().optional(),
+  })
+  .describe(
+    "plan\/isAdmin\/isSuperuser require the caller to be a superuser and are never allowed when clerkId (path param) matches the caller's own clerkId.",
+  );
+
+export const UpdateAdminUserResponse = zod.object({
+  user: zod.object({
+    id: zod.number(),
+    clerkId: zod.string(),
+    displayName: zod.string().nullish(),
+    plan: zod.string(),
+    isAdmin: zod.boolean(),
+    isSuperuser: zod.boolean(),
+    dailyAiUsage: zod.number().optional(),
+    stripeCustomerId: zod.string().nullish(),
+    stripeSubscriptionId: zod.string().nullish(),
+    stripeSubscriptionStatus: zod.string().nullish(),
+    createdAt: zod.coerce.date(),
+    updatedAt: zod.coerce.date(),
+  }),
+});
