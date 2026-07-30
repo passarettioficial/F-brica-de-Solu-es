@@ -66,6 +66,16 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Em produção o Replit roteia /api pro processo do api-server na frente de tudo;
+    // localmente isso não existe, então o dev server do Vite precisa fazer esse proxy
+    // pra o frontend (aqui) conseguir falar com o backend (artifacts/api-server) rodando
+    // em outra porta. Só afeta `vite dev`/`vite preview` — nunca o build de produção.
+    proxy: {
+      "/api": {
+        target: process.env.API_PROXY_TARGET ?? "http://localhost:3001",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,
