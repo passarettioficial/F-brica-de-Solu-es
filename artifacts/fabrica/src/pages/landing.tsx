@@ -15,9 +15,9 @@ const phases = [
   { n: "02", name: "PRD", desc: "Personas, métricas, user stories, LTV/CAC" },
   { n: "03", name: "Segurança", desc: "STRIDE, RBAC, mapa de dados LGPD" },
   { n: "04", name: "Spec", desc: "Modelo de dados, arquitetura, APIs" },
-  { n: "05", name: "Execução", desc: "Milestones, MVP, backlog priorizado" },
-  { n: "06", name: "Testes", desc: "Casos críticos P0/P1, riscos, QA" },
-  { n: "07", name: "Lançamento", desc: "GTM, checklist, métricas pós-launch" },
+  { n: "05", name: "Plano de Implementação", desc: "Milestones, MVP, backlog priorizado" },
+  { n: "06", name: "Plano de Testes", desc: "Casos críticos P0/P1, riscos, QA" },
+  { n: "07", name: "Plano de Deploy", desc: "GTM, checklist, métricas pós-launch" },
 ];
 
 const proofs = [

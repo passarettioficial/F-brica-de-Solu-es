@@ -23,7 +23,7 @@ interface Stats {
   recentComments: RecentComment[];
 }
 
-const PHASE_NAMES = ["Ideia", "PRD", "Segurança & LGPD", "Spec", "Implementação", "Teste", "Deploy"];
+const PHASE_NAMES = ["Ideia", "PRD", "Segurança & LGPD", "Spec", "Plano de Implementação", "Plano de Testes", "Plano de Deploy"];
 
 function scoreColor(score: number | null, total: number): string {
   if (score == null || total < 3) return "text-muted-foreground";

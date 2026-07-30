@@ -8,6 +8,7 @@ import { analyzeProjectCoherence, analyzeMarketPotential } from "./ai";
 import { logEvent } from "./events";
 import { seedDemoProject } from "./demoSeed";
 import { buildProjectArtifactContext } from "./project-context";
+import { PHASE_NAMES_UPPER } from "./phase-names";
 
 /**
  * Business logic for the project lifecycle (CRUD, trash, sharing, export, AI scoring),
@@ -324,10 +325,7 @@ export async function getProjectSummary(clerkId: string, id: number): Promise<Se
 
 // ─── Export ──────────────────────────────────────────────────────────────────
 
-export const PHASE_NAMES: Record<number, string> = {
-  1: "IDEIA", 2: "PRD", 3: "SEGURANÇA & LGPD", 4: "SPEC",
-  5: "IMPLEMENTAÇÃO", 6: "TESTE", 7: "DEPLOY",
-};
+export const PHASE_NAMES = PHASE_NAMES_UPPER;
 
 export interface ExportData {
   project: Project;
@@ -480,10 +478,9 @@ export async function analyzePotential(clerkId: string, id: number): Promise<Ser
   if (!projectResult.ok) return projectResult;
   const project = projectResult.data;
 
+  // Ao contrário de analyzeCoherence, roda mesmo sem artefatos ainda (usa só o briefing) —
+  // é a fonte do "Ponto Cego", disparado assim que o founder clica em "Gerar com IA" na Fase 1.
   const artifactContext = await buildProjectArtifactContext(id, 1200);
-  if (!artifactContext.trim()) {
-    return { ok: false, status: 400, error: "Nenhum artefato gerado para analisar. Execute a IA nas fases primeiro." };
-  }
 
   const usage = await checkAndIncrementAiUsage(clerkId);
   if (!usage.allowed) {

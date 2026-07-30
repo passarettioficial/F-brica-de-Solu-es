@@ -3,16 +3,7 @@ import { and, eq, lt, isNull, gte, inArray } from "drizzle-orm";
 import { createNotification } from "../lib/notifications";
 import { logger } from "../lib/logger";
 import { withAdvisoryLock } from "../lib/distributed-lock";
-
-const PHASE_NAMES: Record<number, string> = {
-  1: "Ideia",
-  2: "PRD",
-  3: "Segurança",
-  4: "Spec",
-  5: "Implementação",
-  6: "Teste",
-  7: "Deploy",
-};
+import { PHASE_NAMES_TITLE as PHASE_NAMES } from "../lib/phase-names";
 
 export async function checkStalePhases(): Promise<void> {
   try {

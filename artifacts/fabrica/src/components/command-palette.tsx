@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const PHASE_NAMES = [
-  "Ideia", "PRD", "Segurança & LGPD", "Spec", "Implementação", "Teste", "Deploy",
+  "Ideia", "PRD", "Segurança & LGPD", "Spec", "Plano de Implementação", "Plano de Testes", "Plano de Deploy",
 ];
 
 type Project = { id: number; name: string; currentPhase: number };

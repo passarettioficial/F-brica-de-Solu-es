@@ -3,6 +3,12 @@ import { ArtifactBody } from "./artifact-body";
 import { Button } from "@/components/ui/button";
 import { useUpdateArtifact } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Tooltip, Cell,
+} from "recharts";
+
+const CHART_SERIES_COLORS = ["hsl(var(--primary))", "#d97706", "#64748b"];
 
 function parseJsonBlock<T = Record<string, unknown>>(content: string): T | null {
   try {
@@ -52,8 +58,38 @@ export function SeletorNichoCanvas({ content }: { content: string }) {
     { key: "sinergia_produto", label: "Sinergia" },
     { key: "urgencia", label: "Urgência" },
   ] as const;
+  const top3 = segs.slice(0, 3);
+  const radarData = criterios.map((c) => {
+    const row: Record<string, string | number> = { criterio: c.label };
+    for (const s of top3) row[s.nome] = (s as any)[c.key] as number;
+    return row;
+  });
   return (
     <div className="space-y-4">
+      {top3.length > 1 && (
+        <div className="rounded-xl border border-border bg-card/50 p-2">
+          <ResponsiveContainer width="100%" height={260}>
+            <RadarChart data={radarData} outerRadius="70%">
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis dataKey="criterio" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+              <PolarRadiusAxis domain={[0, 5]} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickCount={6} />
+              {top3.map((s, i) => (
+                <Radar
+                  key={s.nome}
+                  name={s.nome}
+                  dataKey={s.nome}
+                  stroke={CHART_SERIES_COLORS[i]}
+                  fill={CHART_SERIES_COLORS[i]}
+                  fillOpacity={0.15}
+                  strokeWidth={2}
+                />
+              ))}
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
       <div className="overflow-x-auto -mx-1">
         <table className="w-full text-sm">
           <thead>
@@ -909,6 +945,29 @@ function formatBRL(n?: number) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
+function LtvCacBarChart({ ltv, cac }: { ltv?: number; cac?: number }) {
+  if (ltv == null && cac == null) return null;
+  const data = [
+    { nome: "LTV", valor: ltv ?? 0, fill: "hsl(var(--primary))" },
+    { nome: "CAC", valor: cac ?? 0, fill: "#94a3b8" },
+  ];
+  return (
+    <div className="rounded-xl border border-border bg-card/50 p-2">
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 32, left: 4, bottom: 4 }}>
+          <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
+          <XAxis type="number" hide />
+          <YAxis type="category" dataKey="nome" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} width={40} />
+          <Bar dataKey="valor" radius={[0, 6, 6, 0]} barSize={28}>
+            {data.map((d) => <Cell key={d.nome} fill={d.fill} />)}
+            <LabelList dataKey="valor" position="right" formatter={(v: number) => formatBRL(v)} style={{ fontSize: 12, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export function LtvCacCanvas({ content }: { content: string }) {
   const data = parseJsonBlock<LtvCacData>(content);
   if (!data?.ltv && !data?.cac) return <Fallback content={content} />;
@@ -944,6 +1003,7 @@ export function LtvCacCanvas({ content }: { content: string }) {
           {data.cac?.explicacao && <p className="text-xs text-foreground/70 mt-2">{data.cac.explicacao}</p>}
         </div>
       </div>
+      <LtvCacBarChart ltv={data.ltv?.valor_calculado} cac={data.cac?.valor_calculado} />
       {!!data.cac?.canais?.length && (
         <div>
           <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">CAC por canal</div>
@@ -1190,6 +1250,7 @@ export function EditableLtvCacCanvas({
           <div className={`text-xl font-bold ${v.text}`}>{live.razao > 0 ? `${live.razao.toFixed(1)}×` : "—"}</div>
         </div>
       </div>
+      <LtvCacBarChart ltv={live.ltv} cac={cac} />
       <div className={`rounded-lg border-2 px-3 py-2 ${v.bg} ${v.border} flex items-center justify-between flex-wrap gap-2`}>
         <div className={`text-sm font-bold ${v.text}`}>Veredito: {v.label}</div>
         <div className="text-xs text-muted-foreground">
@@ -1847,6 +1908,31 @@ export function MilestonesCanvas({
         <div className="flex items-center gap-3">
           {parsed.duracao_total_estimada && <span className="text-xs text-muted-foreground">Duração total: <strong className="text-foreground">{parsed.duracao_total_estimada}</strong></span>}
           {canDrag && <span className="text-[10px] font-mono uppercase text-muted-foreground hidden md:inline">Arraste para reordenar</span>}
+        </div>
+      </div>
+      <div className="overflow-x-auto -mx-1 pb-1">
+        <div className="relative flex items-start gap-0 min-w-max px-1">
+          {items.map((m, idx) => {
+            const isMvp = mvp && String(m.numero) === mvp;
+            const riskDot: Record<string, string> = {
+              baixo: "border-green-500/60 bg-green-500/10",
+              medio: "border-amber-500/60 bg-amber-500/10",
+              alto: "border-red-500/60 bg-red-500/10",
+            };
+            return (
+              <div key={`trail-${m.numero}-${idx}`} className="flex items-start">
+                <div className="flex flex-col items-center w-28">
+                  <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold ${riskDot[m.risco ?? "medio"] ?? riskDot.medio} ${isMvp ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}>
+                    {m.numero}
+                  </div>
+                  <div className="text-[11px] font-medium text-foreground text-center mt-1.5 line-clamp-2 px-0.5">{m.nome}</div>
+                  {m.duracao && <div className="text-[10px] text-muted-foreground mt-0.5">{m.duracao}</div>}
+                  {isMvp && <div className="text-[9px] font-mono uppercase text-primary mt-0.5">MVP</div>}
+                </div>
+                {idx < items.length - 1 && <div className="h-0.5 w-6 bg-border mt-[18px] flex-shrink-0" />}
+              </div>
+            );
+          })}
         </div>
       </div>
       <div className="relative">
@@ -2537,6 +2623,394 @@ export function MetricasPosLaunchCanvas({ content }: { content: string }) {
         </div>
       )}
       <Attribution>AARRR funnel (Dave McClure, 2007) + North Star Metric (Sean Ellis). Critério "muito decepcionado" (Ellis &amp; Brown, 2017).</Attribution>
+    </div>
+  );
+}
+
+// ───────────────────────── Threat Model / STRIDE (Fase 3) ─────────────────────────
+type ThreatModelData = {
+  features?: Array<{
+    feature: string;
+    ameacas?: Array<{
+      categoria: string;
+      ameaca?: string;
+      probabilidade?: number;
+      impacto?: number;
+      score?: number;
+      controle?: string;
+    }>;
+  }>;
+  superficie_ataque?: {
+    endpoints_api?: string[];
+    mecanismos_auth?: string[];
+    upload_arquivos?: string[];
+    webhooks_integracoes?: string[];
+    dados_sensiveis_transito?: string[];
+  };
+  riscos_criticos?: string[];
+  riscos_altos?: string[];
+  riscos_medios?: string[];
+  controles_prioritarios?: string[];
+};
+
+const STRIDE_CATEGORIES: Array<{ key: string; short: string }> = [
+  { key: "Spoofing", short: "Spoof" },
+  { key: "Tampering", short: "Tamper" },
+  { key: "Repudiation", short: "Repud" },
+  { key: "Information Disclosure", short: "Info" },
+  { key: "Denial of Service", short: "DoS" },
+  { key: "Elevation of Privilege", short: "Priv." },
+];
+
+function threatScoreColor(score: number): string {
+  if (score >= 15) return "bg-red-500/15 text-red-700 dark:text-red-400 font-semibold";
+  if (score >= 8) return "bg-amber-500/15 text-amber-700 dark:text-amber-400 font-semibold";
+  if (score > 0) return "bg-green-500/15 text-green-700 dark:text-green-400 font-medium";
+  return "bg-muted/40 text-muted-foreground";
+}
+
+export function ThreatModelCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<ThreatModelData>(content);
+  if (!data?.features?.length) return <Fallback content={content} />;
+  const superficie = data.superficie_ataque
+    ? ([
+        ["Endpoints de API", data.superficie_ataque.endpoints_api],
+        ["Mecanismos de autenticação", data.superficie_ataque.mecanismos_auth],
+        ["Upload de arquivos", data.superficie_ataque.upload_arquivos],
+        ["Webhooks/integrações", data.superficie_ataque.webhooks_integracoes],
+        ["Dados sensíveis em trânsito", data.superficie_ataque.dados_sensiveis_transito],
+      ] as const).filter(([, v]) => v?.length)
+    : [];
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <h4 className="font-serif text-base">Matriz STRIDE por feature</h4>
+        <span className="text-[10px] font-mono uppercase text-muted-foreground">Score = probabilidade × impacto</span>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-secondary/50">
+              <th className="text-left px-3 py-2 font-medium text-xs uppercase tracking-wider">Feature</th>
+              {STRIDE_CATEGORIES.map((c) => (
+                <th key={c.key} className="px-2 py-2 text-center font-mono text-[10px]" title={c.key}>{c.short}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.features.map((f) => (
+              <tr key={f.feature} className="border-t border-border">
+                <td className="px-3 py-2 font-medium text-foreground align-top">{f.feature}</td>
+                {STRIDE_CATEGORIES.map((cat) => {
+                  const a = f.ameacas?.find((x) => x.categoria === cat.key);
+                  const score = a?.score ?? (a?.probabilidade && a?.impacto ? a.probabilidade * a.impacto : 0);
+                  return (
+                    <td key={cat.key} className="px-2 py-1.5 text-center align-top">
+                      {a ? (
+                        <span
+                          className={`inline-block min-w-[32px] px-2 py-1 rounded text-[12px] font-mono ${threatScoreColor(score)}`}
+                          title={[a.ameaca, a.controle].filter(Boolean).join(" — ")}
+                        >
+                          {score}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!!superficie.length && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {superficie.map(([label, items]) => (
+            <div key={label} className="rounded-lg border border-border bg-muted/20 p-3">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1.5">{label}</div>
+              <ul className="space-y-1">
+                {items!.map((it, i) => <li key={i} className="text-xs text-foreground">{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {!!data.riscos_criticos?.length && (
+          <div className="rounded-lg border border-red-300 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20 p-3">
+            <div className="text-[10px] font-mono uppercase text-red-700 dark:text-red-400 mb-1.5">Riscos críticos</div>
+            <ul className="space-y-1">{data.riscos_criticos.map((r, i) => <li key={i} className="text-xs text-foreground">{r}</li>)}</ul>
+          </div>
+        )}
+        {!!data.riscos_altos?.length && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3">
+            <div className="text-[10px] font-mono uppercase text-amber-700 dark:text-amber-400 mb-1.5">Riscos altos</div>
+            <ul className="space-y-1">{data.riscos_altos.map((r, i) => <li key={i} className="text-xs text-foreground">{r}</li>)}</ul>
+          </div>
+        )}
+      </div>
+      {!!data.controles_prioritarios?.length && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <div className="text-[10px] font-mono uppercase text-primary mb-1.5">Controles prioritários</div>
+          <ol className="space-y-1.5">
+            {data.controles_prioritarios.map((c, i) => (
+              <li key={i} className="text-sm text-foreground flex gap-2">
+                <span className="text-primary font-mono text-xs flex-shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                <span>{c}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      <Attribution>Modelagem de ameaças STRIDE (Microsoft, 1999). Escala de score (probabilidade × impacto) própria do Método FoundersFlow.</Attribution>
+    </div>
+  );
+}
+
+// ───────────────────────── Arquitetura do Sistema (Fase 4) ─────────────────────────
+type ArquiteturaData = {
+  estilo_arquitetural?: { escolha?: string; justificativa?: string };
+  componentes?: Array<{ nome: string; tipo?: string; descricao?: string }>;
+  conexoes?: Array<{ de: string; para: string; protocolo?: string; descricao?: string }>;
+  stack_tecnologica?: Array<{ camada: string; escolha?: string; justificativa?: string }>;
+  fluxos_dados_principais?: string[];
+  decisoes_trade_off?: string[];
+};
+
+const COMPONENT_TYPE_LABELS: Record<string, string> = {
+  frontend: "Frontend",
+  backend: "Backend",
+  database: "Banco de Dados",
+  cache: "Cache",
+  queue: "Fila",
+  external: "Externo",
+  infra: "Infraestrutura",
+};
+
+const COMPONENT_TYPE_ORDER = ["frontend", "backend", "database", "cache", "queue", "external", "infra"];
+
+export function ArquiteturaCanvas({ content }: { content: string }) {
+  const data = parseJsonBlock<ArquiteturaData>(content);
+  if (!data?.componentes?.length) return <Fallback content={content} />;
+  const byType = new Map<string, NonNullable<ArquiteturaData["componentes"]>>();
+  for (const c of data.componentes) {
+    const t = c.tipo ?? "infra";
+    if (!byType.has(t)) byType.set(t, []);
+    byType.get(t)!.push(c);
+  }
+  const orderedTypes = [
+    ...COMPONENT_TYPE_ORDER.filter((t) => byType.has(t)),
+    ...[...byType.keys()].filter((t) => !COMPONENT_TYPE_ORDER.includes(t)),
+  ];
+
+  return (
+    <div className="space-y-4">
+      {data.estilo_arquitetural?.escolha && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-primary mb-1">Estilo arquitetural</div>
+          <div className="text-base font-semibold text-foreground">{data.estilo_arquitetural.escolha}</div>
+          {data.estilo_arquitetural.justificativa && <p className="text-sm text-foreground/80 mt-1">{data.estilo_arquitetural.justificativa}</p>}
+        </div>
+      )}
+
+      <div>
+        <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Componentes</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {orderedTypes.map((t) => (
+            <div key={t} className="rounded-xl border border-border bg-card/50 p-3">
+              <div className="text-[10px] font-mono uppercase text-muted-foreground mb-2">{COMPONENT_TYPE_LABELS[t] ?? t}</div>
+              <div className="space-y-2">
+                {byType.get(t)!.map((c) => (
+                  <div key={c.nome} className="rounded-lg border border-border/60 bg-background px-2.5 py-2">
+                    <div className="text-sm font-medium text-foreground">{c.nome}</div>
+                    {c.descricao && <div className="text-xs text-muted-foreground mt-0.5">{c.descricao}</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {!!data.conexoes?.length && (
+        <div className="rounded-lg border border-border bg-muted/20 p-3">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Conexões</div>
+          <ul className="space-y-1.5">
+            {data.conexoes.map((cx, i) => (
+              <li key={i} className="text-sm text-foreground flex flex-wrap items-center gap-1.5">
+                <span className="font-medium">{cx.de}</span>
+                <span className="text-muted-foreground">→</span>
+                <span className="font-medium">{cx.para}</span>
+                {cx.protocolo && <span className="text-xs font-mono text-primary ml-1">{cx.protocolo}</span>}
+                {cx.descricao && <span className="text-xs text-muted-foreground">— {cx.descricao}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!!data.stack_tecnologica?.length && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[10px] font-mono uppercase text-muted-foreground border-b border-border">
+                <th className="text-left px-2 py-1.5">Camada</th>
+                <th className="text-left px-2 py-1.5">Escolha</th>
+                <th className="text-left px-2 py-1.5">Justificativa</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.stack_tecnologica.map((s, i) => (
+                <tr key={i} className="border-b border-border/40">
+                  <td className="px-2 py-2 text-muted-foreground capitalize">{s.camada}</td>
+                  <td className="px-2 py-2 font-medium text-foreground">{s.escolha}</td>
+                  <td className="px-2 py-2 text-foreground/70 text-xs">{s.justificativa}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!!data.fluxos_dados_principais?.length && (
+        <div>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1.5">Fluxos de dados principais</div>
+          <ul className="space-y-1.5">
+            {data.fluxos_dados_principais.map((f, i) => (
+              <li key={i} className="text-sm text-foreground flex gap-2"><span className="text-primary mt-0.5">→</span><span>{f}</span></li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!!data.decisoes_trade_off?.length && (
+        <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3">
+          <div className="text-[10px] font-mono uppercase text-amber-700 dark:text-amber-400 mb-1">Decisões de trade-off</div>
+          <ul className="space-y-1">{data.decisoes_trade_off.map((d, i) => <li key={i} className="text-sm text-foreground">{d}</li>)}</ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────── Sprint 1 Detalhado (Fase 5) ─────────────────────────
+type Sprint1Data = {
+  objetivos?: string[];
+  tasks?: Array<{ titulo: string; estimativa_horas?: number; categoria?: string }>;
+  setup_passos?: string[];
+  definition_of_done?: string[];
+  bloqueadores?: Array<{ risco: string; mitigacao?: string }>;
+  checkpoint_fim_sprint?: string;
+};
+
+export function Sprint1Canvas({ content }: { content: string }) {
+  const data = parseJsonBlock<Sprint1Data>(content);
+  if (!data?.tasks?.length) return <Fallback content={content} />;
+  const byCategory = new Map<string, NonNullable<Sprint1Data["tasks"]>>();
+  for (const t of data.tasks) {
+    const cat = t.categoria ?? "Outros";
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat)!.push(t);
+  }
+  const totalHoras = data.tasks.reduce((s, t) => s + (t.estimativa_horas ?? 0), 0);
+  const chartData = [...byCategory.entries()].map(([categoria, tasks]) => ({
+    categoria,
+    horas: tasks.reduce((s, t) => s + (t.estimativa_horas ?? 0), 0),
+  }));
+
+  return (
+    <div className="space-y-4">
+      {!!data.objetivos?.length && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-primary mb-1.5">Objetivos da sprint</div>
+          <ul className="space-y-1">
+            {data.objetivos.map((o, i) => <li key={i} className="text-sm text-foreground flex gap-2"><span className="text-primary mt-0.5">✓</span><span>{o}</span></li>)}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <h4 className="font-serif text-base">{data.tasks.length} tasks</h4>
+        <span className="text-xs text-muted-foreground">Total: <strong className="text-foreground">{totalHoras}h</strong></span>
+      </div>
+
+      {byCategory.size > 1 && (
+        <div className="rounded-xl border border-border bg-card/50 p-2">
+          <ResponsiveContainer width="100%" height={Math.max(80, byCategory.size * 32)}>
+            <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 32, left: 4, bottom: 4 }}>
+              <CartesianGrid horizontal={false} stroke="hsl(var(--border))" />
+              <XAxis type="number" hide />
+              <YAxis type="category" dataKey="categoria" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} width={80} />
+              <Bar dataKey="horas" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} barSize={18}>
+                <LabelList dataKey="horas" position="right" formatter={(v: number) => `${v}h`} style={{ fontSize: 11, fill: "hsl(var(--foreground))", fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {[...byCategory.entries()].map(([cat, tasks]) => (
+          <div key={cat} className="rounded-lg border border-border p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{cat}</div>
+              <div className="text-xs text-muted-foreground">{tasks.reduce((s, t) => s + (t.estimativa_horas ?? 0), 0)}h</div>
+            </div>
+            <ul className="space-y-1.5">
+              {tasks.map((t, i) => (
+                <li key={i} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-foreground">{t.titulo}</span>
+                  {t.estimativa_horas != null && <span className="text-xs font-mono text-muted-foreground flex-shrink-0">{t.estimativa_horas}h</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {!!data.setup_passos?.length && (
+        <div className="rounded-lg border border-border bg-muted/20 p-3">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1.5">Setup do ambiente</div>
+          <ol className="space-y-1">
+            {data.setup_passos.map((s, i) => (
+              <li key={i} className="text-sm text-foreground flex gap-2"><span className="text-muted-foreground font-mono text-xs flex-shrink-0">{i + 1}.</span><span>{s}</span></li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {!!data.definition_of_done?.length && (
+        <div>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1.5">Definition of Done</div>
+          <ul className="space-y-1">
+            {data.definition_of_done.map((d, i) => (
+              <li key={i} className="text-sm text-foreground flex gap-2"><span className="text-green-600 dark:text-green-400 mt-0.5">✓</span><span>{d}</span></li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!!data.bloqueadores?.length && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3">
+          <div className="text-[10px] font-mono uppercase text-amber-700 dark:text-amber-400 mb-1.5">Bloqueadores potenciais</div>
+          <ul className="space-y-2">
+            {data.bloqueadores.map((b, i) => (
+              <li key={i} className="text-sm">
+                <span className="text-foreground font-medium">{b.risco}</span>
+                {b.mitigacao && <span className="text-muted-foreground"> — {b.mitigacao}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {data.checkpoint_fim_sprint && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1">Checkpoint de fim de sprint</div>
+          <p className="text-sm text-foreground">{data.checkpoint_fim_sprint}</p>
+        </div>
+      )}
     </div>
   );
 }

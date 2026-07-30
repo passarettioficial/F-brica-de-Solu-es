@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { ArtifactBody } from "@/components/artifact-body";
 import { PHASES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { CoherenceGauge } from "@/components/coherence-gauge";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -116,16 +117,18 @@ export function PublicSharePage() {
               {data.briefing}
             </p>
           )}
-          <div className="flex items-center flex-wrap gap-3 mt-4">
+          <div className="flex items-center flex-wrap gap-6 mt-4">
             {data.coherenceScore != null && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
-                Coerência {data.coherenceScore}/100
-              </span>
+              <div className="flex items-center gap-2">
+                <CoherenceGauge score={data.coherenceScore} variant="coherence" size={64} />
+                <span className="text-xs text-muted-foreground">Coerência</span>
+              </div>
             )}
             {data.marketPotentialScore != null && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground">
-                Potencial {data.marketPotentialScore}/100
-              </span>
+              <div className="flex items-center gap-2">
+                <CoherenceGauge score={data.marketPotentialScore} variant="potential" size={64} />
+                <span className="text-xs text-muted-foreground">Potencial</span>
+              </div>
             )}
             <span className="text-xs text-muted-foreground">{completedCount} de 7 fases concluídas</span>
           </div>

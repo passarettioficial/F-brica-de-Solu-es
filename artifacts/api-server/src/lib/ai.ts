@@ -1,13 +1,12 @@
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { recordOpenAiCost } from "./openaiCost";
+import { PHASE_NAMES_UPPER_ARRAY as PHASE_NAMES } from "./phase-names";
 
 export interface PhaseAIResult {
   artifactKey: string;
   content: string;
   contentJson: string | null;
 }
-
-const PHASE_NAMES = ["IDEIA", "PRD", "SEGURANÇA & LGPD", "SPEC", "IMPLEMENTAÇÃO", "TESTE", "DEPLOY"];
 
 const PHASE_PROMPTS: Record<number, string> = {
   1: `Você é um especialista em validação de ideias de produto e estratégia de negócio (Método FoundersFlow). Analise o briefing e gere os seguintes artefatos em português brasileiro. Seja específico para o negócio descrito, não genérico. **Sempre que pedir formato JSON, devolva o JSON dentro de bloco \`\`\`json ... \`\`\`.**
@@ -339,28 +338,38 @@ Inclua também o fluxo de consentimento em formato JSON:
 {"consentimento_inicial": {"momento": "...", "como_obter": "...", "granularidade": [...]}, "revogacao": {"como": "...", "prazo_efeito": "..."}, "banner_cookies": {"categorias": [...]}}
 
 ### THREAT_MODEL
-Modelagem de ameaças STRIDE para as features críticas deste produto:
+Modelagem de ameaças STRIDE para as features críticas deste produto, em formato JSON:
 
-Para cada feature crítica identificada no PRD (mínimo 4 features):
-**Feature: [nome]**
-| Categoria STRIDE | Ameaça específica | Probabilidade (1-5) | Impacto (1-5) | Score | Controle requerido |
-|---|---|---|---|---|---|
-| Spoofing | ... | | | | |
-| Tampering | ... | | | | |
-| Repudiation | ... | | | | |
-| Information Disclosure | ... | | | | |
-| Denial of Service | ... | | | | |
-| Elevation of Privilege | ... | | | | |
+\`\`\`json
+{
+  "features": [
+    {
+      "feature": "nome da feature crítica",
+      "ameacas": [
+        {"categoria": "Spoofing", "ameaca": "ameaça específica a esta feature", "probabilidade": 3, "impacto": 4, "score": 12, "controle": "controle requerido concreto"},
+        {"categoria": "Tampering", "ameaca": "...", "probabilidade": 1, "impacto": 5, "score": 5, "controle": "..."},
+        {"categoria": "Repudiation", "ameaca": "...", "probabilidade": 2, "impacto": 3, "score": 6, "controle": "..."},
+        {"categoria": "Information Disclosure", "ameaca": "...", "probabilidade": 3, "impacto": 5, "score": 15, "controle": "..."},
+        {"categoria": "Denial of Service", "ameaca": "...", "probabilidade": 2, "impacto": 4, "score": 8, "controle": "..."},
+        {"categoria": "Elevation of Privilege", "ameaca": "...", "probabilidade": 1, "impacto": 5, "score": 5, "controle": "..."}
+      ]
+    }
+  ],
+  "superficie_ataque": {
+    "endpoints_api": ["endpoints de API expostos"],
+    "mecanismos_auth": ["mecanismos de autenticação"],
+    "upload_arquivos": ["se aplicável"],
+    "webhooks_integracoes": ["webhooks/integrações externas"],
+    "dados_sensiveis_transito": ["dados sensíveis em trânsito"]
+  },
+  "riscos_criticos": ["risco crítico consolidado 1", "..."],
+  "riscos_altos": ["..."],
+  "riscos_medios": ["..."],
+  "controles_prioritarios": ["..."]
+}
+\`\`\`
 
-**Superfície de ataque identificada:**
-- Endpoints de API expostos: [lista]
-- Mecanismos de autenticação: [lista]
-- Upload de arquivos: [se aplicável]
-- Webhooks/integrações externas: [lista]
-- Dados sensíveis em trânsito: [lista]
-
-**Matriz de risco consolidada em formato JSON:**
-{"riscos_criticos": [...], "riscos_altos": [...], "riscos_medios": [...], "controles_prioritarios": [...]}
+Mínimo 4 features, cada uma com as 6 categorias STRIDE preenchidas. \`score\` = \`probabilidade × impacto\` (1-25). Probabilidade e impacto em escala 1-5.
 
 ### MATRIZ_RBAC
 Modelo de identidade e controle de acesso. Use a forma "matriz" — lista de papéis e lista de recursos com o nível de acesso de cada papel em cada recurso. Formato JSON:
@@ -453,12 +462,33 @@ Plano completo de resposta a incidentes e operações seguras em formato JSON:
   4: `Você é um arquiteto de software sênior com experiência em sistemas escaláveis e seguros. Com base no briefing e artefatos anteriores (incluindo o Threat Model e Matriz RBAC da fase Segurança & LGPD), gere os seguintes artefatos técnicos em português brasileiro.
 
 ### ARQUITETURA
-Arquitetura completa do sistema:
-**Estilo arquitetural**: [monolito/microsserviços/serverless — com justificativa]
-**Diagrama de componentes** (ASCII art detalhado)
-**Stack tecnológica recomendada** com justificativa para cada escolha (frontend, backend, banco, cache, fila, infra)
-**Fluxo de dados principais** descritos em texto
-**Decisões de trade-off**: [o que foi priorizado e por quê]
+Arquitetura completa do sistema, em formato JSON:
+
+\`\`\`json
+{
+  "estilo_arquitetural": {"escolha": "ex: monolito modular", "justificativa": "por que este estilo e não microsserviços/serverless"},
+  "componentes": [
+    {"nome": "ex: Web App", "tipo": "frontend", "descricao": "1 linha"},
+    {"nome": "ex: API Server", "tipo": "backend", "descricao": "1 linha"},
+    {"nome": "ex: PostgreSQL", "tipo": "database", "descricao": "1 linha"}
+  ],
+  "conexoes": [
+    {"de": "Web App", "para": "API Server", "protocolo": "REST/HTTPS", "descricao": "opcional"}
+  ],
+  "stack_tecnologica": [
+    {"camada": "frontend", "escolha": "...", "justificativa": "..."},
+    {"camada": "backend", "escolha": "...", "justificativa": "..."},
+    {"camada": "banco", "escolha": "...", "justificativa": "..."},
+    {"camada": "cache", "escolha": "...", "justificativa": "..."},
+    {"camada": "fila", "escolha": "...", "justificativa": "..."},
+    {"camada": "infra", "escolha": "...", "justificativa": "..."}
+  ],
+  "fluxos_dados_principais": ["descrição do fluxo 1", "descrição do fluxo 2"],
+  "decisoes_trade_off": ["o que foi priorizado e por quê — item 1", "..."]
+}
+\`\`\`
+
+Cubra todos os componentes reais do produto descrito (mínimo 5) e todas as conexões relevantes entre eles.
 
 ### MODELO_DADOS
 Modelo de dados em formato JSON estruturado, seguido de notas sobre soft-delete, auditoria e multi-tenancy.
@@ -553,13 +583,23 @@ Plano de milestones em formato JSON. Cada milestone deve ter um entregável nave
 Mínimo 5 milestones cobrindo todo o MVP. Risco ∈ {baixo, medio, alto}.
 
 ### SPRINT_1
-Plano detalhado da Sprint 1 (primeira semana de desenvolvimento):
-- Objetivos claros e mensuráveis
-- Tasks técnicas em ordem de execução (com estimativas em horas)
-- Setup do ambiente de desenvolvimento passo a passo
-- Definição de "done" para cada task
-- Bloqueadores potenciais e como resolvê-los
-- Checkpoint de fim de sprint: o que deve estar funcionando
+Plano detalhado da Sprint 1 (primeira semana de desenvolvimento), em formato JSON:
+
+\`\`\`json
+{
+  "objetivos": ["objetivo claro e mensurável 1", "..."],
+  "tasks": [
+    {"titulo": "ex: Setup do repo e CI", "estimativa_horas": 3, "categoria": "Setup"},
+    {"titulo": "ex: Modelo de dados + migrations", "estimativa_horas": 4, "categoria": "Backend"}
+  ],
+  "setup_passos": ["passo a passo do ambiente de desenvolvimento"],
+  "definition_of_done": ["definição de done aplicável a cada task"],
+  "bloqueadores": [{"risco": "bloqueador potencial", "mitigacao": "como resolver"}],
+  "checkpoint_fim_sprint": "o que deve estar funcionando ao final da sprint"
+}
+\`\`\`
+
+Tasks em ordem de execução, categorias como Setup/Backend/Frontend/Testes/Deploy. Mínimo 8 tasks cobrindo a primeira semana inteira.
 
 ### ESTRUTURA_PASTAS
 Estrutura de pastas completa do projeto em formato de árvore ASCII, com comentário explicativo para cada pasta/arquivo importante. Inclua: arquivos de configuração, estrutura de testes, assets, docs.

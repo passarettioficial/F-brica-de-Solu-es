@@ -9,9 +9,9 @@ const PHASES = [
   { num: 2, name: "PRD", out: "Requisitos, Personas, User Stories, Roadmap, Métricas" },
   { num: 3, name: "Segurança & LGPD", out: "Data Map, Threat Model, RBAC, Política de privacidade" },
   { num: 4, name: "Spec", out: "Arquitetura, Modelo de dados, Contratos de API, Fluxos UX" },
-  { num: 5, name: "Implementação", out: "Milestones, Sprint 1, README, Definition of Done" },
-  { num: 6, name: "Teste", out: "Plano de testes, Casos críticos, QA, Observabilidade" },
-  { num: 7, name: "Deploy", out: "Runbook, Go-to-Market, Launch Checklist, Pitch" },
+  { num: 5, name: "Plano de Implementação", out: "Milestones, Sprint 1, README, Definition of Done" },
+  { num: 6, name: "Plano de Testes", out: "Plano de testes, Casos críticos, QA, Observabilidade" },
+  { num: 7, name: "Plano de Deploy", out: "Runbook, Go-to-Market, Launch Checklist, Pitch" },
 ];
 
 export function FluxoContinuoPage() {

@@ -17,9 +17,9 @@ const PHASES = [
   { num: 2, name: "PRD", icon: "◈", desc: "Definição de produto", artifacts: "7 artefatos" },
   { num: 3, name: "Segurança", icon: "◈", desc: "LGPD e privacidade", artifacts: "6 artefatos" },
   { num: 4, name: "Spec", icon: "◈", desc: "Arquitetura técnica", artifacts: "8 artefatos" },
-  { num: 5, name: "Implementação", icon: "◈", desc: "Plano de execução", artifacts: "7 artefatos" },
-  { num: 6, name: "Teste", icon: "◈", desc: "QA e validação", artifacts: "7 artefatos" },
-  { num: 7, name: "Deploy", icon: "◈", desc: "Lançamento real", artifacts: "7 artefatos" },
+  { num: 5, name: "Plano de Implementação", icon: "◈", desc: "Plano de execução", artifacts: "7 artefatos" },
+  { num: 6, name: "Plano de Testes", icon: "◈", desc: "QA e validação", artifacts: "7 artefatos" },
+  { num: 7, name: "Plano de Deploy", icon: "◈", desc: "Lançamento real", artifacts: "7 artefatos" },
 ];
 
 const FEATURES = [

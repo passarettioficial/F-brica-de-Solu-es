@@ -110,11 +110,26 @@ const DERIVERS: Record<string, Deriver> = {
     }
     return null;
   },
+  THREAT_MODEL: (c) => {
+    const d = parseJson<{ features?: unknown[]; riscos_criticos?: unknown[] }>(c);
+    const n = d?.features?.length ?? 0;
+    if (n === 0) return null;
+    const criticos = d?.riscos_criticos?.length ?? 0;
+    if (n >= 4) return { state: criticos > 0 ? "warn" : "ok", label: `${n} features · ${criticos} riscos críticos` };
+    return { state: "warn", label: `${n} features · mín. 4` };
+  },
   MODELO_DADOS: (c) => {
     const d = parseJson<{ entidades?: unknown[] }>(c);
     const n = d?.entidades?.length ?? 0;
     if (n >= 4) return { state: "ok", label: `${n} entidades` };
     if (n > 0) return { state: "warn", label: `${n} entidades · mín. 4` };
+    return null;
+  },
+  ARQUITETURA: (c) => {
+    const d = parseJson<{ componentes?: unknown[]; conexoes?: unknown[] }>(c);
+    const n = d?.componentes?.length ?? 0;
+    if (n >= 5) return { state: "ok", label: `${n} componentes · ${d?.conexoes?.length ?? 0} conexões` };
+    if (n > 0) return { state: "warn", label: `${n} componentes · mín. 5` };
     return null;
   },
   MILESTONES: (c) => {
@@ -123,6 +138,14 @@ const DERIVERS: Record<string, Deriver> = {
     if (n >= 5) return { state: "ok", label: `${n} milestones · ${d?.duracao_total_estimada ?? ""}`.trim() };
     if (n > 0) return { state: "warn", label: `${n} milestones · mín. 5` };
     return null;
+  },
+  SPRINT_1: (c) => {
+    const d = parseJson<{ tasks?: { estimativa_horas?: number }[] }>(c);
+    const n = d?.tasks?.length ?? 0;
+    if (n === 0) return null;
+    const horas = d!.tasks!.reduce((s, t) => s + (t.estimativa_horas ?? 0), 0);
+    if (n >= 8) return { state: "ok", label: `${n} tasks · ${horas}h` };
+    return { state: "warn", label: `${n} tasks · mín. 8` };
   },
   CASOS_TESTE_CRITICOS: (c) => {
     const d = parseJson<{ casos?: { prioridade?: string }[] }>(c);

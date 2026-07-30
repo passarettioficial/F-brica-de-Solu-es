@@ -92,7 +92,7 @@ export const PHASES = [
   },
   {
     number: 5,
-    name: "IMPLEMENTAÇÃO",
+    name: "PLANO DE IMPLEMENTAÇÃO",
     motivation: "Quebre o produto em milestones navegáveis e construa com disciplina de engenharia",
     tagline: "7 entregáveis de engenharia",
     artifacts: [
@@ -112,7 +112,7 @@ export const PHASES = [
   },
   {
     number: 6,
-    name: "TESTE",
+    name: "PLANO DE TESTES",
     motivation: "Valide que o produto funciona e que usuários reais conseguem usá-lo sem ajuda",
     tagline: "7 entregáveis de qualidade",
     artifacts: [
@@ -132,7 +132,7 @@ export const PHASES = [
   },
   {
     number: 7,
-    name: "DEPLOY",
+    name: "PLANO DE DEPLOY",
     motivation: "Lance com intenção e estratégia — e chegue aos seus primeiros 10 clientes pagantes",
     tagline: "7 entregáveis de lançamento",
     artifacts: [

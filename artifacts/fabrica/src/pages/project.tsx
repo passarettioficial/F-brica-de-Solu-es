@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PHASES } from "@/lib/constants";
 import { downloadProjectPdf } from "@/lib/pdf-export";
 import { handleAiLimit } from "@/lib/paywall";
+import { CoherenceGauge } from "@/components/coherence-gauge";
 
 const ARTIFACT_LABELS: Record<string, string> = (() => {
   const map: Record<string, string> = {};
@@ -91,45 +92,15 @@ function PhasePipeline({ phases, currentPhase, projectId }: {
 
 // ─── CoherenceCard ──────────────────────────────────────────────────────────
 
-function useCountUp(target: number | null | undefined, durationMs = 700) {
-  const [value, setValue] = useState<number | null>(target == null ? null : 0);
-  const currentRef = useRef<number>(0);
-  useEffect(() => {
-    if (target == null) { setValue(null); currentRef.current = 0; return; }
-    const from = currentRef.current;
-    const to = target;
-    if (from === to) { setValue(to); return; }
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const v = Math.round(from + (to - from) * eased);
-      currentRef.current = v;
-      setValue(v);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, durationMs]);
-  return value;
-}
-
 function CoherenceCard({ project, projectId, onRefresh }: { project: any; projectId: number; onRefresh: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const score = project.coherenceScore as number | null | undefined;
-  const animatedScore = useCountUp(score);
   const data = (project.coherenceData ?? null) as any;
   const updatedAt = project.coherenceUpdatedAt ? new Date(project.coherenceUpdatedAt) : null;
   const phases: any[] = project.phases ?? [];
   const hasEnoughArtifacts = phases.some((p: any) => p.status === "completed" || p.status === "active");
-
-  const scoreColor = score == null ? "text-muted-foreground" : score >= 75 ? "text-emerald-600 dark:text-emerald-400" : score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
-  const ringColor = score == null ? "#e5e7eb" : score >= 75 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
-  const circumference = 2 * Math.PI * 20;
-  const strokeDash = score != null ? (score / 100) * circumference : 0;
 
   async function analyze() {
     setLoading(true);
@@ -153,21 +124,7 @@ function CoherenceCard({ project, projectId, onRefresh }: { project: any; projec
     <div className="bg-card border border-card-border rounded-xl p-5 mb-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
-          <div className="relative flex-shrink-0 w-14 h-14">
-            <svg width="56" height="56" viewBox="0 0 56 56">
-              <circle cx="28" cy="28" r="20" fill="none" stroke="var(--muted)" strokeWidth="4" />
-              {score != null && (
-                <circle cx="28" cy="28" r="20" fill="none" stroke={ringColor} strokeWidth="4"
-                  strokeLinecap="round" strokeDasharray={`${strokeDash} ${circumference}`}
-                  transform="rotate(-90 28 28)" style={{ transition: "stroke-dasharray 0.5s ease" }} />
-              )}
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-bold tabular-nums ${scoreColor}`} data-testid="coherence-score-number">
-                {animatedScore != null ? animatedScore : "—"}
-              </span>
-            </div>
-          </div>
+          <CoherenceGauge score={score} variant="coherence" testId="coherence-score-number" />
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-serif text-base font-medium" data-testid="coherence-headline">
@@ -264,16 +221,10 @@ function MarketPotentialCard({ project, projectId, onRefresh }: { project: any; 
   const [error, setError] = useState<string | null>(null);
 
   const score = project.marketPotentialScore as number | null | undefined;
-  const animatedScore = useCountUp(score);
   const data = (project.marketPotentialData ?? null) as any;
   const updatedAt = project.marketPotentialUpdatedAt ? new Date(project.marketPotentialUpdatedAt) : null;
   const phases: any[] = project.phases ?? [];
   const hasEnoughArtifacts = phases.some((p: any) => p.status === "completed" || p.status === "active");
-
-  const scoreColor = score == null ? "text-muted-foreground" : score >= 75 ? "text-blue-600 dark:text-blue-400" : score >= 50 ? "text-amber-600 dark:text-amber-400" : "text-destructive";
-  const ringColor = score == null ? "#e5e7eb" : score >= 75 ? "#2563eb" : score >= 50 ? "#f59e0b" : "#ef4444";
-  const circumference = 2 * Math.PI * 20;
-  const strokeDash = score != null ? (score / 100) * circumference : 0;
 
   async function analyze() {
     setLoading(true);
@@ -305,21 +256,7 @@ function MarketPotentialCard({ project, projectId, onRefresh }: { project: any; 
     <div className="bg-card border border-card-border rounded-xl p-5 mb-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
-          <div className="relative flex-shrink-0 w-14 h-14">
-            <svg width="56" height="56" viewBox="0 0 56 56">
-              <circle cx="28" cy="28" r="20" fill="none" stroke="var(--muted)" strokeWidth="4" />
-              {score != null && (
-                <circle cx="28" cy="28" r="20" fill="none" stroke={ringColor} strokeWidth="4"
-                  strokeLinecap="round" strokeDasharray={`${strokeDash} ${circumference}`}
-                  transform="rotate(-90 28 28)" style={{ transition: "stroke-dasharray 0.5s ease" }} />
-              )}
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className={`text-sm font-bold tabular-nums ${scoreColor}`} data-testid="potential-score-number">
-                {animatedScore != null ? animatedScore : "—"}
-              </span>
-            </div>
-          </div>
+          <CoherenceGauge score={score} variant="potential" testId="potential-score-number" />
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-serif text-base font-medium">Potencial de Mercado</h3>

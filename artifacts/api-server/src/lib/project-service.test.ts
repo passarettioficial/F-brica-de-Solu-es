@@ -9,6 +9,7 @@ const checkAndIncrementAiUsageMock = vi.fn();
 const getPlanConfigMock = vi.fn();
 const auditLogMock = vi.fn();
 const analyzeProjectCoherenceMock = vi.fn();
+const analyzeMarketPotentialMock = vi.fn();
 const buildProjectArtifactContextMock = vi.fn();
 
 vi.mock("@workspace/db", () => ({
@@ -40,12 +41,12 @@ vi.mock("./auth", () => ({
 
 vi.mock("./stripe", () => ({ getPlanConfig: getPlanConfigMock }));
 vi.mock("./audit", () => ({ auditLog: auditLogMock }));
-vi.mock("./ai", () => ({ analyzeProjectCoherence: analyzeProjectCoherenceMock, analyzeMarketPotential: vi.fn() }));
+vi.mock("./ai", () => ({ analyzeProjectCoherence: analyzeProjectCoherenceMock, analyzeMarketPotential: analyzeMarketPotentialMock }));
 vi.mock("./events", () => ({ logEvent: vi.fn() }));
 vi.mock("./demoSeed", () => ({ seedDemoProject: vi.fn() }));
 vi.mock("./project-context", () => ({ buildProjectArtifactContext: buildProjectArtifactContextMock }));
 
-const { createProject, enableSharing, analyzeCoherence } = await import("./project-service");
+const { createProject, enableSharing, analyzeCoherence, analyzePotential } = await import("./project-service");
 
 function mockSelectOnce(rows: unknown[]) {
   selectMock.mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve(rows) }) });
@@ -179,5 +180,63 @@ describe("analyzeCoherence", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.data).toEqual({ score: 85, notes: "ok" });
+  });
+});
+
+describe("analyzePotential", () => {
+  it("roda mesmo sem artefatos ainda (contexto vazio) — é a fonte do Ponto Cego", async () => {
+    mockSelectOnce([{ id: 5, name: "Proj", briefing: "..." }]); // requireProjectForAi
+    buildProjectArtifactContextMock.mockResolvedValueOnce(""); // nenhum artefato gerado ainda
+    checkAndIncrementAiUsageMock.mockResolvedValueOnce({ allowed: true, limit: 30, plan: "founder", used: 1 });
+    analyzeMarketPotentialMock.mockResolvedValueOnce({ score: 42, dimensoes: {}, alertas: [], acelerador: "" });
+    updateMock.mockReturnValueOnce({ set: () => ({ where: () => Promise.resolve(undefined) }) });
+
+    const result = await analyzePotential("clerk_1", 5);
+
+    expect(result.ok).toBe(true);
+    expect(analyzeMarketPotentialMock).toHaveBeenCalledWith("Proj", "...", "");
+  });
+
+  it("preserva o payload completo (plan/context/limit/used) quando o limite de IA é atingido", async () => {
+    mockSelectOnce([{ id: 5, name: "Proj", briefing: "..." }]);
+    buildProjectArtifactContextMock.mockResolvedValueOnce("algum contexto de artefato");
+    checkAndIncrementAiUsageMock.mockResolvedValueOnce({ allowed: false, limit: 30, plan: "founder", used: 30 });
+
+    const result = await analyzePotential("clerk_1", 5);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(429);
+      expect(result.code).toBe("AI_LIMIT_EXCEEDED");
+      expect(result.body).toMatchObject({ limit: 30, used: 30, plan: "founder", context: "Análise de potencial de mercado" });
+    }
+  });
+
+  it("retorna 402 com payload de trial expirado quando aplicável", async () => {
+    mockSelectOnce([{ id: 5, name: "Proj", briefing: "..." }]);
+    buildProjectArtifactContextMock.mockResolvedValueOnce("algum contexto de artefato");
+    checkAndIncrementAiUsageMock.mockResolvedValueOnce({ allowed: false, reason: "trial_expired", plan: "free", limit: 3, used: 3 });
+
+    const result = await analyzePotential("clerk_1", 5);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.status).toBe(402);
+      expect(result.code).toBe("FREE_TRIAL_EXPIRED");
+      expect(result.body).toMatchObject({ plan: "free" });
+    }
+  });
+
+  it("persiste marketPotentialScore/marketPotentialData quando a análise tem sucesso", async () => {
+    mockSelectOnce([{ id: 5, name: "Proj", briefing: "..." }]);
+    buildProjectArtifactContextMock.mockResolvedValueOnce("algum contexto de artefato");
+    checkAndIncrementAiUsageMock.mockResolvedValueOnce({ allowed: true, limit: 30, plan: "founder", used: 1 });
+    analyzeMarketPotentialMock.mockResolvedValueOnce({ score: 70, dimensoes: { viabilidade_execucao: 40 }, alertas: ["risco alto"], acelerador: "faça X" });
+    updateMock.mockReturnValueOnce({ set: () => ({ where: () => Promise.resolve(undefined) }) });
+
+    const result = await analyzePotential("clerk_1", 5);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data).toEqual({ score: 70, dimensoes: { viabilidade_execucao: 40 }, alertas: ["risco alto"], acelerador: "faça X" });
   });
 });

@@ -44,14 +44,18 @@ import {
   EditableLtvCacCanvas,
   EditableScorePotencialCanvas,
   MatrizRbacCanvas,
+  ThreatModelCanvas,
   ModeloDadosCanvas,
+  ArquiteturaCanvas,
   MilestonesCanvas,
+  Sprint1Canvas,
   UserStoriesCanvas,
   CasosTesteCanvas,
   MetricasPosLaunchCanvas,
 } from "@/components/canvases";
 import { deriveGate } from "@/lib/gate-derivations";
 import { deriveArtifactBadge } from "@/lib/artifact-derivations";
+import { PontoCegoCard, type PontoCegoData } from "@/components/ponto-cego-card";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -274,8 +278,11 @@ const ArtifactCard = memo(function ArtifactCard({
   const isLtvCac = phaseNumber === 2 && artifact.artifactKey === "LTV_CAC";
   const isPricing = phaseNumber === 2 && artifact.artifactKey === "HIPOTESE_PRICING";
   const isMatrizRbac = phaseNumber === 3 && artifact.artifactKey === "MATRIZ_RBAC";
+  const isThreatModel = phaseNumber === 3 && artifact.artifactKey === "THREAT_MODEL";
   const isModeloDados = phaseNumber === 4 && artifact.artifactKey === "MODELO_DADOS";
+  const isArquitetura = phaseNumber === 4 && artifact.artifactKey === "ARQUITETURA";
   const isMilestones = phaseNumber === 5 && artifact.artifactKey === "MILESTONES";
+  const isSprint1 = phaseNumber === 5 && artifact.artifactKey === "SPRINT_1";
   const isUserStories = phaseNumber === 2 && artifact.artifactKey === "USER_STORIES";
   const isCasosTeste = phaseNumber === 6 && artifact.artifactKey === "CASOS_TESTE_CRITICOS";
   const isMetricasPos = phaseNumber === 7 && artifact.artifactKey === "METRICAS_POS_LAUNCH";
@@ -444,8 +451,12 @@ const ArtifactCard = memo(function ArtifactCard({
                 </ProtectWrap>
               ) : isMatrizRbac ? (
                 <ProtectWrap protect={!canCopy}><MatrizRbacCanvas content={artifact.content} /></ProtectWrap>
+              ) : isThreatModel ? (
+                <ProtectWrap protect={!canCopy}><ThreatModelCanvas content={artifact.content} /></ProtectWrap>
               ) : isModeloDados ? (
                 <ProtectWrap protect={!canCopy}><ModeloDadosCanvas content={artifact.content} /></ProtectWrap>
+              ) : isArquitetura ? (
+                <ProtectWrap protect={!canCopy}><ArquiteturaCanvas content={artifact.content} /></ProtectWrap>
               ) : isUserStories ? (
                 <ProtectWrap protect={!canCopy}>
                   <UserStoriesCanvas
@@ -468,6 +479,8 @@ const ArtifactCard = memo(function ArtifactCard({
                     onUpdate={onUpdate}
                   />
                 </ProtectWrap>
+              ) : isSprint1 ? (
+                <ProtectWrap protect={!canCopy}><Sprint1Canvas content={artifact.content} /></ProtectWrap>
               ) : isCasosTeste ? (
                 <ProtectWrap protect={!canCopy}>
                   <CasosTesteCanvas
@@ -1037,6 +1050,12 @@ export function PhasePage() {
   const [upgradeRequired, setUpgradeRequired] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const expandedInitRef = useRef(false);
+  const [pontoCegoLoading, setPontoCegoLoading] = useState(false);
+  const [pontoCegoData, setPontoCegoData] = useState<PontoCegoData | null>(null);
+  const [pontoCegoDismissed, setPontoCegoDismissed] = useState(false);
+  const pontoCegoAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => () => pontoCegoAbortRef.current?.abort(), []);
 
   function toggleExpanded(id: number) {
     setExpandedIds((prev) => {
@@ -1124,6 +1143,32 @@ export function PhasePage() {
     setGenerating(true);
     setGeneratingText("");
     setGenerationError("");
+
+    if (phaseNumber === 1) {
+      setPontoCegoDismissed(false);
+      setPontoCegoData(null);
+      setPontoCegoLoading(true);
+      pontoCegoAbortRef.current?.abort();
+      const controller = new AbortController();
+      pontoCegoAbortRef.current = controller;
+      fetch(`${basePath}/api/projects/${projectId}/potential/analyze`, {
+        method: "POST",
+        credentials: "include",
+        signal: controller.signal,
+      }).then(async (res) => {
+        if (controller.signal.aborted) return;
+        if (!res.ok) { setPontoCegoLoading(false); return; }
+        const body = await res.json().catch(() => null) as PontoCegoData | null;
+        if (controller.signal.aborted) return;
+        setPontoCegoData(body);
+        setPontoCegoLoading(false);
+      }).catch(() => {
+        // Falha silenciosa (inclui abort): o Ponto Cego é uma feature secundária
+        // e não deve interromper nem sinalizar erro sobre a geração principal da fase.
+        if (controller.signal.aborted) return;
+        setPontoCegoLoading(false);
+      });
+    }
 
     fetch(`${basePath}/api/projects/${projectId}/phases/${phaseNumber}/execute`, {
       method: "POST",
@@ -1429,7 +1474,16 @@ export function PhasePage() {
               </div>
             </div>
           ) : generating ? (
-            <GenerationLoadingState artifactCount={phaseDef?.artifacts?.length ?? 0} text={generatingText} projectName={project?.name} />
+            <>
+              {phaseNumber === 1 && !pontoCegoDismissed && (
+                <PontoCegoCard
+                  loading={pontoCegoLoading}
+                  data={pontoCegoData}
+                  onDismiss={() => setPontoCegoDismissed(true)}
+                />
+              )}
+              <GenerationLoadingState artifactCount={phaseDef?.artifacts?.length ?? 0} text={generatingText} projectName={project?.name} />
+            </>
           ) : (
           <div className="space-y-3">
               {upgradeRequired ? (
