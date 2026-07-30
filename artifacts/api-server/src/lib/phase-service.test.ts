@@ -11,7 +11,7 @@ const logEventMock = vi.fn();
 
 vi.mock("@workspace/db", () => ({
   db: { select: selectMock, update: updateMock },
-  projectsTable: { id: "id", clerkId: "clerkId" },
+  projectsTable: { id: "id", clerkId: "clerkId", deletedAt: "deletedAt" },
   phasesTable: { id: "id", projectId: "projectId", phaseNumber: "phaseNumber", isGenerating: "isGenerating" },
   phaseArtifactsTable: {},
   artifactVersionsTable: {},
@@ -139,6 +139,31 @@ describe("completePhase", () => {
     expect(updateMock).toHaveBeenCalledTimes(1); // only the completion update, no next-phase activation
     expect(createNotificationMock).toHaveBeenCalledWith("clerk_1", "PROJECT_COMPLETED", expect.any(String), expect.any(String), "/projects/1");
     expect(logEventMock).toHaveBeenCalledWith("clerk_1", "project_completed", { projectId: 1 });
+  });
+});
+
+describe("requireProjectAndPhase — escopo de ownership exclui projetos soft-deleted", () => {
+  // ownedActiveProject() filtra por isNull(deletedAt) na query real; o mock de
+  // db.select() não interpreta o WHERE, então simulamos a CONSEQUÊNCIA que a query
+  // real produziria para um projeto na lixeira: 0 linhas retornadas. Isso documenta
+  // e trava o contrato "projeto na lixeira == projeto não encontrado" para todo
+  // consumidor de requireProjectAndPhase — completePhase, prepareExecution,
+  // getPhaseWithArtifacts, listPhaseArtifacts, markArtifactDownloaded,
+  // listArtifactVersions compartilham exatamente este mesmo caminho.
+  it("completePhase retorna 404 (não completa fase de projeto na lixeira)", async () => {
+    mockSelectOnce([]); // projeto soft-deleted não aparece mais no resultado de ownedActiveProject
+    const result = await completePhase("clerk_1", 1, 2);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(404);
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("prepareExecution retorna 404 (não gera IA para projeto na lixeira, cota não é consumida)", async () => {
+    mockSelectOnce([]);
+    const result = await prepareExecution("clerk_1", 1, 1);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(404);
+    expect(checkAndIncrementAiUsageMock).not.toHaveBeenCalled();
   });
 });
 

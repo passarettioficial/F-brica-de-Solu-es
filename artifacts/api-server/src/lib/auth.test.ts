@@ -108,6 +108,34 @@ describe("checkAndIncrementAiUsage", () => {
     expect(result.used).toBe(6);
   });
 
+  it("perde a corrida do reset diário (0 linhas afetadas) e cai para o incremento atômico, sem burlar o limite", async () => {
+    // Simula duas requisições concorrentes na virada do dia: o SELECT desta requisição
+    // ainda vê dailyAiResetDate antigo, mas outra requisição já venceu o reset — o
+    // UPDATE condicional (ne(dailyAiResetDate, today)) afeta 0 linhas.
+    mockSelectResult([{
+      isSuperuser: false, plan: "founder", dailyAiUsage: 30, dailyAiResetDate: "2020-01-01",
+      isAdmin: false, createdAt: daysAgo(100),
+    }]);
+    mockUpdateReturning([]); // 1ª chamada: reset condicional perde a corrida (0 linhas)
+    mockUpdateReturning([{ dailyAiUsage: 2 }]); // 2ª chamada: incremento atômico padrão, já vê o reset da vencedora
+    const result = await checkAndIncrementAiUsage("clerk_race_loser");
+    expect(result.allowed).toBe(true);
+    expect(result.used).toBe(2);
+    expect(updateMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("perde a corrida do reset E o limite diário já foi atingido pela vencedora — bloqueia corretamente", async () => {
+    mockSelectResult([{
+      isSuperuser: false, plan: "founder", dailyAiUsage: 30, dailyAiResetDate: "2020-01-01",
+      isAdmin: false, createdAt: daysAgo(100),
+    }]);
+    mockUpdateReturning([]); // perde o reset
+    mockUpdateReturning([]); // incremento também não afeta linha (limite já atingido pela vencedora)
+    const result = await checkAndIncrementAiUsage("clerk_race_loser_blocked");
+    expect(result.allowed).toBe(false);
+    expect(updateMock).toHaveBeenCalledTimes(2);
+  });
+
   it("bloqueia quando o update atômico não afeta nenhuma linha (limite atingido)", async () => {
     mockSelectResult([{
       isSuperuser: false, plan: "founder", dailyAiUsage: 30, dailyAiResetDate: today,

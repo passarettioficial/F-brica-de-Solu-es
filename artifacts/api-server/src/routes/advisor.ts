@@ -1,11 +1,12 @@
 import { Router, type IRouter } from "express";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, isNull } from "drizzle-orm";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, usersTable } from "@workspace/db";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { recordOpenAiCost } from "../lib/openaiCost";
 import { getPlanConfig } from "../lib/stripe";
 import { sanitizeBriefing } from "../lib/ai";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
+import { auditLog } from "../lib/audit";
 
 const router: IRouter = Router();
 
@@ -32,9 +33,26 @@ router.post("/projects/:projectId/advisor", async (req, res): Promise<void> => {
   if (!message?.trim()) { res.status(400).json({ error: "Mensagem vazia" }); return; }
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
+
+  // Sem isso, o Advisor era o único fluxo de IA sem teto de custo por usuário — cada
+  // mensagem custa tokens GPT-4.1 reais, igual à geração de fases (que já é gateada).
+  const usage = await checkAndIncrementAiUsage(userId);
+  if (!usage.allowed) {
+    if (usage.reason === "trial_expired") {
+      await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "free_trial_expired", projectId }, req });
+      const payload = trialExpiredPayload({ plan: usage.plan, context: "AI Advisor" });
+      res.status(402).json(payload);
+      return;
+    }
+    await auditLog({ eventType: "security.rate_limited", actorClerkId: userId, meta: { reason: "ai_daily_limit", limit: usage.limit, projectId }, req });
+    const payload = aiLimitPayload({ limit: usage.limit, plan: usage.plan, used: usage.used, context: "AI Advisor" });
+    res.status(429).json(payload);
+    return;
+  }
+  await auditLog({ eventType: "user.ai.used", actorClerkId: userId, meta: { projectId, feature: "advisor" }, req });
 
   // Gather all generated artifacts as context — single query instead of N+1
   const phases = await db.select().from(phasesTable).where(eq(phasesTable.projectId, projectId));

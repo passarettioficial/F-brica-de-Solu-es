@@ -21,3 +21,24 @@ export async function requireAdmin(req: Request, res: Response): Promise<{ clerk
 
   return { clerkId: userId, displayName: user.displayName ?? null, isAdmin: user.isAdmin, isSuperuser: user.isSuperuser };
 }
+
+/**
+ * isAdmin/isSuperuser/plan concedem privilégio (IA irrestrita, bypass de billing).
+ * Só superusuários podem alterá-los, e nunca sobre a própria conta — evita
+ * auto-promoção (admin comum virando superuser) e auto-concessão de plano pago.
+ */
+export function checkPrivilegedFieldUpdate(
+  admin: { clerkId: string; isSuperuser: boolean },
+  targetClerkId: string,
+  fields: { plan?: string; isAdmin?: boolean; isSuperuser?: boolean },
+): { allowed: true } | { allowed: false; error: string } {
+  const grantsPrivilege = fields.plan !== undefined || fields.isAdmin !== undefined || fields.isSuperuser !== undefined;
+  if (!grantsPrivilege) return { allowed: true };
+  if (!admin.isSuperuser) {
+    return { allowed: false, error: "Alterar plano, admin ou superusuário requer privilégio de superusuário." };
+  }
+  if (targetClerkId === admin.clerkId) {
+    return { allowed: false, error: "Não é permitido alterar seu próprio plano ou privilégios administrativos." };
+  }
+  return { allowed: true };
+}

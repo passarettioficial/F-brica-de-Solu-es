@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { db, projectsTable, phasesTable, phaseArtifactsTable, marketValidationsTable } from "@workspace/db";
 import { generateInterviewScript, analyzeInterviewNotes } from "../lib/ai";
 import { requireAuth, checkAndIncrementAiUsage, aiLimitPayload, trialExpiredPayload } from "../lib/auth";
@@ -35,7 +35,7 @@ router.get("/projects/:projectId/validations", async (req, res): Promise<void> =
   const projectId = parseInt(Array.isArray(req.params.projectId) ? req.params.projectId[0] : req.params.projectId, 10);
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
@@ -58,7 +58,7 @@ router.post("/projects/:projectId/validations", async (req, res): Promise<void> 
   }
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
@@ -84,7 +84,7 @@ router.post("/projects/:projectId/validations/:validationId/generate-script", as
   const validationId = parseInt(Array.isArray(req.params.validationId) ? req.params.validationId[0] : req.params.validationId, 10);
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
@@ -144,7 +144,7 @@ router.patch("/projects/:projectId/validations/:validationId", async (req, res):
   const { interviewNotes } = req.body as { interviewNotes: string };
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 
@@ -166,7 +166,7 @@ router.post("/projects/:projectId/validations/:validationId/analyze", async (req
   const validationId = parseInt(Array.isArray(req.params.validationId) ? req.params.validationId[0] : req.params.validationId, 10);
 
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId))
+    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, userId), isNull(projectsTable.deletedAt))
   );
   if (!project) { res.status(404).json({ error: "Project not found" }); return; }
 

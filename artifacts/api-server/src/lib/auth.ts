@@ -1,5 +1,5 @@
 import { db, usersTable } from "@workspace/db";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, and, lt, ne, sql } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import type { Request } from "express";
 import { getPlanConfig } from "./stripe";
@@ -89,12 +89,24 @@ export async function checkAndIncrementAiUsage(clerkId: string): Promise<{ allow
     return { allowed: false, limit: dailyLimit, plan: user.plan, used: user.dailyAiUsage, reason: "trial_expired" };
   }
 
-  // Reset counter atomically if it's a new day
+  // Reset counter atomically if it's a new day. A WHERE condicional em dailyAiResetDate
+  // (em vez de um UPDATE incondicional) evita a race condition de duas requisições
+  // concorrentes lendo dailyAiResetDate!==today antes de qualquer uma escrever: só uma
+  // delas consegue "vencer" o reset (0 linhas afetadas para a perdedora).
   if (user.dailyAiResetDate !== today) {
-    await db.update(usersTable)
+    const [reset] = await db.update(usersTable)
       .set({ dailyAiUsage: 1, dailyAiResetDate: today, updatedAt: new Date() })
-      .where(eq(usersTable.clerkId, clerkId));
-    return { allowed: true, limit: dailyLimit, plan: user.plan, used: 1 };
+      .where(and(
+        eq(usersTable.clerkId, clerkId),
+        ne(usersTable.dailyAiResetDate, today),
+      ))
+      .returning();
+    if (reset) {
+      return { allowed: true, limit: dailyLimit, plan: user.plan, used: 1 };
+    }
+    // Perdeu a corrida: outra requisição concorrente já resetou o contador entre
+    // nosso SELECT e este UPDATE. Cai para o incremento atômico abaixo, que agora
+    // vê o contador já resetado (dailyAiResetDate === today).
   }
 
   // Atomic increment: only succeeds if usage is still below limit

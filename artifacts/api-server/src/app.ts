@@ -116,6 +116,16 @@ const aiExecuteLimiter = rateLimit({
   message: { error: "Limite de execuções de IA por minuto atingido. Aguarde 1 minuto." },
 });
 
+// AI Advisor: cada mensagem custa tokens GPT-4.1 reais (até 2000 max_completion_tokens),
+// igual à geração de fases — sem isso era o único fluxo de IA sem teto de burst por minuto.
+const advisorLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 6,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Limite de mensagens ao AI Advisor por minuto atingido. Aguarde 1 minuto." },
+});
+
 // Coupon code enumeration is cheap to brute-force without a dedicated limit — both the
 // billing and admin-namespaced validation endpoints check the same codes.
 const couponValidateLimiter = rateLimit({
@@ -137,6 +147,7 @@ const supportTicketLimiter = rateLimit({
 
 app.use("/api", globalLimiter);
 app.post("/api/projects/:projectId/phases/:phaseNumber/execute", aiExecuteLimiter);
+app.post("/api/projects/:projectId/advisor", advisorLimiter);
 app.post("/api/billing/validate-coupon", couponValidateLimiter);
 app.post("/api/admin/coupons/validate", couponValidateLimiter);
 app.post("/api/support/tickets", supportTicketLimiter);

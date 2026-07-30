@@ -1,4 +1,4 @@
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { eq, and, inArray, desc, isNull } from "drizzle-orm";
 import type { Request } from "express";
 import {
   db, projectsTable, phasesTable, phaseArtifactsTable, artifactVersionsTable, usersTable, artifactFeedbackTable,
@@ -59,9 +59,20 @@ async function isFreePlan(clerkId: string): Promise<boolean> {
   return planCfg.id === "free";
 }
 
+// Escopo de ownership padrão: projeto pertence ao usuário E não está na lixeira.
+// Projetos soft-deleted não devem continuar gerando IA, completando fases, sendo
+// editados ou recebendo feedback — a lixeira precisa ser uma lixeira de verdade.
+function ownedActiveProject(projectId: number, clerkId: string) {
+  return and(
+    eq(projectsTable.id, projectId),
+    eq(projectsTable.clerkId, clerkId),
+    isNull(projectsTable.deletedAt),
+  );
+}
+
 async function requireProjectAndPhase(clerkId: string, projectId: number, phaseNumber: number): Promise<ServiceResult<{ project: Project; phase: Phase }>> {
   const [project] = await db.select().from(projectsTable).where(
-    and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, clerkId)),
+    ownedActiveProject(projectId, clerkId),
   );
   if (!project) return { ok: false, status: 404, error: "Project not found" };
 
@@ -105,7 +116,7 @@ export async function listPhaseArtifacts(clerkId: string, projectId: number, pha
 }
 
 export async function updatePhaseGates(clerkId: string, projectId: number, phaseNumber: number, data: Record<string, unknown>): Promise<ServiceResult<Phase>> {
-  const [project] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, clerkId)));
+  const [project] = await db.select().from(projectsTable).where(ownedActiveProject(projectId, clerkId));
   if (!project) return { ok: false, status: 404, error: "Project not found" };
 
   const [phase] = await db.update(phasesTable)
@@ -168,7 +179,7 @@ export async function completePhase(clerkId: string, projectId: number, phaseNum
 // ─── Artifact editing / versioning ──────────────────────────────────────────
 
 export async function updateArtifact(clerkId: string, projectId: number, phaseNumber: number, artifactKey: string, data: { content: string; contentJson?: string | null }): Promise<ServiceResult<PhaseArtifact>> {
-  const [project] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, clerkId)));
+  const [project] = await db.select().from(projectsTable).where(ownedActiveProject(projectId, clerkId));
   if (!project) return { ok: false, status: 404, error: "Project not found" };
 
   const denied = await requireEditPlan(clerkId, "A edição de artefatos requer um plano pago.");
@@ -210,7 +221,7 @@ export async function listArtifactVersions(clerkId: string, projectId: number, p
 }
 
 export async function restoreArtifactVersion(clerkId: string, projectId: number, phaseNumber: number, artifactKey: string, versionId: number): Promise<ServiceResult<PhaseArtifact>> {
-  const [project] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, clerkId)));
+  const [project] = await db.select().from(projectsTable).where(ownedActiveProject(projectId, clerkId));
   if (!project) return { ok: false, status: 404, error: "Project not found" };
 
   const denied = await requireEditPlan(clerkId, "Restaurar versões requer um plano pago.");
@@ -259,7 +270,7 @@ export async function submitArtifactFeedback(
   clerkId: string, projectId: number, phaseNumber: number, artifactKey: string,
   rating: "up" | "down", comment: string | null,
 ): Promise<ServiceResult<{ ok: true }>> {
-  const [project] = await db.select().from(projectsTable).where(and(eq(projectsTable.id, projectId), eq(projectsTable.clerkId, clerkId)));
+  const [project] = await db.select().from(projectsTable).where(ownedActiveProject(projectId, clerkId));
   if (!project) return { ok: false, status: 404, error: "Project not found" };
 
   const [user] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.clerkId, clerkId));

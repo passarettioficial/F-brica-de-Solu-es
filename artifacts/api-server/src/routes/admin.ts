@@ -1,13 +1,14 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, desc, count, sql, gte, and, isNull } from "drizzle-orm";
 import { db, usersTable, couponsTable, settingsTable, projectsTable, auditLogsTable, phasesTable, phaseArtifactsTable, artifactFeedbackTable } from "@workspace/db";
-import { requireAdmin } from "../lib/adminAuth";
+import { requireAdmin, checkPrivilegedFieldUpdate } from "../lib/adminAuth";
 import { requireAuth } from "../lib/auth";
 import { validateCoupon } from "../lib/coupons";
 import { logger } from "../lib/logger";
 import { auditLog } from "../lib/audit";
 import { getBudgetStatus, setBudget } from "../lib/openaiCost";
 import { getMetricsSnapshot } from "../lib/metrics";
+import { PHASE_NAMES_TITLE_ARRAY as PHASE_NAMES } from "../lib/phase-names";
 
 const router: IRouter = Router();
 
@@ -157,10 +158,6 @@ router.get("/admin/feedback-stats", async (req: Request, res: Response): Promise
 });
 
 // ─── Insights (funnel, stuck phases, top deliverables, active users) ─────────
-
-const PHASE_NAMES = [
-  "Ideia", "PRD", "Segurança & LGPD", "Spec", "Implementação", "Teste", "Deploy",
-];
 
 router.get("/admin/insights", async (req: Request, res: Response): Promise<void> => {
   const admin = await requireAdmin(req, res);
@@ -482,6 +479,12 @@ router.patch("/admin/users/:clerkId", async (req: Request, res: Response): Promi
     isSuperuser?: boolean;
     displayName?: string;
   };
+
+  const privilegeCheck = checkPrivilegedFieldUpdate(admin, clerkId, { plan, isAdmin, isSuperuser });
+  if (!privilegeCheck.allowed) {
+    res.status(403).json({ error: privilegeCheck.error });
+    return;
+  }
 
   try {
     const updates: Record<string, unknown> = { updatedAt: new Date() };
