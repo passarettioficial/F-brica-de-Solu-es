@@ -1880,6 +1880,23 @@ export function MilestonesCanvas({
   }
   function onDragEnd() { setDragIdx(null); setOverIdx(null); setOverPos("before"); }
 
+  // Alternativa acessível por teclado ao drag-and-drop (mesma reordenação do onDrop).
+  function moveBy(idx: number, delta: number) {
+    const target = idx + delta;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    const [moved] = next.splice(idx, 1);
+    next.splice(target, 0, moved);
+    const { milestones, marco_mvp } = renumberMilestones(next, marcoMvp);
+    setItems(milestones);
+    setMarcoMvp(marco_mvp);
+    setDirty(true);
+  }
+  function onHandleKeyDown(e: React.KeyboardEvent, idx: number) {
+    if (e.key === "ArrowUp") { e.preventDefault(); moveBy(idx, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); moveBy(idx, 1); }
+  }
+
   function reset() {
     setItems(initial);
     setMarcoMvp(parsed?.marco_mvp);
@@ -1969,9 +1986,15 @@ export function MilestonesCanvas({
                   <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
                     <div className="flex-1 min-w-0 flex items-start gap-2">
                       {canDrag && (
-                        <span className="cursor-grab active:cursor-grabbing text-muted-foreground mt-1 select-none" aria-label="Arrastar milestone" title="Arrastar para reordenar">
+                        <button
+                          type="button"
+                          className="cursor-grab active:cursor-grabbing text-muted-foreground mt-1 select-none rounded focus-visible:ring-2 focus-visible:ring-primary/50"
+                          aria-label={`Mover milestone ${idx + 1} de ${items.length}. Use as setas para cima e para baixo para reordenar.`}
+                          title="Arrastar ou usar as setas do teclado para reordenar"
+                          onKeyDown={(e) => onHandleKeyDown(e, idx)}
+                        >
                           <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
-                        </span>
+                        </button>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -2134,6 +2157,21 @@ export function UserStoriesCanvas({
   }
   function onDragEnd() { setDragIdx(null); setOverIdx(null); setOverPos("before"); }
 
+  // Alternativa acessível por teclado ao drag-and-drop (mesma reordenação do onDrop).
+  function moveBy(idx: number, delta: number) {
+    const target = idx + delta;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    const [moved] = next.splice(idx, 1);
+    next.splice(target, 0, moved);
+    setItems(next);
+    setDirty(true);
+  }
+  function onHandleKeyDown(e: React.KeyboardEvent, idx: number) {
+    if (e.key === "ArrowUp") { e.preventDefault(); moveBy(idx, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); moveBy(idx, 1); }
+  }
+
   function reset() { setItems(initial); setDirty(false); }
 
   function save() {
@@ -2255,9 +2293,17 @@ export function UserStoriesCanvas({
               <details className={`rounded-xl border bg-card group ${canDrag ? "border-border hover:border-primary/40" : "border-border"}`}>
                 <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
                   {canDrag && (
-                    <span className={`select-none ${dragEnabled ? "cursor-grab active:cursor-grabbing text-muted-foreground" : "cursor-not-allowed text-muted-foreground/30"}`} aria-label={dragEnabled ? "Arrastar story" : "Limpe filtros para arrastar"} title={dragEnabled ? "Arrastar para reordenar" : "Limpe filtros para arrastar"} onClick={(e) => e.preventDefault()}>
+                    <button
+                      type="button"
+                      disabled={!dragEnabled}
+                      className={`select-none rounded focus-visible:ring-2 focus-visible:ring-primary/50 ${dragEnabled ? "cursor-grab active:cursor-grabbing text-muted-foreground" : "cursor-not-allowed text-muted-foreground/30"}`}
+                      aria-label={dragEnabled ? `Mover story ${idx + 1} de ${items.length}. Use as setas para cima e para baixo para reordenar.` : "Limpe filtros para arrastar"}
+                      title={dragEnabled ? "Arrastar ou usar as setas do teclado para reordenar" : "Limpe filtros para arrastar"}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onKeyDown={(e) => { if (dragEnabled) onHandleKeyDown(e, idx); }}
+                    >
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
-                    </span>
+                    </button>
                   )}
                   {s.prioridade != null && (
                     canDrag ? (
@@ -2420,6 +2466,21 @@ export function CasosTesteCanvas({
   }
   function onDragEnd() { setDragIdx(null); setOverIdx(null); setOverPos("before"); }
 
+  // Alternativa acessível por teclado ao drag-and-drop (mesma reordenação do onDrop).
+  function moveBy(idx: number, delta: number) {
+    const target = idx + delta;
+    if (target < 0 || target >= items.length) return;
+    const next = [...items];
+    const [moved] = next.splice(idx, 1);
+    next.splice(target, 0, moved);
+    setItems(next);
+    setDirty(true);
+  }
+  function onHandleKeyDown(e: React.KeyboardEvent, idx: number) {
+    if (e.key === "ArrowUp") { e.preventDefault(); moveBy(idx, -1); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); moveBy(idx, 1); }
+  }
+
   function reset() { setItems(initial); setDirty(false); }
 
   function save() {
@@ -2477,14 +2538,16 @@ export function CasosTesteCanvas({
               <details className={`rounded-xl border bg-card group ${canDrag ? "border-border hover:border-primary/40" : "border-border"}`}>
                 <summary className="cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-secondary/30 transition-colors list-none">
                   {canDrag && (
-                    <span
-                      className="cursor-grab active:cursor-grabbing text-muted-foreground select-none"
-                      aria-label="Arrastar caso"
-                      title="Arrastar para reordenar"
-                      onClick={(e) => e.preventDefault()}
+                    <button
+                      type="button"
+                      className="cursor-grab active:cursor-grabbing text-muted-foreground select-none rounded focus-visible:ring-2 focus-visible:ring-primary/50"
+                      aria-label={`Mover caso de teste ${idx + 1} de ${items.length}. Use as setas para cima e para baixo para reordenar.`}
+                      title="Arrastar ou usar as setas do teclado para reordenar"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onKeyDown={(e) => onHandleKeyDown(e, idx)}
                     >
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
-                    </span>
+                    </button>
                   )}
                   {canDrag ? (
                     <button

@@ -292,6 +292,12 @@ export interface UpdateAdminUserBody {
   isSuperuser?: boolean;
 }
 
+/**
+ * Dados de negócio do founder coletados no onboarding (setor, faturamento, estágio, etc.) — formato livre, sem schema fixo.
+ * @nullable
+ */
+export type AdminUserFounderProfile = { [key: string]: unknown } | null;
+
 export interface AdminUser {
   id: number;
   clerkId: string;
@@ -301,12 +307,31 @@ export interface AdminUser {
   isAdmin: boolean;
   isSuperuser: boolean;
   dailyAiUsage?: number;
+  /** Data (YYYY-MM-DD) do último reset da cota diária de IA. */
+  dailyAiResetDate?: string;
   /** @nullable */
   stripeCustomerId?: string | null;
   /** @nullable */
   stripeSubscriptionId?: string | null;
   /** @nullable */
   stripeSubscriptionStatus?: string | null;
+  /**
+   * Reserva de checkout Stripe em andamento (guarda contra corrida de checkout concorrente). Interno, sem uso pretendido pelo cliente admin.
+   * @nullable
+   */
+  pendingCheckoutSessionId?: string | null;
+  /** @nullable */
+  pendingCheckoutExpiresAt?: string | null;
+  /**
+   * Dados de negócio do founder coletados no onboarding (setor, faturamento, estágio, etc.) — formato livre, sem schema fixo.
+   * @nullable
+   */
+  founderProfile?: AdminUserFounderProfile;
+  profileStage?: number;
+  /** @nullable */
+  onboardingCompletedAt?: string | null;
+  /** @nullable */
+  lgpdConsentAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

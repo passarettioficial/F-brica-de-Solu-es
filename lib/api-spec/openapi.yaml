@@ -1070,12 +1070,33 @@ components:
           type: boolean
         dailyAiUsage:
           type: integer
+        dailyAiResetDate:
+          type: string
+          description: Data (YYYY-MM-DD) do último reset da cota diária de IA.
         stripeCustomerId:
           type: ["string", "null"]
         stripeSubscriptionId:
           type: ["string", "null"]
         stripeSubscriptionStatus:
           type: ["string", "null"]
+        pendingCheckoutSessionId:
+          type: ["string", "null"]
+          description: Reserva de checkout Stripe em andamento (guarda contra corrida de checkout concorrente). Interno, sem uso pretendido pelo cliente admin.
+        pendingCheckoutExpiresAt:
+          type: ["string", "null"]
+          format: date-time
+        founderProfile:
+          type: ["object", "null"]
+          description: Dados de negócio do founder coletados no onboarding (setor, faturamento, estágio, etc.) — formato livre, sem schema fixo.
+          additionalProperties: true
+        profileStage:
+          type: integer
+        onboardingCompletedAt:
+          type: ["string", "null"]
+          format: date-time
+        lgpdConsentAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time

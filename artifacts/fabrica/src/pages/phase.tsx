@@ -1,4 +1,4 @@
-import { useState, memo, useEffect, useRef } from "react";
+import { useState, memo, useEffect, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
 import { Link, useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -204,7 +204,7 @@ const ArtifactCard = memo(function ArtifactCard({
   canDownload: boolean;
   onUpdate: () => void;
   expanded: boolean;
-  onToggleExpanded: () => void;
+  onToggleExpanded: (id: number) => void;
   siblings?: Array<{ artifactKey: string; content: string }>;
   projectName: string;
 }) {
@@ -308,7 +308,7 @@ const ArtifactCard = memo(function ArtifactCard({
   return (
     <div id={`artifact-anchor-${artifact.id}`} className={`scroll-mt-24 bg-card border rounded-xl overflow-hidden transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-card-border"}`}>
       <button
-        onClick={onToggleExpanded}
+        onClick={() => onToggleExpanded(artifact.id)}
         aria-expanded={expanded}
         aria-controls={`artifact-content-${artifact.id}`}
         className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors text-left"
@@ -1059,13 +1059,13 @@ export function PhasePage() {
   useEffect(() => () => pontoCegoAbortRef.current?.abort(), []);
   useEffect(() => () => executeAbortRef.current?.abort(), []);
 
-  function toggleExpanded(id: number) {
+  const toggleExpanded = useCallback((id: number) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  }
+  }, []);
 
   function jumpToArtifact(id: number) {
     setExpandedIds((prev) => {
@@ -1248,9 +1248,9 @@ export function PhasePage() {
     });
   }
 
-  function invalidatePhase() {
+  const invalidatePhase = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getGetPhaseQueryKey(projectId, phaseNumber) });
-  }
+  }, [queryClient, projectId, phaseNumber]);
 
   if (isLoading) {
     return (
@@ -1677,7 +1677,7 @@ export function PhasePage() {
                     canDownload={permissions.canDownload}
                     onUpdate={invalidatePhase}
                     expanded={expandedIds.has(artifact.id)}
-                    onToggleExpanded={() => toggleExpanded(artifact.id)}
+                    onToggleExpanded={toggleExpanded}
                     siblings={artifacts}
                     projectName={project?.name ?? "Projeto"}
                   />

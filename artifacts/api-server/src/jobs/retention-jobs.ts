@@ -1,5 +1,5 @@
-import { db, phasesTable, projectsTable } from "@workspace/db";
-import { and, eq, lt, isNull, gte, inArray } from "drizzle-orm";
+import { db, phasesTable, projectsTable, auditLogsTable } from "@workspace/db";
+import { and, eq, lt, isNull, isNotNull, or, gte, inArray } from "drizzle-orm";
 import { createNotification } from "../lib/notifications";
 import { logger } from "../lib/logger";
 import { withAdvisoryLock } from "../lib/distributed-lock";
@@ -125,6 +125,31 @@ export async function checkInactiveUsers(): Promise<void> {
   }
 }
 
+// LGPD: IP e User-Agent são PII. Mantemos o registro do evento de auditoria indefinidamente
+// (rastreabilidade de segurança), mas anonimizamos os dois campos identificáveis após 90 dias
+// — o próprio evento (quem, o quê, quando) continua íntegro para investigação futura.
+const AUDIT_LOG_PII_RETENTION_DAYS = 90;
+
+export async function anonymizeOldAuditLogs(): Promise<void> {
+  try {
+    const cutoff = new Date(Date.now() - AUDIT_LOG_PII_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+    const anonymized = await db.update(auditLogsTable)
+      .set({ ip: null, userAgent: null })
+      .where(and(
+        lt(auditLogsTable.createdAt, cutoff),
+        or(isNotNull(auditLogsTable.ip), isNotNull(auditLogsTable.userAgent)),
+      ))
+      .returning({ id: auditLogsTable.id });
+
+    if (anonymized.length > 0) {
+      logger.info({ count: anonymized.length }, "anonymizeOldAuditLogs: IP/User-Agent anonimizados em audit_logs > 90 dias");
+    }
+  } catch (err) {
+    logger.error({ err }, "anonymizeOldAuditLogs failed");
+  }
+}
+
 export function startRetentionJobs(): void {
   const SIX_HOURS = 6 * 60 * 60 * 1000;
   const TWELVE_HOURS = 12 * 60 * 60 * 1000;
@@ -135,16 +160,19 @@ export function startRetentionJobs(): void {
   const runStalePhases = () => void withAdvisoryLock("retention:stale-phases", checkStalePhases);
   const runStaleProjects = () => void withAdvisoryLock("retention:stale-projects", checkStaleProjects);
   const runInactiveUsers = () => void withAdvisoryLock("retention:inactive-users", checkInactiveUsers);
+  const runAnonymizeAuditLogs = () => void withAdvisoryLock("retention:anonymize-audit-logs", anonymizeOldAuditLogs);
 
   // Run once on startup (staggered to avoid startup spike)
   setTimeout(runStalePhases, 30_000);
   setTimeout(runStaleProjects, 60_000);
   setTimeout(runInactiveUsers, 90_000);
+  setTimeout(runAnonymizeAuditLogs, 120_000);
 
   // Then on intervals
   setInterval(runStalePhases, SIX_HOURS);
   setInterval(runStaleProjects, TWELVE_HOURS);
   setInterval(runInactiveUsers, TWENTY_FOUR_HOURS);
+  setInterval(runAnonymizeAuditLogs, TWENTY_FOUR_HOURS);
 
   logger.info("Retention jobs scheduled");
 }

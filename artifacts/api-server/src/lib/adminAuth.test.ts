@@ -73,6 +73,15 @@ describe("checkPrivilegedFieldUpdate", () => {
     expect(result.allowed).toBe(true);
   });
 
+  it("bloqueia superuser tentando setar um plano desconhecido (input arbitrário, não é um dos PLANS)", () => {
+    const result = checkPrivilegedFieldUpdate(
+      { clerkId: "super_1", isSuperuser: true },
+      "target_1",
+      { plan: "plano-inventado" },
+    );
+    expect(result.allowed).toBe(false);
+  });
+
   it("trata isAdmin/isSuperuser explicitamente false como alteração privilegiada (revogação também é sensível)", () => {
     const result = checkPrivilegedFieldUpdate(
       { clerkId: "admin_1", isSuperuser: false },

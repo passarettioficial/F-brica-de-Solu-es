@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { ensureUser } from "./auth";
+import { PLANS } from "./stripe";
 
 export async function requireAdmin(req: Request, res: Response): Promise<{ clerkId: string; displayName: string | null; isAdmin: boolean; isSuperuser: boolean } | null> {
   const auth = getAuth(req);
@@ -39,6 +40,9 @@ export function checkPrivilegedFieldUpdate(
   }
   if (targetClerkId === admin.clerkId) {
     return { allowed: false, error: "Não é permitido alterar seu próprio plano ou privilégios administrativos." };
+  }
+  if (fields.plan !== undefined && !(fields.plan in PLANS)) {
+    return { allowed: false, error: `Plano desconhecido: "${fields.plan}".` };
   }
   return { allowed: true };
 }

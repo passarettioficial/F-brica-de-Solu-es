@@ -463,9 +463,29 @@ export const UpdateAdminUserResponse = zod.object({
     isAdmin: zod.boolean(),
     isSuperuser: zod.boolean(),
     dailyAiUsage: zod.number().optional(),
+    dailyAiResetDate: zod
+      .string()
+      .optional()
+      .describe("Data (YYYY-MM-DD) do último reset da cota diária de IA."),
     stripeCustomerId: zod.string().nullish(),
     stripeSubscriptionId: zod.string().nullish(),
     stripeSubscriptionStatus: zod.string().nullish(),
+    pendingCheckoutSessionId: zod
+      .string()
+      .nullish()
+      .describe(
+        "Reserva de checkout Stripe em andamento (guarda contra corrida de checkout concorrente). Interno, sem uso pretendido pelo cliente admin.",
+      ),
+    pendingCheckoutExpiresAt: zod.coerce.date().nullish(),
+    founderProfile: zod
+      .record(zod.string(), zod.unknown())
+      .nullish()
+      .describe(
+        "Dados de negócio do founder coletados no onboarding (setor, faturamento, estágio, etc.) — formato livre, sem schema fixo.",
+      ),
+    profileStage: zod.number().optional(),
+    onboardingCompletedAt: zod.coerce.date().nullish(),
+    lgpdConsentAt: zod.coerce.date().nullish(),
     createdAt: zod.coerce.date(),
     updatedAt: zod.coerce.date(),
   }),

@@ -52,4 +52,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+# Convenção nativa do Vite (.env.[mode]) sem sufixo .local — sem isso, um
+# .env.production ou .env.development criado seguindo esse padrão escapava das regras acima.
+.env.production
+.env.development
 !.env.example
