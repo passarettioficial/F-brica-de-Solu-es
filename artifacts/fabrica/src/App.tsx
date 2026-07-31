@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { PaywallModal } from "@/components/paywall-modal";
 import { CommandPalette } from "@/components/command-palette";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 // Every route is its own chunk: nobody pays for the admin panel, the phase canvases, or the
 // pitch pages in their initial bundle just because those routes exist in the router.
@@ -271,11 +272,13 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <HelmetProvider>
-      <WouterRouter base={basePath}>
-        <ClerkProviderWithRoutes />
-      </WouterRouter>
-    </HelmetProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <WouterRouter base={basePath}>
+          <ClerkProviderWithRoutes />
+        </WouterRouter>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

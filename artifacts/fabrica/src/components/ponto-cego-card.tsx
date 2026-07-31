@@ -21,8 +21,11 @@ const DIMENSION_LABELS: Record<string, string> = {
   viabilidade_execucao: "Viabilidade de execução",
 };
 
-function weakestDimension(dimensoes: PontoCegoData["dimensoes"]) {
-  const entries = Object.entries(dimensoes) as Array<[keyof PontoCegoData["dimensoes"], number]>;
+function weakestDimension(dimensoes: PontoCegoData["dimensoes"] | undefined | null) {
+  if (!dimensoes || typeof dimensoes !== "object") return null;
+  const entries = (Object.entries(dimensoes) as Array<[keyof PontoCegoData["dimensoes"], number]>).filter(
+    ([, value]) => typeof value === "number" && Number.isFinite(value),
+  );
   if (!entries.length) return null;
   return entries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), entries[0]);
 }

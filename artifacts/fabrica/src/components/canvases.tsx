@@ -941,8 +941,15 @@ type LtvCacData = {
 };
 
 function formatBRL(n?: number) {
-  if (n == null) return "—";
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const value = typeof n === "number" ? n : Number(n);
+  if (n == null || !Number.isFinite(value)) return "—";
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+}
+
+function formatRatio(n?: number) {
+  const value = typeof n === "number" ? n : Number(n);
+  if (n == null || !Number.isFinite(value)) return "—";
+  return value.toFixed(1);
 }
 
 function LtvCacBarChart({ ltv, cac }: { ltv?: number; cac?: number }) {
@@ -1035,7 +1042,7 @@ export function LtvCacCanvas({ content }: { content: string }) {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Razão LTV ÷ CAC</div>
-            <div className={`text-4xl font-bold ${v.text}`}>{data.razao_ltv_cac?.toFixed(1) ?? "—"}×</div>
+            <div className={`text-4xl font-bold ${v.text}`}>{formatRatio(data.razao_ltv_cac)}×</div>
           </div>
           <div className="text-right">
             <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold border-2 ${v.border} ${v.text} ${v.bg}`}>{v.label}</div>

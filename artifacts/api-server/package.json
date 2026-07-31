@@ -21,7 +21,7 @@
     "drizzle-orm": "catalog:",
     "express": "^5",
     "express-rate-limit": "^8.5.2",
-    "http-proxy-middleware": "^3.0.5",
+    "http-proxy-middleware": "^3.0.7",
     "pino": "^9",
     "pino-http": "^10",
     "stripe": "^22.1.0",

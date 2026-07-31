@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { recordOpenAiCost } from "./openaiCost";
 import { PHASE_NAMES_UPPER_ARRAY as PHASE_NAMES } from "./phase-names";
@@ -1104,21 +1105,27 @@ Retorne APENAS JSON válido (sem texto antes ou depois):
 }
 `.trim();
 
-export interface CoherenceResult {
-  score: number;
-  resumo: string;
-  conflitos: Array<{
-    severidade: "alta" | "media" | "baixa";
-    descricao: string;
-    artefatos_envolvidos: string[];
-    sugestao: string;
-  }>;
-  alinhamentos: Array<{
-    descricao: string;
-    artefatos_envolvidos: string[];
-  }>;
-  recomendacao_geral: string;
-}
+const CoherenceResultSchema = z.object({
+  score: z.number(),
+  resumo: z.string(),
+  conflitos: z.array(
+    z.object({
+      severidade: z.enum(["alta", "media", "baixa"]),
+      descricao: z.string(),
+      artefatos_envolvidos: z.array(z.string()),
+      sugestao: z.string(),
+    }),
+  ),
+  alinhamentos: z.array(
+    z.object({
+      descricao: z.string(),
+      artefatos_envolvidos: z.array(z.string()),
+    }),
+  ),
+  recomendacao_geral: z.string(),
+});
+
+export type CoherenceResult = z.infer<typeof CoherenceResultSchema>;
 
 // ─── Market Potential Score (JSON, non-streaming) ─────────────────────────────
 
@@ -1151,21 +1158,23 @@ Avalie nas dimensões abaixo e retorne APENAS JSON válido (sem texto antes ou d
 }
 `.trim();
 
-export interface MarketPotentialResult {
-  score: number;
-  dimensoes: {
-    tamanho_mercado: number;
-    urgencia_problema: number;
-    modelo_receita: number;
-    diferencial_competitivo: number;
-    viabilidade_execucao: number;
-  };
-  tam_estimado: string;
-  nivel_inovacao: string;
-  resumo: string;
-  alertas: string[];
-  acelerador: string;
-}
+const MarketPotentialResultSchema = z.object({
+  score: z.number(),
+  dimensoes: z.object({
+    tamanho_mercado: z.number(),
+    urgencia_problema: z.number(),
+    modelo_receita: z.number(),
+    diferencial_competitivo: z.number(),
+    viabilidade_execucao: z.number(),
+  }),
+  tam_estimado: z.string(),
+  nivel_inovacao: z.string(),
+  resumo: z.string(),
+  alertas: z.array(z.string()),
+  acelerador: z.string(),
+});
+
+export type MarketPotentialResult = z.infer<typeof MarketPotentialResultSchema>;
 
 export async function analyzeMarketPotential(
   projectName: string,
@@ -1186,7 +1195,11 @@ export async function analyzeMarketPotential(
   const raw = completion.choices[0]?.message?.content ?? "{}";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Market potential analysis returned invalid JSON");
-  return JSON.parse(jsonMatch[0]) as MarketPotentialResult;
+  const parsed = MarketPotentialResultSchema.safeParse(JSON.parse(jsonMatch[0]));
+  if (!parsed.success) {
+    throw new Error(`Market potential analysis returned unexpected shape: ${parsed.error.message}`);
+  }
+  return parsed.data;
 }
 
 export async function analyzeProjectCoherence(
@@ -1208,5 +1221,9 @@ export async function analyzeProjectCoherence(
   const raw = completion.choices[0]?.message?.content ?? "{}";
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Coherence analysis returned invalid JSON");
-  return JSON.parse(jsonMatch[0]) as CoherenceResult;
+  const parsed = CoherenceResultSchema.safeParse(JSON.parse(jsonMatch[0]));
+  if (!parsed.success) {
+    throw new Error(`Coherence analysis returned unexpected shape: ${parsed.error.message}`);
+  }
+  return parsed.data;
 }
