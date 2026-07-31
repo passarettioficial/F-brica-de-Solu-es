@@ -39,6 +39,42 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
     return { ok: false, status: 409, error: "Você já tem uma assinatura ativa. Gerencie seu plano no portal de billing." };
   }
 
+  // Reserva atômica de "checkout em andamento" (F8): a checagem acima sozinha tem uma janela
+  // de corrida — duas requisições concorrentes podem ler stripeSubscriptionId=null ANTES de
+  // qualquer uma delas criar uma sessão, e as duas passariam. Este UPDATE condicional só
+  // sucede para UMA requisição por vez; a perdedora recebe 409 em vez de criar uma segunda
+  // Checkout Session real. Expira sozinho após 30min (não depende de webhook pra destravar
+  // um checkout abandonado).
+  const now = new Date();
+  const pendingExpiresAt = new Date(now.getTime() + 30 * 60_000);
+  const [reserved] = await db.update(usersTable)
+    .set({ pendingCheckoutSessionId: "reserving", pendingCheckoutExpiresAt: pendingExpiresAt, updatedAt: now })
+    .where(sql`${usersTable.clerkId} = ${params.clerkId}
+      AND (${usersTable.pendingCheckoutSessionId} IS NULL OR ${usersTable.pendingCheckoutExpiresAt} < ${now})`)
+    .returning({ id: usersTable.id });
+
+  if (!reserved) {
+    return { ok: false, status: 409, error: "Já existe um checkout em andamento para sua conta. Complete a aba já aberta ou aguarde alguns minutos e tente novamente." };
+  }
+
+  try {
+    return await createCheckoutSessionReserved(params, plan, user, pendingExpiresAt);
+  } catch (err) {
+    // Libera a reserva imediatamente em caso de erro — não deixa o usuário travado
+    // esperando 30min por causa de uma falha nossa (ex: Stripe fora do ar).
+    await db.update(usersTable)
+      .set({ pendingCheckoutSessionId: null, pendingCheckoutExpiresAt: null, updatedAt: new Date() })
+      .where(eq(usersTable.clerkId, params.clerkId));
+    throw err;
+  }
+}
+
+async function createCheckoutSessionReserved(
+  params: CreateCheckoutParams,
+  plan: (typeof PLANS)[PlanId],
+  user: typeof usersTable.$inferSelect,
+  pendingExpiresAt: Date,
+): Promise<CheckoutResult> {
   const customerId = await getOrCreateStripeCustomer(params.clerkId, params.email, user.stripeCustomerId);
   if (!user.stripeCustomerId) {
     await db.update(usersTable)
@@ -74,7 +110,7 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
   // clique ou reenvio de formulário na mesma janela não cria uma segunda sessão/assinatura.
   const idempotencyKey = `checkout_${params.clerkId}_${params.planId}_${params.billingCycle}_${appliedCouponCode ?? "no-coupon"}_${Math.floor(Date.now() / 60_000)}`;
 
-  const session = await stripe.checkout.sessions.create(
+  const session = await stripe!.checkout.sessions.create(
     {
       customer: customerId,
       mode: "subscription",
@@ -84,9 +120,18 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
       cancel_url: params.cancelUrl,
       metadata,
       subscription_data: { metadata },
+      // Alinhado à janela de reserva (30min) — a sessão do Stripe deixa de ser utilizável
+      // no mesmo instante em que nosso guard de checkout concorrente também libera.
+      expires_at: Math.floor(pendingExpiresAt.getTime() / 1000),
     },
     { idempotencyKey },
   );
+
+  // Troca o placeholder "reserving" pelo id real da sessão — só para observabilidade
+  // (debug/suporte); a expiração já é o que garante a liberação da reserva.
+  await db.update(usersTable)
+    .set({ pendingCheckoutSessionId: session.id, updatedAt: new Date() })
+    .where(eq(usersTable.clerkId, params.clerkId));
 
   return { ok: true, url: session.url! };
 }
@@ -108,6 +153,8 @@ export async function activateSubscriptionFromCheckout(session: Stripe.Checkout.
       plan: planId,
       stripeSubscriptionId: subscriptionId,
       stripeSubscriptionStatus: "active",
+      pendingCheckoutSessionId: null,
+      pendingCheckoutExpiresAt: null,
       updatedAt: new Date(),
     })
     .where(eq(usersTable.clerkId, clerkId));
@@ -226,6 +273,33 @@ export async function markInvoicePastDue(invoice: Stripe.Invoice): Promise<void>
   }
 }
 
+/**
+ * Resolve qual assinatura um charge pertence, indo charge → payment_intent → invoice payment
+ * → invoice → subscription. O SDK não expõe `Charge.invoice` diretamente nesta versão, mas
+ * `stripe.invoicePayments.list({ payment: { type: "payment_intent", payment_intent } })`
+ * devolve o InvoicePayment daquele payment_intent, cujo `.invoice` (expandido) carrega
+ * `parent.subscription_details.subscription` — o vínculo reverso completo. Retorna null se
+ * o charge não estiver associado a nenhuma assinatura (ex: pagamento avulso) ou se não for
+ * possível resolver com confiança — nesses casos o chamador não deve cancelar a assinatura
+ * do usuário sem confirmação.
+ */
+async function resolveSubscriptionIdFromCharge(charge: Stripe.Charge): Promise<string | null> {
+  const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+  if (!paymentIntentId) return null;
+
+  const payments = await stripe!.invoicePayments.list({
+    payment: { type: "payment_intent", payment_intent: paymentIntentId },
+    expand: ["data.invoice"],
+    limit: 1,
+  });
+  const invoice = payments.data[0]?.invoice;
+  if (!invoice || typeof invoice === "string" || ("deleted" in invoice && invoice.deleted)) return null;
+
+  const subscription = invoice.parent?.subscription_details?.subscription;
+  if (!subscription) return null;
+  return typeof subscription === "string" ? subscription : subscription.id;
+}
+
 export async function processChargeRefund(charge: Stripe.Charge): Promise<void> {
   const customerId = charge.customer as string | null;
   const isFullRefund = charge.amount_refunded >= charge.amount;
@@ -243,23 +317,35 @@ export async function processChargeRefund(charge: Stripe.Charge): Promise<void> 
   // Only a full refund revokes paid access — a partial/goodwill refund keeps the plan intact.
   if (!isFullRefund) return;
 
-  // NOTA (F9, parcial): idealmente checaríamos aqui também se o charge pertence à
-  // assinatura canônica atual do usuário antes de revogar acesso (mesma proteção aplicada
-  // em syncSubscriptionStatus/cancelSubscription abaixo). Investigado a fundo (2 passadas)
-  // e ainda não implementado — o bloqueio real, confirmado nos tipos do SDK instalado
-  // (stripe@22.1.0, API 2026-04-22.dahlia):
-  //   - Invoice.parent.subscription_details.subscription é o vínculo invoice→subscription
-  //     e EXISTE (confirmado lendo Invoices.d.ts) — isso não é mais o problema.
-  //   - O problema é o sentido inverso: charge→invoice. `Charge` não expõe `.invoice`
-  //     nesta versão. `InvoicePayment.invoice` existe (Invoice←InvoicePayment), mas
-  //     `InvoicePaymentListParams` só filtra por `invoice` (busca payments DE uma invoice
-  //     já conhecida) — não há filtro por `payment.charge`/`payment.payment_intent` para
-  //     ir de charge → invoice. Não há índice reverso exposto pelo SDK tipado.
-  // Caminhos possíveis, nenhum implementado por ser arriscado demais para código de
-  // segurança financeira sem confirmar contra a API real: (a) `expand: ["invoice"]` no
-  // retrieve do charge com cast `as any` (SDK pode estar desatualizado vs. a API real —
-  // não verificável sem acesso live), (b) scan completo de invoices do customer (caro e
-  // ainda não garante precisão). Requer decisão de produto + acesso à API real do Stripe.
+  // Um reembolso pode pertencer a uma assinatura antiga/já encerrada do cliente, diferente
+  // da assinatura atual e ativa (ex: reembolso tardio de uma assinatura cancelada meses
+  // atrás, enquanto o cliente já reassinou). Só cancelamos/rebaixamos quando conseguimos
+  // confirmar que o charge pertence à assinatura canônica atual — caso contrário, ficamos
+  // só com o audit log já gravado acima e sinalizamos para revisão manual, na mesma linha
+  // do que já é feito para disputas em flagChargeDispute.
+  let subscriptionId: string | null = null;
+  try {
+    subscriptionId = await resolveSubscriptionIdFromCharge(charge);
+  } catch (err) {
+    logger.error({ err, chargeId: charge.id }, "Failed to resolve subscription for refunded charge");
+  }
+
+  const canonicalId = user.stripeSubscriptionId;
+  if (canonicalId && subscriptionId && subscriptionId !== canonicalId) {
+    logger.warn(
+      { clerkId: user.clerkId, chargeId: charge.id, refundedSubscriptionId: subscriptionId, canonicalSubscriptionId: canonicalId },
+      "Reembolso pertence a uma assinatura não-canônica — plano NÃO foi rebaixado",
+    );
+    return;
+  }
+  if (canonicalId && !subscriptionId) {
+    logger.warn(
+      { clerkId: user.clerkId, chargeId: charge.id, canonicalSubscriptionId: canonicalId },
+      "Não foi possível confirmar a assinatura do charge reembolsado — plano NÃO foi rebaixado automaticamente, requer revisão manual",
+    );
+    return;
+  }
+
   if (user.stripeSubscriptionId) {
     try {
       await stripe!.subscriptions.cancel(user.stripeSubscriptionId);

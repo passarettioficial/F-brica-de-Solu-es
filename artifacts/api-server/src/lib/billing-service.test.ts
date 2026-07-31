@@ -39,6 +39,23 @@ function mockSelectOnce(rows: unknown[]) {
   selectMock.mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve(rows) }) });
 }
 
+function chainableUpdate(returningRows: unknown[]) {
+  return {
+    set: () => ({
+      where: () => {
+        const p = Promise.resolve(undefined) as Promise<undefined> & { returning?: () => Promise<unknown[]> };
+        p.returning = () => Promise.resolve(returningRows);
+        return p;
+      },
+    }),
+  };
+}
+
+/** Faz o próximo `db.update(...)` "perder" a reserva (outro checkout já em andamento). */
+function mockUpdateReservationLoses() {
+  updateMock.mockReturnValueOnce(chainableUpdate([]));
+}
+
 const baseParams = {
   clerkId: "clerk_1",
   billingCycle: "monthly" as const,
@@ -50,7 +67,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   getPriceIdMock.mockResolvedValue("price_123");
   getOrCreateStripeCustomerMock.mockResolvedValue("cus_123");
-  sessionsCreateMock.mockResolvedValue({ url: "https://checkout.stripe.com/session" });
+  sessionsCreateMock.mockResolvedValue({ url: "https://checkout.stripe.com/session", id: "cs_test_123" });
+  // Por padrão, toda reserva de checkout concorrente "vence" — testes que querem exercitar
+  // a corrida (F8) chamam mockUpdateReservationLoses() explicitamente antes.
+  updateMock.mockImplementation(() => chainableUpdate([{ id: 1 }]));
 });
 
 describe("createCheckoutSession — proteção contra assinatura duplicada (F8)", () => {
@@ -92,5 +112,37 @@ describe("createCheckoutSession — proteção contra assinatura duplicada (F8)"
     const [, options] = sessionsCreateMock.mock.calls[0] as [unknown, { idempotencyKey?: string }];
     expect(options.idempotencyKey).toContain("clerk_1");
     expect(options.idempotencyKey).toContain("founder");
+  });
+
+  it("rejeita com 409 se outro checkout já está reservado/em andamento (corrida concorrente)", async () => {
+    mockSelectOnce([{ clerkId: "clerk_1", stripeCustomerId: "cus_1", stripeSubscriptionId: null, stripeSubscriptionStatus: null }]);
+    mockUpdateReservationLoses();
+
+    const result = await createCheckoutSession({ ...baseParams, planId: "founder" });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(409);
+    expect(sessionsCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("libera a reserva se a criação da sessão falhar (não trava o usuário por 30min)", async () => {
+    mockSelectOnce([{ clerkId: "clerk_1", stripeCustomerId: "cus_1", stripeSubscriptionId: null, stripeSubscriptionStatus: null }]);
+    sessionsCreateMock.mockRejectedValueOnce(new Error("Stripe indisponível"));
+
+    await expect(createCheckoutSession({ ...baseParams, planId: "founder" })).rejects.toThrow("Stripe indisponível");
+
+    // A última chamada de update deve ser a liberação da reserva (pendingCheckoutSessionId: null).
+    const lastSetCall = updateMock.mock.results.at(-1);
+    expect(lastSetCall).toBeDefined();
+  });
+
+  it("passa expires_at na sessão do Stripe alinhado à janela de reserva (30min)", async () => {
+    mockSelectOnce([{ clerkId: "clerk_1", stripeCustomerId: "cus_1", stripeSubscriptionId: null, stripeSubscriptionStatus: null }]);
+
+    await createCheckoutSession({ ...baseParams, planId: "founder" });
+
+    const [sessionParams] = sessionsCreateMock.mock.calls[0] as [{ expires_at?: number }];
+    expect(sessionParams.expires_at).toBeGreaterThan(Math.floor(Date.now() / 1000) + 29 * 60);
+    expect(sessionParams.expires_at).toBeLessThanOrEqual(Math.floor(Date.now() / 1000) + 30 * 60);
   });
 });

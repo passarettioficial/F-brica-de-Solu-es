@@ -1,4 +1,5 @@
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
+import helmet from "helmet";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import rateLimit from "express-rate-limit";
@@ -16,6 +17,17 @@ import { recordRequest } from "./lib/metrics";
 
 const app: Express = express();
 app.set("trust proxy", 1);
+
+// Cabeçalhos de segurança HTTP (CSP/HSTS/X-Frame-Options/nosniff/etc). Esta API só serve
+// JSON, então a CSP padrão do helmet (pensada para páginas HTML) é inofensiva aqui — o que
+// importa é frameguard/nosniff/HSTS. crossOriginResourcePolicy é relaxado para "cross-origin"
+// porque o frontend (artifacts/fabrica) roda numa origem/porta diferente por design e
+// consome esta API via fetch com CORS, não same-origin.
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
 
 app.use(
   pinoHttp({

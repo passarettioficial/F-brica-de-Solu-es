@@ -26,6 +26,20 @@ if (!basePath) {
   );
 }
 
+// Cabeçalhos de segurança HTTP aplicados a toda resposta do dev server e do `vite preview`
+// (usado em produção via `pnpm run serve`). Escopo deliberadamente conservador: apenas
+// cabeçalhos que nunca quebram a aplicação (nenhuma CSP com allowlist de domínios, que
+// exigiria mapear tudo que o Clerk/Tailwind carregam e arriscaria tela branca se algo
+// ficar de fora). O motivador concreto é a página pública de compartilhamento
+// (public-share.tsx, sem autenticação) hoje ser embutível em iframe de terceiro.
+const securityHeaders = {
+  "X-Frame-Options": "DENY",
+  "Content-Security-Policy": "frame-ancestors 'none'",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+};
+
 export default defineConfig({
   base: basePath,
   plugins: [
@@ -63,6 +77,7 @@ export default defineConfig({
     strictPort: true,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: securityHeaders,
     fs: {
       strict: true,
     },
@@ -81,5 +96,6 @@ export default defineConfig({
     port,
     host: "0.0.0.0",
     allowedHosts: true,
+    headers: securityHeaders,
   },
 });

@@ -12,6 +12,12 @@ export const usersTable = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeSubscriptionStatus: text("stripe_subscription_status"), // active | canceled | past_due | etc
+  // Marca uma sessão de checkout Stripe em andamento (ainda não paga/confirmada). Guarda
+  // contra checkout concorrente: duas requisições simultâneas não devem conseguir criar duas
+  // Checkout Sessions reais para o mesmo usuário. Expira sozinho (30min, alinhado ao
+  // `expires_at` da sessão) — não depende de nenhum webhook para "destravar".
+  pendingCheckoutSessionId: text("pending_checkout_session_id"),
+  pendingCheckoutExpiresAt: timestamp("pending_checkout_expires_at", { withTimezone: true }),
   isAdmin: boolean("is_admin").notNull().default(false),
   isSuperuser: boolean("is_superuser").notNull().default(false),
   founderProfile: jsonb("founder_profile"),

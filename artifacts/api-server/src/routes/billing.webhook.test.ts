@@ -6,6 +6,7 @@ const insertMock = vi.fn();
 const constructEventMock = vi.fn();
 const subscriptionsCancelMock = vi.fn();
 const chargesRetrieveMock = vi.fn();
+const invoicePaymentsListMock = vi.fn();
 const auditLogMock = vi.fn();
 const planIdFromLookupKeyMock = vi.fn().mockReturnValue(null);
 
@@ -23,6 +24,7 @@ vi.mock("../lib/stripe", () => ({
     webhooks: { constructEvent: constructEventMock },
     subscriptions: { cancel: subscriptionsCancelMock },
     charges: { retrieve: chargesRetrieveMock },
+    invoicePayments: { list: invoicePaymentsListMock },
   },
   PLANS: { free: { id: "free" }, founder: { id: "founder" }, studio: { id: "studio" } },
   getPlanConfig: vi.fn(),
@@ -179,22 +181,70 @@ describe("handleStripeWebhook — eventos processados", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it("charge.refunded com reembolso total cancela a assinatura e rebaixa para free", async () => {
+  it("charge.refunded com reembolso total da assinatura canônica cancela e rebaixa para free", async () => {
     constructEventMock.mockReturnValueOnce({
       type: "charge.refunded",
       data: {
-        object: { id: "ch_1", customer: "cus_1", amount: 1000, amount_refunded: 1000 },
+        object: { id: "ch_1", customer: "cus_1", amount: 1000, amount_refunded: 1000, payment_intent: "pi_1" },
       },
     });
     mockSelectOnce([{ clerkId: "clerk_1", stripeCustomerId: "cus_1", stripeSubscriptionId: "sub_123" }]);
+    invoicePaymentsListMock.mockResolvedValueOnce({
+      data: [{ invoice: { parent: { subscription_details: { subscription: "sub_123" } } } }],
+    });
     mockUpdateOnce();
 
     const res = fakeRes();
     await handleStripeWebhook(fakeReq(), res);
 
+    expect(invoicePaymentsListMock).toHaveBeenCalledWith({
+      payment: { type: "payment_intent", payment_intent: "pi_1" },
+      expand: ["data.invoice"],
+      limit: 1,
+    });
     expect(subscriptionsCancelMock).toHaveBeenCalledWith("sub_123");
     expect(updateMock).toHaveBeenCalledTimes(1);
     expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({ eventType: "user.payment.refunded" }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("charge.refunded (F9) de uma assinatura NÃO-canônica não cancela nem rebaixa a assinatura atual", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "charge.refunded",
+      data: {
+        object: { id: "ch_old", customer: "cus_1", amount: 1000, amount_refunded: 1000, payment_intent: "pi_old" },
+      },
+    });
+    // Usuário tem uma assinatura atual e ativa (sub_new) diferente da que foi reembolsada (sub_old).
+    mockSelectOnce([{ clerkId: "clerk_1", stripeCustomerId: "cus_1", stripeSubscriptionId: "sub_new" }]);
+    invoicePaymentsListMock.mockResolvedValueOnce({
+      data: [{ invoice: { parent: { subscription_details: { subscription: "sub_old" } } } }],
+    });
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(subscriptionsCancelMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({ eventType: "user.payment.refunded" }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("charge.refunded (F9) sem confirmação da assinatura não rebaixa automaticamente (requer revisão manual)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "charge.refunded",
+      data: {
+        object: { id: "ch_unresolvable", customer: "cus_1", amount: 1000, amount_refunded: 1000 },
+      },
+    });
+    mockSelectOnce([{ clerkId: "clerk_1", stripeCustomerId: "cus_1", stripeSubscriptionId: "sub_123" }]);
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(invoicePaymentsListMock).not.toHaveBeenCalled();
+    expect(subscriptionsCancelMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
   });
 

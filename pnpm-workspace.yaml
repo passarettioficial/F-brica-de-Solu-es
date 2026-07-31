@@ -48,6 +48,12 @@ onlyBuiltDependencies:
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
+  # Onda 1 da auditoria de segurança: CVEs em dependências transitivas de produção.
+  # picomatch@2.3.1 é fixado por versão exata (não globalmente) para não forçar a
+  # versão 4.x usada pelo toolchain do Vite/Tailwind a baixar de major.
+  'picomatch@2.3.1': ^2.3.2
+  path-to-regexp: ^8.4.0
+  js-cookie: ^3.0.6
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'
