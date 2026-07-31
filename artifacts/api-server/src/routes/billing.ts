@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, webhookEventsTable } from "@workspace/db";
 import { stripe, getPlanConfig, type PlanId } from "../lib/stripe";
 import { requireAuth, ensureUser } from "../lib/auth";
 import { validateCoupon } from "../lib/coupons";
@@ -13,6 +13,7 @@ import {
   markInvoicePastDue,
   processChargeRefund,
   flagChargeDispute,
+  processDisputeClosed,
 } from "../lib/billing-service";
 
 const router: IRouter = Router();
@@ -204,6 +205,28 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
     return;
   }
 
+  // Deduplicação (F9): a Stripe pode reentregar um evento legítimo (retry, reenvio manual
+  // pelo painel). Sem isso, um checkout.session.completed reentregue depois que o usuário já
+  // cancelou reativaria o acesso pago. onConflictDoNothing() faz o INSERT falhar
+  // silenciosamente na segunda vez pro mesmo event.id — 0 linhas retornadas = já processado.
+  try {
+    const [inserted] = await db.insert(webhookEventsTable)
+      .values({ eventId: event.id, eventType: event.type })
+      .onConflictDoNothing()
+      .returning({ eventId: webhookEventsTable.eventId });
+
+    if (!inserted) {
+      logger.info({ eventId: event.id, eventType: event.type }, "Webhook Stripe reentregue — já processado, ignorando");
+      res.status(200).json({ received: true, deduplicated: true });
+      return;
+    }
+  } catch (err) {
+    // Se a checagem de deduplicação falhar (ex: banco fora do ar), prosseguimos com o
+    // processamento em vez de rejeitar o webhook — melhor arriscar reprocessar um evento
+    // do que perder um evento real por uma falha de infraestrutura não relacionada.
+    logger.error({ err, eventId: event.id }, "Falha ao registrar deduplicação de webhook — prosseguindo mesmo assim");
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed":
@@ -223,6 +246,9 @@ export async function handleStripeWebhook(req: Request, res: Response): Promise<
         break;
       case "charge.dispute.created":
         await flagChargeDispute(event.data.object as import("stripe").Stripe.Dispute);
+        break;
+      case "charge.dispute.closed":
+        await processDisputeClosed(event.data.object as import("stripe").Stripe.Dispute);
         break;
     }
 

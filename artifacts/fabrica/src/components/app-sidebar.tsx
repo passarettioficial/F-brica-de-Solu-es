@@ -21,6 +21,10 @@ interface AppSidebarProps {
   projectName?: string;
   phaseStatuses?: PhaseStatus[];
   completedPhases?: number;
+  /** Bloqueia navegação para OUTRAS fases enquanto uma geração de IA está em andamento —
+   * sem isso, trocar de fase no meio do streaming deixava spinner/texto da fase anterior
+   * vazando visualmente para a fase atual. */
+  generating?: boolean;
 }
 
 export function AppSidebar({
@@ -29,6 +33,7 @@ export function AppSidebar({
   projectName,
   phaseStatuses,
   completedPhases = 0,
+  generating = false,
 }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [location] = useLocation();
@@ -96,17 +101,19 @@ export function AppSidebar({
               const isDone = status === "completed";
               const isActive = phaseNum === currentPhase;
               const isLocked = status === "locked" && !isActive;
+              const isBlockedByGeneration = generating && !isActive;
+              const isDisabled = isLocked || isBlockedByGeneration;
               const color = PHASE_COLORS[phaseNum] ?? "#1A3FAB";
               const isLast = i === PHASES.length - 1;
 
               return (
                 <div key={phaseNum} className="flex items-center flex-1 min-w-0">
                   <Link
-                    href={isLocked ? "#" : `/projects/${projectId}/phases/${phaseNum}`}
-                    title={phase.name}
+                    href={isDisabled ? "#" : `/projects/${projectId}/phases/${phaseNum}`}
+                    title={isBlockedByGeneration ? "Aguarde a geração da fase atual terminar" : phase.name}
                     style={{
-                      opacity: isLocked ? 0.35 : 1,
-                      pointerEvents: isLocked ? "none" : "auto",
+                      opacity: isLocked ? 0.35 : isBlockedByGeneration ? 0.5 : 1,
+                      pointerEvents: isDisabled ? "none" : "auto",
                       flexShrink: 0,
                     }}
                   >

@@ -139,10 +139,24 @@ async function createCheckoutSessionReserved(
 export async function activateSubscriptionFromCheckout(session: Stripe.Checkout.Session): Promise<void> {
   const clerkId = session.metadata?.clerkId;
   const rawPlanId = session.metadata?.planId;
-  const planId = rawPlanId ? normalizePlanId(rawPlanId) : null;
+  const metadataPlanId = rawPlanId ? normalizePlanId(rawPlanId) : null;
   const subscriptionId = session.subscription as string;
 
-  if (!clerkId || !planId || !subscriptionId) return;
+  if (!clerkId || !metadataPlanId || !subscriptionId) return;
+
+  // O evento de checkout só carrega metadata (setada na criação da sessão) — igual a
+  // syncSubscriptionStatus, o preço vigente na assinatura é a fonte real de verdade, já
+  // que a Stripe não garante ordem de entrega: um upgrade feito pelo Customer Portal logo
+  // após o checkout pode ter seu webhook entregue ANTES deste, e sem essa checagem este
+  // handler sobrescreveria o plano de volta para o valor desatualizado da metadata.
+  let planId = metadataPlanId;
+  try {
+    const sub = await stripe!.subscriptions.retrieve(subscriptionId);
+    const priceLookupKey = sub.items?.data?.[0]?.price?.lookup_key ?? null;
+    planId = planIdFromLookupKey(priceLookupKey) ?? metadataPlanId;
+  } catch (err) {
+    logger.error({ err, subscriptionId }, "Failed to resolve real price for checkout — using metadata planId as fallback");
+  }
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.clerkId, clerkId));
   // Idempotency: Stripe may redeliver this event. Only redeem the coupon once per subscription.
@@ -300,6 +314,55 @@ async function resolveSubscriptionIdFromCharge(charge: Stripe.Charge): Promise<s
   return typeof subscription === "string" ? subscription : subscription.id;
 }
 
+/**
+ * Cancela a assinatura Stripe do usuário e rebaixa o plano para "free" — mas só se o
+ * `charge` puder ser confirmado como pertencente à assinatura canônica atual (ver
+ * resolveSubscriptionIdFromCharge acima). Usado tanto por reembolso total quanto por
+ * disputa perdida, os dois eventos que legitimamente revogam acesso pago. Sem confirmação,
+ * não revoga nada — fica para revisão manual, em vez de arriscar cancelar a assinatura
+ * atual e válida de um cliente pagante por causa de um evento numa assinatura antiga.
+ */
+async function cancelSubscriptionForCharge(
+  user: typeof usersTable.$inferSelect,
+  charge: Stripe.Charge,
+  newStatus: string,
+): Promise<boolean> {
+  let subscriptionId: string | null = null;
+  try {
+    subscriptionId = await resolveSubscriptionIdFromCharge(charge);
+  } catch (err) {
+    logger.error({ err, chargeId: charge.id }, "Failed to resolve subscription for charge");
+  }
+
+  const canonicalId = user.stripeSubscriptionId;
+  if (canonicalId && subscriptionId && subscriptionId !== canonicalId) {
+    logger.warn(
+      { clerkId: user.clerkId, chargeId: charge.id, chargeSubscriptionId: subscriptionId, canonicalSubscriptionId: canonicalId },
+      "Charge pertence a uma assinatura não-canônica — acesso NÃO revogado",
+    );
+    return false;
+  }
+  if (canonicalId && !subscriptionId) {
+    logger.warn(
+      { clerkId: user.clerkId, chargeId: charge.id, canonicalSubscriptionId: canonicalId },
+      "Não foi possível confirmar a assinatura do charge — acesso NÃO revogado automaticamente, requer revisão manual",
+    );
+    return false;
+  }
+
+  if (user.stripeSubscriptionId) {
+    try {
+      await stripe!.subscriptions.cancel(user.stripeSubscriptionId);
+    } catch (err) {
+      logger.error({ err, subscriptionId: user.stripeSubscriptionId }, "Failed to cancel subscription");
+    }
+  }
+  await db.update(usersTable)
+    .set({ plan: "free", stripeSubscriptionStatus: newStatus, updatedAt: new Date() })
+    .where(eq(usersTable.clerkId, user.clerkId));
+  return true;
+}
+
 export async function processChargeRefund(charge: Stripe.Charge): Promise<void> {
   const customerId = charge.customer as string | null;
   const isFullRefund = charge.amount_refunded >= charge.amount;
@@ -317,46 +380,49 @@ export async function processChargeRefund(charge: Stripe.Charge): Promise<void> 
   // Only a full refund revokes paid access — a partial/goodwill refund keeps the plan intact.
   if (!isFullRefund) return;
 
-  // Um reembolso pode pertencer a uma assinatura antiga/já encerrada do cliente, diferente
-  // da assinatura atual e ativa (ex: reembolso tardio de uma assinatura cancelada meses
-  // atrás, enquanto o cliente já reassinou). Só cancelamos/rebaixamos quando conseguimos
-  // confirmar que o charge pertence à assinatura canônica atual — caso contrário, ficamos
-  // só com o audit log já gravado acima e sinalizamos para revisão manual, na mesma linha
-  // do que já é feito para disputas em flagChargeDispute.
-  let subscriptionId: string | null = null;
+  const revoked = await cancelSubscriptionForCharge(user, charge, "refunded");
+  if (revoked) {
+    logger.warn({ clerkId: user.clerkId, chargeId: charge.id }, "Full refund processed — plan downgraded to free");
+  }
+}
+
+/**
+ * `charge.dispute.closed` dispara quando a Stripe resolve definitivamente uma disputa —
+ * `dispute.status` pode ser "won" (banco decidiu a favor do vendedor, nada muda),
+ * "lost" (fundos efetivamente retirados) ou algum estado intermediário. Só "lost" revoga
+ * acesso; até então o cliente contestando de boa-fé não perde o plano (flagChargeDispute
+ * só sinaliza a abertura para revisão manual, sem revogar).
+ */
+export async function processDisputeClosed(dispute: Stripe.Dispute): Promise<void> {
+  if (dispute.status !== "lost") return;
+
+  const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id;
+
+  let charge: Stripe.Charge;
   try {
-    subscriptionId = await resolveSubscriptionIdFromCharge(charge);
+    charge = await stripe!.charges.retrieve(chargeId);
   } catch (err) {
-    logger.error({ err, chargeId: charge.id }, "Failed to resolve subscription for refunded charge");
-  }
-
-  const canonicalId = user.stripeSubscriptionId;
-  if (canonicalId && subscriptionId && subscriptionId !== canonicalId) {
-    logger.warn(
-      { clerkId: user.clerkId, chargeId: charge.id, refundedSubscriptionId: subscriptionId, canonicalSubscriptionId: canonicalId },
-      "Reembolso pertence a uma assinatura não-canônica — plano NÃO foi rebaixado",
-    );
-    return;
-  }
-  if (canonicalId && !subscriptionId) {
-    logger.warn(
-      { clerkId: user.clerkId, chargeId: charge.id, canonicalSubscriptionId: canonicalId },
-      "Não foi possível confirmar a assinatura do charge reembolsado — plano NÃO foi rebaixado automaticamente, requer revisão manual",
-    );
+    logger.error({ err, chargeId }, "Failed to retrieve charge for closed dispute");
     return;
   }
 
-  if (user.stripeSubscriptionId) {
-    try {
-      await stripe!.subscriptions.cancel(user.stripeSubscriptionId);
-    } catch (err) {
-      logger.error({ err, subscriptionId: user.stripeSubscriptionId }, "Failed to cancel subscription after full refund");
-    }
+  const customerId = charge.customer as string | null;
+  if (!customerId) return;
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.stripeCustomerId, customerId));
+  if (!user) return;
+
+  const revoked = await cancelSubscriptionForCharge(user, charge, "dispute_lost");
+
+  await auditLog({
+    eventType: "user.payment.canceled",
+    actorClerkId: user.clerkId,
+    meta: { disputeId: dispute.id, chargeId, reason: "dispute_lost", revoked },
+  });
+
+  if (revoked) {
+    logger.warn({ clerkId: user.clerkId, disputeId: dispute.id }, "Disputa perdida — plano rebaixado para free");
   }
-  await db.update(usersTable)
-    .set({ plan: "free", stripeSubscriptionStatus: "refunded", updatedAt: new Date() })
-    .where(eq(usersTable.clerkId, user.clerkId));
-  logger.warn({ clerkId: user.clerkId, chargeId: charge.id }, "Full refund processed — plan downgraded to free");
 }
 
 export async function flagChargeDispute(dispute: Stripe.Dispute): Promise<void> {

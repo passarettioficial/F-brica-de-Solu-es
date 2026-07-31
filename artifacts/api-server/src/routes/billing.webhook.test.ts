@@ -5,6 +5,7 @@ const updateMock = vi.fn();
 const insertMock = vi.fn();
 const constructEventMock = vi.fn();
 const subscriptionsCancelMock = vi.fn();
+const subscriptionsRetrieveMock = vi.fn();
 const chargesRetrieveMock = vi.fn();
 const invoicePaymentsListMock = vi.fn();
 const auditLogMock = vi.fn();
@@ -17,12 +18,13 @@ vi.mock("@workspace/db", () => ({
   usersTable: { clerkId: "clerkId", stripeCustomerId: "stripeCustomerId" },
   couponsTable: { code: "code", usesCount: "usesCount", maxUses: "maxUses" },
   couponRedemptionsTable: { couponId: "couponId", clerkId: "clerkId" },
+  webhookEventsTable: { eventId: "eventId", eventType: "eventType" },
 }));
 
 vi.mock("../lib/stripe", () => ({
   stripe: {
     webhooks: { constructEvent: constructEventMock },
-    subscriptions: { cancel: subscriptionsCancelMock },
+    subscriptions: { cancel: subscriptionsCancelMock, retrieve: subscriptionsRetrieveMock },
     charges: { retrieve: chargesRetrieveMock },
     invoicePayments: { list: invoicePaymentsListMock },
   },
@@ -62,6 +64,22 @@ function mockInsertOnce() {
   const values = vi.fn().mockReturnValue({ onConflictDoNothing });
   insertMock.mockReturnValueOnce({ values });
   return { onConflictDoNothing, values };
+}
+
+/** Mock genérico do INSERT de deduplicação de webhook (webhookEventsTable). */
+function chainableDedupInsert(inserted: boolean) {
+  return {
+    values: () => ({
+      onConflictDoNothing: () => ({
+        returning: () => Promise.resolve(inserted ? [{ eventId: "evt_test" }] : []),
+      }),
+    }),
+  };
+}
+
+/** Faz o próximo `db.insert(...)` (a deduplicação, sempre a primeira chamada) "vencer". */
+function mockDedupInsertOnce(inserted = true) {
+  insertMock.mockReturnValueOnce(chainableDedupInsert(inserted));
 }
 
 function fakeReq(opts: { hasSignature?: boolean } = {}) {
@@ -127,6 +145,13 @@ describe("handleStripeWebhook — eventos processados", () => {
   beforeEach(() => {
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
     vi.clearAllMocks();
+    // Sem items configurados por padrão -> planIdFromLookupKey (mock) devolve null ->
+    // activateSubscriptionFromCheckout cai no fallback da metadata, preservando o
+    // comportamento dos testes que não são especificamente sobre essa resolução.
+    subscriptionsRetrieveMock.mockResolvedValue({ items: { data: [] } });
+    // Por padrão, todo evento "vence" a deduplicação (é a primeira vez que é visto) —
+    // testes que querem exercitar a reentrega chamam mockDedupInsertOnce(false) explicitamente.
+    insertMock.mockImplementation(() => chainableDedupInsert(true));
   });
 
   it("checkout.session.completed ativa o plano do usuário", async () => {
@@ -149,6 +174,37 @@ describe("handleStripeWebhook — eventos processados", () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
+  it("checkout.session.completed usa o preço real da assinatura, não a metadata desatualizada (F10)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          // Metadata diz "founder", mas um upgrade via Portal já mudou a assinatura pra "studio"
+          // e o webhook desse upgrade chegou primeiro (Stripe não garante ordem de entrega).
+          metadata: { clerkId: "clerk_1", planId: "founder" },
+          subscription: "sub_123",
+        },
+      },
+    });
+    subscriptionsRetrieveMock.mockResolvedValueOnce({ items: { data: [{ price: { lookup_key: "studio_monthly" } }] } });
+    planIdFromLookupKeyMock.mockReturnValueOnce("studio");
+    mockSelectOnce([{ clerkId: "clerk_1", stripeSubscriptionId: null }]);
+    const updateSetSpy = vi.fn();
+    updateMock.mockReturnValueOnce({
+      set: (values: unknown) => {
+        updateSetSpy(values);
+        return { where: () => Promise.resolve(undefined) };
+      },
+    });
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(subscriptionsRetrieveMock).toHaveBeenCalledWith("sub_123");
+    expect(updateSetSpy).toHaveBeenCalledWith(expect.objectContaining({ plan: "studio" }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   it("checkout.session.completed com cupom incrementa uso e registra a redenção com snapshot do desconto", async () => {
     constructEventMock.mockReturnValueOnce({
       type: "checkout.session.completed",
@@ -162,12 +218,13 @@ describe("handleStripeWebhook — eventos processados", () => {
     mockSelectOnce([{ clerkId: "clerk_1", stripeSubscriptionId: null }]); // existing user lookup
     mockUpdateOnce(); // user plan activation
     mockUpdateOnce([{ id: 42, code: "PROMO10", discountType: "percent", discountValue: 20 }]); // bounded coupon usesCount increment
-    const { onConflictDoNothing, values } = mockInsertOnce();
+    mockDedupInsertOnce(); // 1ª chamada de insert = deduplicação do evento
+    const { onConflictDoNothing, values } = mockInsertOnce(); // 2ª chamada = redenção do cupom
 
     const res = fakeRes();
     await handleStripeWebhook(fakeReq(), res);
 
-    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(insertMock).toHaveBeenCalledTimes(2);
     expect(values).toHaveBeenCalledWith({
       couponId: 42,
       clerkId: "clerk_1",
@@ -451,5 +508,64 @@ describe("handleStripeWebhook — eventos processados", () => {
     expect(updateMock).not.toHaveBeenCalled();
     expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({ eventType: "user.payment.disputed" }));
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("charge.dispute.closed com status 'lost' cancela a assinatura canônica e rebaixa o plano", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "charge.dispute.closed",
+      data: {
+        object: { id: "dp_2", charge: "ch_4", status: "lost" },
+      },
+    });
+    chargesRetrieveMock.mockResolvedValueOnce({ id: "ch_4", customer: "cus_4", payment_intent: "pi_4" });
+    mockSelectOnce([{ clerkId: "clerk_4", stripeCustomerId: "cus_4", stripeSubscriptionId: "sub_4" }]);
+    invoicePaymentsListMock.mockResolvedValueOnce({
+      data: [{ invoice: { parent: { subscription_details: { subscription: "sub_4" } } } }],
+    });
+    mockUpdateOnce();
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(subscriptionsCancelMock).toHaveBeenCalledWith("sub_4");
+    expect(updateMock).toHaveBeenCalledTimes(1);
+    expect(auditLogMock).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: "user.payment.canceled",
+      meta: expect.objectContaining({ reason: "dispute_lost", revoked: true }),
+    }));
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("charge.dispute.closed com status 'won' não revoga acesso", async () => {
+    constructEventMock.mockReturnValueOnce({
+      type: "charge.dispute.closed",
+      data: {
+        object: { id: "dp_3", charge: "ch_5", status: "won" },
+      },
+    });
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(chargesRetrieveMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it("evento reentregue (mesmo event.id) é ignorado — não reprocessa (F9, dedupe)", async () => {
+    constructEventMock.mockReturnValueOnce({
+      id: "evt_dup_1",
+      type: "customer.subscription.deleted",
+      data: { object: { id: "sub_1", metadata: { clerkId: "clerk_1" } } },
+    });
+    mockDedupInsertOnce(false); // já processado — onConflictDoNothing não insere nada
+
+    const res = fakeRes();
+    await handleStripeWebhook(fakeReq(), res);
+
+    expect(selectMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ deduplicated: true }));
   });
 });

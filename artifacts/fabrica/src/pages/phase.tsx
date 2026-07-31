@@ -1054,8 +1054,10 @@ export function PhasePage() {
   const [pontoCegoData, setPontoCegoData] = useState<PontoCegoData | null>(null);
   const [pontoCegoDismissed, setPontoCegoDismissed] = useState(false);
   const pontoCegoAbortRef = useRef<AbortController | null>(null);
+  const executeAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => pontoCegoAbortRef.current?.abort(), []);
+  useEffect(() => () => executeAbortRef.current?.abort(), []);
 
   function toggleExpanded(id: number) {
     setExpandedIds((prev) => {
@@ -1140,6 +1142,13 @@ export function PhasePage() {
   }
 
   function handleExecuteAI() {
+    // Aborta um stream anterior ainda em andamento (reentrância — segundo clique, ou troca
+    // de fase que remonta o componente) antes de iniciar um novo, evitando dois streams
+    // concorrentes escrevendo no mesmo estado.
+    executeAbortRef.current?.abort();
+    const executeController = new AbortController();
+    executeAbortRef.current = executeController;
+
     setGenerating(true);
     setGeneratingText("");
     setGenerationError("");
@@ -1173,6 +1182,7 @@ export function PhasePage() {
     fetch(`${basePath}/api/projects/${projectId}/phases/${phaseNumber}/execute`, {
       method: "POST",
       credentials: "include",
+      signal: executeController.signal,
     }).then(async (response) => {
       if (!response.ok) {
         const err = await response.json().catch(() => ({ error: "Erro desconhecido" })) as { error?: string; code?: string; requiresUpgrade?: boolean };
@@ -1229,6 +1239,8 @@ export function PhasePage() {
       }
       setGenerating(false);
     }).catch(() => {
+      // Abort intencional (segundo clique, troca de fase) — sem erro, sem toast.
+      if (executeController.signal.aborted) return;
       const msg = "Erro de conexao ao gerar artefatos. Verifique sua conexao e tente novamente.";
       setGenerationError(msg);
       setGenerating(false);
@@ -1269,6 +1281,7 @@ export function PhasePage() {
         projectId={projectId}
         projectName={project?.name}
         phaseStatuses={(project as any)?.phases?.map((p: { status: string }) => ({ status: p.status })) ?? []}
+        generating={generating}
       />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

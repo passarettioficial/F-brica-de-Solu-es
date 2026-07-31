@@ -130,11 +130,11 @@ function HomeRedirect() {
   );
 }
 
-function ProtectedRoute({ component: Component }: { component: ComponentType }) {
+function ProtectedRoute({ component: Component, routeKey }: { component: ComponentType; routeKey?: string }) {
   return (
     <>
       <Show when="signed-in">
-        <Component />
+        <Component key={routeKey} />
       </Show>
       <Show when="signed-out">
         <Redirect to="/" />
@@ -211,7 +211,7 @@ function Router() {
         {() => <ProtectedRoute component={ProjectPage} />}
       </Route>
       <Route path="/projects/:projectId/phases/:phaseNumber">
-        {() => <ProtectedRoute component={PhasePage} />}
+        {(params) => <ProtectedRoute component={PhasePage} routeKey={`${params.projectId}-${params.phaseNumber}`} />}
       </Route>
       <Route path="/projects/:projectId/advisor">
         {() => <ProtectedRoute component={AdvisorPage} />}

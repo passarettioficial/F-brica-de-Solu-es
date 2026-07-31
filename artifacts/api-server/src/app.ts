@@ -160,6 +160,12 @@ const supportTicketLimiter = rateLimit({
 app.use("/api", globalLimiter);
 app.post("/api/projects/:projectId/phases/:phaseNumber/execute", aiExecuteLimiter);
 app.post("/api/projects/:projectId/advisor", advisorLimiter);
+// Mesmo teto de burst do execute/advisor — estes 4 endpoints também custam OpenAI real
+// (checkAndIncrementAiUsage) e antes só tinham o globalLimiter genérico de 300/15min.
+app.post("/api/projects/:id/coherence/analyze", aiExecuteLimiter);
+app.post("/api/projects/:id/potential/analyze", aiExecuteLimiter);
+app.post("/api/projects/:projectId/validations/:validationId/generate-script", aiExecuteLimiter);
+app.post("/api/projects/:projectId/validations/:validationId/analyze", aiExecuteLimiter);
 app.post("/api/billing/validate-coupon", couponValidateLimiter);
 app.post("/api/admin/coupons/validate", couponValidateLimiter);
 app.post("/api/support/tickets", supportTicketLimiter);

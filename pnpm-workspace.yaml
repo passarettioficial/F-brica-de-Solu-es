@@ -54,6 +54,8 @@ overrides:
   'picomatch@2.3.1': ^2.3.2
   path-to-regexp: ^8.4.0
   js-cookie: ^3.0.6
+  # Onda 2: bypass de sanitização/XSS em versões antigas (via jspdf).
+  dompurify: ^3.4.12
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'
